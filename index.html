@@ -401,68 +401,66 @@ this was the originalcode <!DOCTYPE html>
                             <h4>Service Total: <span id="totalPrice">KES 0</span></h4>
                             <p class="payment-note">Payment can be made via M-Pesa now or cash at shop</p>
                         </div>
-                        
-                        <div class="payment-section">
-                            <h4>Payment Method *</h4>
-                            <div class="payment-options">
-                                <label class="payment-option">
-                                    <input type="radio" name="payment" value="cash" checked>
-                                    <span>Pay at Shop (Cash)</span>
-                                </label>
-                                <label class="payment-option">
-                                    <input type="radio" name="payment" value="mpesa" id="mpesaRadio">
-                                    <span><i class="fas fa-mobile-alt"></i> M-Pesa (Pay Now)</span>
-                                </label>
-                                <label class="payment-option">
-                                    <input type="radio" name="payment" value="card">
-                                    <span><i class="far fa-credit-card"></i> Card at Shop</span>
-                                </label>
-                            </div>
-                            
-                            <div id="mpesaPayment" class="mpesa-payment" style="display: none;">
-                                <div class="form-group">
-                                    <label for="mpesaNumber">M-Pesa Number *</label>
-                                    <input type="tel" id="mpesaNumber" class="form-control" placeholder="0712 345 678">
-                                </div>
-                                <div class="mpesa-instructions">
-                                    <p><strong>How to pay with M-Pesa:</strong></p>
-                                    <ol>
-                                        <li>Confirm booking first</li>
-                                        <li>You'll receive an M-Pesa prompt on your phone</li>
-                                        <li>Enter your M-Pesa PIN to complete payment</li>
-                                        <li>Payment confirmation will be sent via SMS</li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group terms-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="termsAgree" required>
-                                <span>I agree to receive SMS and email notifications about my appointment. I understand that I may receive a reminder 24 hours before my appointment.</span>
-                            </label>
-                        </div>
-                        
-                        <div class="form-group terms-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="cancellationPolicy" required>
-                                <span>I agree to the cancellation policy (free cancellation up to 2 hours before appointment).</span>
-                            </label>
-                        </div>
-                        
-                        <button type="submit" class="btn-primary btn-block" id="submitBtn" disabled>
-                            <i class="fas fa-calendar-check"></i> Loading Booking System...
-                        </button>
-                        
-                        <div class="form-footer">
-                            <p><small>You'll receive instant confirmation via SMS and email. Keep the confirmation for your records.</small></p>
-                        </div>
-                    </form>
-                </div>
+                     <div class="payment-section">
+    <h4>Payment Method *</h4>
+    <div class="payment-options">
+        <label class="payment-option">
+            <input type="radio" name="payment" value="cash" checked>
+            <span>Pay at Shop (Cash)</span>
+        </label>
+        <label class="payment-option">
+            <input type="radio" name="payment" value="mpesa_stk" id="mpesaStkRadio">
+            <span><i class="fas fa-mobile-alt"></i> M-Pesa STK Push (Pay Now)</span>
+        </label>
+        <label class="payment-option">
+            <input type="radio" name="payment" value="mpesa_manual" id="mpesaManualRadio">
+            <span><i class="fas fa-mobile-alt"></i> M-Pesa (Manual Payment)</span>
+        </label>
+        <label class="payment-option">
+            <input type="radio" name="payment" value="card">
+            <span><i class="far fa-credit-card"></i> Card at Shop</span>
+        </label>
+    </div>
+    
+    <!-- STK Push Instructions (shown when selected) -->
+    <div id="stkPaymentInfo" class="mpesa-payment" style="display: none;">
+        <div class="stk-instructions">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>How STK Push Works:</strong>
+            </div>
+            <ol>
+                <li>Click "Confirm Booking" below</li>
+                <li>You'll receive an <strong>M-Pesa prompt</strong> on your phone</li>
+                <li>Enter your <strong>M-Pesa PIN</strong> to complete payment</li>
+                <li>Payment confirmation happens automatically</li>
+                <li>Your booking will be instantly confirmed</li>
+            </ol>
+            <div class="payment-security">
+                <i class="fas fa-shield-alt"></i>
+                <small>Secure payment processed via Lipa Na. No card details stored.</small>
             </div>
         </div>
-    </section>
-
+    </div>
+    
+    <!-- Manual M-Pesa Instructions (shown when selected) -->
+    <div id="manualMpesaPayment" class="mpesa-payment" style="display: none;">
+        <div class="form-group">
+            <label for="mpesaNumber">M-Pesa Number *</label>
+            <input type="tel" id="mpesaNumber" class="form-control" placeholder="0712 345 678">
+        </div>
+        <div class="mpesa-instructions">
+            <p><strong>Manual M-Pesa Payment:</strong></p>
+            <ol>
+                <li>We'll send you payment details after booking</li>
+                <li>Make payment to our M-Pesa number</li>
+                <li>Send us the transaction code via WhatsApp</li>
+                <li>We'll manually confirm your booking</li>
+            </ol>
+        </div>
+    </div>
+</div>
+ </section>
     <!-- Testimonials Section -->
     <section class="section" id="testimonials" style="background-color: var(--secondary); color: white;">
         <div class="container">
