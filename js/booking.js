@@ -3,6 +3,7 @@ let selectedServicePrice = 0;
 let selectedServiceName = '';
 let selectedServiceId = '';
 let availableTimeSlots = [];
+let isProcessingBooking = false; // Add flag to prevent multiple submissions
 
 function initializeBooking() {
     console.log('Setting up booking system...');
@@ -12,36 +13,36 @@ function initializeBooking() {
         const serviceSelect = document.getElementById('serviceType');
         const dateInput = document.getElementById('appointmentDate');
         const timeSelect = document.getElementById('appointmentTime');
+        const submitBtn = document.getElementById('submitBtn');
         
         // Check if elements exist AND services are loaded (more than 1 option)
-        if (serviceSelect && dateInput && timeSelect && serviceSelect.options.length > 1) {
+        if (serviceSelect && dateInput && timeSelect && submitBtn && serviceSelect.options.length > 1) {
             console.log('✅ Form elements ready, initializing booking system...');
             
-            // 1. Initialize form elements
+            // Initialize form elements
             initializeFormElements();
             
-            // 2. Set up event listeners
+            // Set up event listeners
             setupEventListeners();
             
-            // 3. Initialize date picker with delay
+            // Initialize date picker with delay
             setTimeout(() => {
                 initializeDatePicker();
             }, 100);
             
-            // 4. Setup payment options
+            // Setup payment options
             setupPaymentOptions();
             
             // Enable submit button
-            const submitBtn = document.getElementById('submitBtn');
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Booking';
-            }
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Booking';
             
             console.log('✅ Booking system initialized successfully');
+            return true;
         } else {
             console.log('⏳ Waiting for form elements to be ready...');
             setTimeout(checkFormReady, 500);
+            return false;
         }
     };
     
@@ -61,12 +62,7 @@ function initializeFormElements() {
             selectedServiceId = selectedOption.value;
             
             // Update price display
-            const priceDisplay = document.getElementById('priceDisplay');
-            const totalPrice = document.getElementById('totalPrice');
-            if (priceDisplay && totalPrice) {
-                totalPrice.textContent = `KES ${selectedServicePrice}`;
-                priceDisplay.style.display = 'block';
-            }
+            updatePriceDisplay();
         }
         
         serviceSelect.addEventListener('change', function() {
@@ -77,12 +73,7 @@ function initializeFormElements() {
                 selectedServiceId = selectedOption.value;
                 
                 // Update price display
-                const priceDisplay = document.getElementById('priceDisplay');
-                const totalPrice = document.getElementById('totalPrice');
-                if (priceDisplay && totalPrice) {
-                    totalPrice.textContent = `KES ${selectedServicePrice}`;
-                    priceDisplay.style.display = 'block';
-                }
+                updatePriceDisplay();
             } else {
                 // Hide price if no service selected
                 const priceDisplay = document.getElementById('priceDisplay');
@@ -122,9 +113,18 @@ function initializeFormElements() {
             
             if (dayOfWeek === 0 || dayOfWeek === 6) {
                 this.value = '';
-                showBookingError('We are closed on weekends. Please select a weekday (Monday-Friday).');
+                showBookingError('We are closed on weekends. Please select a weekday (Monday-Friday).', 'warning');
             }
         });
+    }
+}
+
+function updatePriceDisplay() {
+    const priceDisplay = document.getElementById('priceDisplay');
+    const totalPrice = document.getElementById('totalPrice');
+    if (priceDisplay && totalPrice) {
+        totalPrice.textContent = `KES ${selectedServicePrice}`;
+        priceDisplay.style.display = 'block';
     }
 }
 
@@ -175,9 +175,10 @@ function initializeDatePicker() {
             timeSelect.disabled = true;
         }
     });
-} 
+}
+
 async function loadAvailableTimeSlots(date) {
-     // ADD THIS PROTECTION:
+    // ADD THIS PROTECTION:
     if (!date || date.trim() === '') {
         console.warn('loadAvailableTimeSlots called with empty date');
         return;
@@ -276,9 +277,9 @@ async function loadAvailableTimeSlots(date) {
                 });
                 
                 availableTimeSlots.push({
-                    time: timeDB,          // For database storage
-                    display: timeDisplay,  // For display
-                    time24: time24,        // For comparison
+                    time: timeDB,
+                    display: timeDisplay,
+                    time24: time24,
                     available: !isBooked,
                     hour: hour24,
                     minute: minute
@@ -291,6 +292,8 @@ async function loadAvailableTimeSlots(date) {
     } catch (error) {
         console.error('Error generating time slots:', error);
         throw error;
+    } finally {
+        window.loadingTimeSlots = false;
     }
 }
 
@@ -378,35 +381,6 @@ function populateTimeSlots() {
             timeSelect.appendChild(option);
         });
     }
-    
-    // Show booked slots at the bottom (optional)
-    if (bookedSlots.length > 0) {
-        const bookedLabel = document.createElement('option');
-        bookedLabel.disabled = true;
-        bookedLabel.textContent = '───────── Booked ─────────';
-        timeSelect.appendChild(bookedLabel);
-        
-        // Limit to showing only 5 booked slots
-        bookedSlots.slice(0, 5).forEach(slot => {
-            const option = document.createElement('option');
-            option.value = '';
-            option.textContent = `${slot.display} (Booked)`;
-            option.disabled = true;
-            option.style.color = '#999';
-            option.style.fontStyle = 'italic';
-            timeSelect.appendChild(option);
-        });
-        
-        if (bookedSlots.length > 5) {
-            const moreOption = document.createElement('option');
-            moreOption.value = '';
-            moreOption.textContent = `...and ${bookedSlots.length - 5} more booked`;
-            moreOption.disabled = true;
-            moreOption.style.color = '#999';
-            moreOption.style.fontStyle = 'italic';
-            timeSelect.appendChild(moreOption);
-        }
-    }
 }
 
 function setupEventListeners() {
@@ -416,18 +390,37 @@ function setupEventListeners() {
         return;
     }
     
-    // Form submission handler
-    form.addEventListener('submit', async function(e) {
+    // PREVENT DEFAULT FORM SUBMISSION - Fix for the "Processing your booking..." issue
+    form.addEventListener('submit', function(e) {
         e.preventDefault();
-        
-        // Validate form
-        if (!validateBookingForm()) {
-            return;
-        }
-        
-        // Process booking
-        await processBooking();
+        // The actual submission is handled in the async function below
     });
+    
+    // Add click handler to submit button instead
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            // Prevent multiple clicks
+            if (isProcessingBooking) {
+                console.log('Booking already in progress, ignoring click');
+                return;
+            }
+            
+            isProcessingBooking = true;
+            
+            // Validate form
+            if (!validateBookingForm()) {
+                isProcessingBooking = false;
+                return;
+            }
+            
+            // Process booking
+            await processBooking();
+            isProcessingBooking = false;
+        });
+    }
     
     // Phone number validation and formatting
     const phoneInput = document.getElementById('phoneNumber');
@@ -444,16 +437,12 @@ function setupEventListeners() {
             let formatted = '';
             
             if (value.startsWith('254') && value.length <= 12) {
-                // Format: 254 123 456 789
                 formatted = value.replace(/(\d{3})(\d{3})(\d{3})(\d{0,3})/, '$1 $2 $3 $4').trim();
             } else if (value.startsWith('0') && value.length <= 10) {
-                // Format: 0712 345 678
                 formatted = value.replace(/(\d{4})(\d{3})(\d{0,3})/, '$1 $2 $3').trim();
             } else if (value.length <= 9) {
-                // Format: 123 456 789
                 formatted = value.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1 $2 $3').trim();
             } else {
-                // Take only first 12 digits for 254 or 10 for 0
                 if (value.startsWith('254')) {
                     value = value.substring(0, 12);
                     formatted = value.replace(/(\d{3})(\d{3})(\d{3})(\d{0,3})/, '$1 $2 $3 $4').trim();
@@ -463,7 +452,6 @@ function setupEventListeners() {
                 }
             }
             
-            // Update value
             this.value = formatted;
             
             // Restore cursor position
@@ -472,7 +460,6 @@ function setupEventListeners() {
             this.setSelectionRange(cursorPos + cursorOffset, cursorPos + cursorOffset);
         });
         
-        // Validate on blur
         phoneInput.addEventListener('blur', function() {
             const value = this.value.replace(/\s/g, '');
             const phoneRegex = /^(0[17]\d{8}|011\d{7}|254[17]\d{8})$/;
@@ -493,14 +480,12 @@ function setupEventListeners() {
         });
     }
     
-    // =============== STK PUSH EVENT LISTENERS ===============
     // Handle STK Push vs Manual M-Pesa selection
     const mpesaStkRadio = document.getElementById('mpesaStkRadio');
     const mpesaManualRadio = document.getElementById('mpesaManualRadio');
     const stkPaymentInfo = document.getElementById('stkPaymentInfo');
     const manualMpesaPayment = document.getElementById('manualMpesaPayment');
     
-    // Function to update M-Pesa display
     function updateMpesaDisplay() {
         console.log('Updating M-Pesa display...');
         
@@ -545,19 +530,16 @@ function setupEventListeners() {
         }
     }
     
-    // STK Push radio button handler
     if (mpesaStkRadio && stkPaymentInfo) {
         mpesaStkRadio.addEventListener('change', updateMpesaDisplay);
         mpesaStkRadio.addEventListener('click', updateMpesaDisplay);
     }
     
-    // Manual M-Pesa radio button handler
     if (mpesaManualRadio && manualMpesaPayment) {
         mpesaManualRadio.addEventListener('change', updateMpesaDisplay);
         mpesaManualRadio.addEventListener('click', updateMpesaDisplay);
     }
     
-    // Handle other payment methods
     document.querySelectorAll('input[name="payment"]').forEach(radio => {
         if (radio.value !== 'mpesa_stk' && radio.value !== 'mpesa_manual') {
             radio.addEventListener('change', function() {
@@ -582,12 +564,6 @@ function setupEventListeners() {
         });
     }
     
-    // Handle form reset to maintain M-Pesa display
-    form.addEventListener('reset', function() {
-        console.log('Form reset - updating M-Pesa display');
-        setTimeout(updateMpesaDisplay, 50);
-    });
-    
     // Initial update of M-Pesa display
     setTimeout(updateMpesaDisplay, 100);
 }
@@ -601,13 +577,11 @@ function setupPaymentOptions() {
     const manualMpesaPayment = document.getElementById('manualMpesaPayment');
     
     if (mpesaStkRadio && stkPaymentInfo && manualMpesaPayment) {
-        // If STK Push is checked by default, show its info
         if (mpesaStkRadio.checked) {
             stkPaymentInfo.style.display = 'block';
             manualMpesaPayment.style.display = 'none';
         }
         
-        // If Manual M-Pesa is checked, show its info
         const mpesaManualRadio = document.getElementById('mpesaManualRadio');
         if (mpesaManualRadio && mpesaManualRadio.checked) {
             stkPaymentInfo.style.display = 'none';
@@ -628,7 +602,7 @@ function validateBookingForm() {
     const cancellationPolicy = document.getElementById('cancellationPolicy');
     
     if (!fullName || !phoneNumber || !email || !serviceType || !appointmentDate || !appointmentTime) {
-        showBookingError('Form fields not found. Please refresh the page.');
+        showBookingError('Form fields not found. Please refresh the page.', 'error');
         return false;
     }
     
@@ -639,8 +613,8 @@ function validateBookingForm() {
     const serviceTypeValue = serviceType.value;
     const appointmentDateValue = appointmentDate.value;
     const appointmentTimeValue = appointmentTime.value;
-    const termsAgreeValue = termsAgree.checked;
-    const cancellationPolicyValue = cancellationPolicy.checked;
+    const termsAgreeValue = termsAgree ? termsAgree.checked : false;
+    const cancellationPolicyValue = cancellationPolicy ? cancellationPolicy.checked : false;
     
     // Validate required fields
     const errors = [];
@@ -708,31 +682,26 @@ function validateBookingForm() {
         }
     }
     
-    if (!termsAgreeValue) {
+    if (termsAgree && !termsAgreeValue) {
         errors.push('Please agree to receive notifications');
         highlightField(termsAgree.parentElement, true);
-    } else {
+    } else if (termsAgree) {
         highlightField(termsAgree.parentElement, false);
     }
     
-    if (!cancellationPolicyValue) {
+    if (cancellationPolicy && !cancellationPolicyValue) {
         errors.push('Please agree to the cancellation policy');
         highlightField(cancellationPolicy.parentElement, true);
-    } else {
+    } else if (cancellationPolicy) {
         highlightField(cancellationPolicy.parentElement, false);
     }
     
-    // Validate payment method - UPDATED FOR STK PUSH
+    // Validate payment method
     const paymentMethod = document.querySelector('input[name="payment"]:checked');
     if (!paymentMethod) {
         errors.push('Please select a payment method');
     } else if (paymentMethod.value === 'mpesa_stk' || paymentMethod.value === 'mpesa_manual') {
-        // For STK Push, use main phone number automatically
-        if (paymentMethod.value === 'mpesa_stk') {
-            // No additional validation needed - uses main phone number
-        } 
-        // For Manual M-Pesa, validate M-Pesa number field
-        else if (paymentMethod.value === 'mpesa_manual') {
+        if (paymentMethod.value === 'mpesa_manual') {
             const mpesaNumber = document.getElementById('mpesaNumber');
             if (mpesaNumber) {
                 const mpesaNumberValue = mpesaNumber.value.trim();
@@ -756,7 +725,7 @@ function validateBookingForm() {
     
     // Show errors if any
     if (errors.length > 0) {
-        showBookingError(errors[0]);
+        showBookingError(errors[0], 'error');
         
         // Scroll to first error field
         const firstErrorField = document.querySelector('.error-highlight');
@@ -787,7 +756,7 @@ function highlightField(element, isError) {
     }
 }
 
-// ============ STK PUSH PAYMENT FUNCTIONS ============
+// STK PUSH PAYMENT FUNCTIONS
 async function initiateSTKPushPayment(bookingData) {
     try {
         console.log('Initiating STK Push payment...');
@@ -812,7 +781,6 @@ async function initiateSTKPushPayment(bookingData) {
         
         console.log('STK Push request:', stkRequest);
         
-        // Call your backend endpoint (you need to create this endpoint)
         const response = await fetch('/api/mpesa/stk-push', {
             method: 'POST',
             headers: {
@@ -849,201 +817,9 @@ async function initiateSTKPushPayment(bookingData) {
     }
 }
 
-function showPaymentPendingModal(bookingData, paymentResult) {
-    const modal = document.createElement('div');
-    modal.id = 'paymentPendingModal';
-    modal.className = 'modal';
-    modal.style.cssText = `
-        display: block;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0,0,0,0.7);
-    `;
-    
-    modal.innerHTML = `
-        <div class="modal-content" style="
-            background-color: white;
-            margin: 10% auto;
-            padding: 30px;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 500px;
-            text-align: center;
-        ">
-            <div class="payment-icon" style="font-size: 60px; color: #007bff; margin-bottom: 20px;">
-                <i class="fas fa-mobile-alt"></i>
-            </div>
-            
-            <h2 style="color: #333; margin-bottom: 15px;">Complete Payment</h2>
-            
-            <div class="payment-instructions" style="
-                background: #f8f9fa;
-                padding: 20px;
-                border-radius: 8px;
-                margin: 20px 0;
-                text-align: left;
-            ">
-                <p><strong>Follow these steps:</strong></p>
-                <ol style="margin-left: 20px;">
-                    <li>Check your phone for an <strong>M-Pesa prompt</strong></li>
-                    <li>Enter your <strong>M-Pesa PIN</strong> to authorize payment</li>
-                    <li>Wait for payment confirmation</li>
-                </ol>
-                
-                <div class="payment-details" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
-                    <p><strong>Amount:</strong> KES ${bookingData.service_price}</p>
-                    <p><strong>Phone:</strong> ${formatPhone(bookingData.customer_phone)}</p>
-                    <p><strong>Reference:</strong> ${bookingData.booking_reference}</p>
-                </div>
-            </div>
-            
-            <div class="payment-status" id="paymentStatus" style="
-                margin: 20px 0;
-                padding: 15px;
-                background: #fff3cd;
-                border-left: 4px solid #ffc107;
-            ">
-                <i class="fas fa-spinner fa-spin"></i>
-                <span>Waiting for payment confirmation...</span>
-            </div>
-            
-            <div class="modal-buttons" style="margin-top: 25px;">
-                <button id="cancelPayment" class="btn-secondary" style="
-                    padding: 10px 20px;
-                    margin-right: 10px;
-                    border: 1px solid #dc3545;
-                    background: white;
-                    color: #dc3545;
-                    border-radius: 5px;
-                    cursor: pointer;
-                ">
-                    Cancel
-                </button>
-                <button id="paymentCompleted" class="btn-primary" style="
-                    padding: 10px 20px;
-                    background: #28a745;
-                    color: white;
-                    border: none;
-                    border-radius: 5px;
-                    cursor: pointer;
-                ">
-                    I've Completed Payment
-                </button>
-            </div>
-            
-            <p style="margin-top: 20px; font-size: 14px; color: #666;">
-                <i class="fas fa-info-circle"></i>
-                If you don't receive the prompt within 30 seconds, please check your phone's network connection.
-            </p>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Close modal when clicking outside
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            document.body.removeChild(modal);
-        }
-    });
-    
-    // Cancel button
-    document.getElementById('cancelPayment').addEventListener('click', function() {
-        document.body.removeChild(modal);
-        showBookingError('Payment cancelled. Booking saved with pending payment status.', 'warning');
-    });
-    
-    // Payment completed button
-    document.getElementById('paymentCompleted').addEventListener('click', function() {
-        document.body.removeChild(modal);
-        showBookingError('Thank you! We\'ll verify your payment and confirm your booking.', 'success');
-    });
-    
-    return modal;
-}
-
-async function pollForPaymentConfirmation(bookingReference, transactionId) {
-    console.log('Polling for payment confirmation for transaction:', transactionId);
-    
-    // Poll for payment status (you need to implement this on your backend)
-    const pollInterval = setInterval(async () => {
-        try {
-            console.log('Checking payment status...');
-            
-            // Call your backend endpoint to check payment status
-            const response = await fetch(`/api/mpesa/payment-status/${transactionId}`);
-            
-            if (!response.ok) {
-                console.warn('Payment status check failed');
-                return;
-            }
-            
-            const result = await response.json();
-            console.log('Payment status result:', result);
-            
-            if (result.paymentStatus === 'completed' || result.paymentStatus === 'success') {
-                clearInterval(pollInterval);
-                
-                // Update booking status in Supabase
-                await updateBookingPaymentStatus(bookingReference, 'paid', transactionId);
-                
-                // Show success message
-                showBookingError('✅ Payment confirmed! Your booking is now fully confirmed.', 'success');
-                
-                // Close any open payment modal
-                const paymentModal = document.getElementById('paymentPendingModal');
-                if (paymentModal) {
-                    document.body.removeChild(paymentModal);
-                }
-                
-                // Reset form
-                resetBookingForm();
-                
-            } else if (result.paymentStatus === 'failed' || result.paymentStatus === 'cancelled') {
-                clearInterval(pollInterval);
-                showBookingError('Payment failed. Please try again or use another payment method.', 'error');
-            }
-        } catch (error) {
-            console.error('Payment polling error:', error);
-        }
-    }, 5000); // Poll every 5 seconds
-    
-    // Stop polling after 5 minutes
-    setTimeout(() => {
-        clearInterval(pollInterval);
-        console.log('Payment polling stopped after 5 minutes');
-    }, 300000);
-}
-
-async function updateBookingPaymentStatus(bookingReference, status, transactionId) {
-    try {
-        const { error } = await window.supabase
-            .from('appointments')
-            .update({
-                payment_status: status,
-                mpesa_transaction_id: transactionId,
-                status: 'confirmed'
-            })
-            .eq('booking_reference', bookingReference);
-        
-        if (error) {
-            console.error('Failed to update booking payment status:', error);
-            throw error;
-        } else {
-            console.log('Booking payment status updated successfully');
-            return true;
-        }
-    } catch (error) {
-        console.error('Error updating payment status:', error);
-        throw error;
-    }
-}
-
 async function processBooking() {
+    console.log('processBooking called');
+    
     // Show loading spinner
     const loadingSpinner = document.getElementById('loadingSpinner');
     if (loadingSpinner) {
@@ -1067,7 +843,7 @@ async function processBooking() {
         const paymentMethod = bookingData.payment_method;
         
         if (paymentMethod === 'mpesa_stk') {
-            // ============ STK PUSH PAYMENT FLOW ============
+            // STK PUSH PAYMENT FLOW
             console.log('Starting STK Push payment flow...');
             
             // 1. First, save booking with pending payment status
@@ -1101,8 +877,7 @@ async function processBooking() {
             }
             
         } else {
-            // ============ REGULAR BOOKING FLOW ============
-            // (Cash, Manual M-Pesa, Card)
+            // REGULAR BOOKING FLOW
             const bookingResult = await saveBookingToSupabase(bookingData);
             
             // Save locally as backup
@@ -1165,7 +940,7 @@ function collectFormData() {
     const form = document.getElementById('appointmentForm');
     const formData = new FormData(form);
     
-    // Get form values - MAKE SURE THEY'RE NOT EMPTY
+    // Get form values
     const fullName = document.getElementById('fullName').value.trim();
     const phoneNumber = document.getElementById('phoneNumber').value.trim();
     const email = document.getElementById('email').value.trim();
@@ -1185,14 +960,14 @@ function collectFormData() {
     const barberSelect = document.getElementById('barberSelect');
     const selectedBarber = barberSelect ? barberSelect.options[barberSelect.selectedIndex] : null;
     
-    // Get payment method - UPDATED FOR STK PUSH
+    // Get payment method
     const paymentMethodRadio = document.querySelector('input[name="payment"]:checked');
     const paymentMethod = paymentMethodRadio ? paymentMethodRadio.value : 'cash';
     
     // Generate booking reference
     const bookingRef = 'KB-' + Date.now().toString().slice(-8) + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
     
-    // Prepare booking data - MATCH YOUR TABLE SCHEMA
+    // Prepare booking data
     const bookingData = {
         customer_name: fullName,
         customer_phone: phoneNumber.replace(/\s/g, ''),
@@ -1204,7 +979,7 @@ function collectFormData() {
         barber_name: selectedBarber ? selectedBarber.textContent : 'Any Available Barber',
         appointment_date: appointmentDate,
         appointment_time: appointmentTime,
-        special_requests: formData.get('specialRequests') || '',  // Use 'special_requests' not 'notes'
+        special_requests: formData.get('specialRequests') || '',
         payment_method: paymentMethod,
         payment_status: paymentMethod === 'mpesa_stk' || paymentMethod === 'mpesa_manual' ? 'pending' : 'paid',
         booking_reference: bookingRef,
@@ -1214,14 +989,12 @@ function collectFormData() {
     
     // Add M-Pesa details based on payment method
     if (paymentMethod === 'mpesa_stk') {
-        // For STK Push, use the main phone number
         bookingData.mpesa_number = phoneNumber.replace(/\s/g, '');
-        bookingData.payment_method = 'mpesa_stk'; // Specifically mark as STK Push
+        bookingData.payment_method = 'mpesa_stk';
     } else if (paymentMethod === 'mpesa_manual') {
-        // For Manual M-Pesa, get the separate M-Pesa number
         const mpesaNumber = document.getElementById('mpesaNumber');
         bookingData.mpesa_number = mpesaNumber ? mpesaNumber.value.replace(/\s/g, '') : '';
-        bookingData.payment_method = 'mpesa_manual'; // Specifically mark as Manual M-Pesa
+        bookingData.payment_method = 'mpesa_manual';
     }
     
     return bookingData;
@@ -1235,7 +1008,7 @@ async function saveBookingToSupabase(bookingData) {
     }
     
     try {
-        // VALIDATE REQUIRED FIELDS BEFORE ANYTHING
+        // Validate required fields
         const requiredFields = [
             'customer_name', 
             'customer_phone', 
@@ -1257,164 +1030,54 @@ async function saveBookingToSupabase(bookingData) {
             throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
         }
         
-        // Validate date format
-        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!dateRegex.test(bookingData.appointment_date)) {
-            throw new Error('Invalid date format. Please use YYYY-MM-DD format.');
-        }
-        
-        // Validate time format
-        const timeRegex = /^\d{2}:\d{2}:\d{2}$/;
-        if (!timeRegex.test(bookingData.appointment_time)) {
-            throw new Error('Invalid time format. Please use HH:MM:SS format.');
-        }
-        
-        // Double-check slot availability
-        const { data: existingAppointments, error: checkError } = await window.supabase
-            .from('appointments')
-            .select('id')
-            .eq('appointment_date', bookingData.appointment_date)
-            .eq('appointment_time', bookingData.appointment_time)
-            .eq('status', 'confirmed');
-        
-        if (checkError) {
-            console.warn('Could not check slot availability:', checkError);
-            // Continue anyway, but log the warning
-        } else if (existingAppointments && existingAppointments.length > 0) {
-            throw new Error('Time slot is no longer available. Please choose another time.');
-        }
-        
-        // Prepare data for Supabase - MATCH YOUR TABLE SCHEMA EXACTLY
+        // Prepare data for Supabase
         const supabaseData = {
-            // Text fields that match your table columns
             customer_name: bookingData.customer_name || '',
             customer_phone: bookingData.customer_phone || '',
             customer_email: bookingData.customer_email || '',
             service_name: bookingData.service_name || '',
             barber_name: bookingData.barber_name || 'Any Available Barber',
-            special_requests: bookingData.special_requests || '', // NOT 'notes'
+            special_requests: bookingData.special_requests || '',
             payment_method: bookingData.payment_method || 'cash',
             payment_status: bookingData.payment_status || 'pending',
             booking_reference: bookingData.booking_reference || '',
             status: 'confirmed',
-            
-            // Numeric fields
             service_price: parseFloat(bookingData.service_price) || 0,
-            amount_paid: parseFloat(bookingData.service_price) || 0,
-            
-            // Date/time fields
             appointment_date: bookingData.appointment_date || '',
             appointment_time: bookingData.appointment_time || '',
-            
-            // Optional fields (check if your table has these)
-            mpesa_number: bookingData.mpesa_number || null,
-            mpesa_transaction_id: null // Will be updated when payment is confirmed
+            mpesa_number: bookingData.mpesa_number || null
         };
         
         console.log('Prepared data for Supabase:', supabaseData);
         
         // Save to Supabase
-        let { data, error } = await window.supabase
+        const { data, error } = await window.supabase
             .from('appointments')
             .insert([supabaseData]);
         
         if (error) {
-            console.error('Supabase insert error details:', error);
-            
-            // Try alternative approach without certain fields
-            const fallbackData = {
-                customer_name: supabaseData.customer_name,
-                customer_phone: supabaseData.customer_phone,
-                customer_email: supabaseData.customer_email,
-                appointment_date: supabaseData.appointment_date,
-                appointment_time: supabaseData.appointment_time,
-                service_name: supabaseData.service_name,
-                service_price: supabaseData.service_price,
-                barber_name: supabaseData.barber_name,
-                special_requests: supabaseData.special_requests,
-                payment_method: supabaseData.payment_method,
-                payment_status: supabaseData.payment_status,
-                booking_reference: supabaseData.booking_reference,
-                status: supabaseData.status
-            };
-            
-            console.log('Trying fallback with minimal fields:', fallbackData);
-            
-            const { data: fallbackResult, error: fallbackError } = await window.supabase
-                .from('appointments')
-                .insert([fallbackData]);
-            
-            if (fallbackError) {
-                console.error('Fallback also failed:', fallbackError);
-                
-                // Provide user-friendly error messages
-                if (fallbackError.code === '23505') {
-                    throw new Error('This time slot was just booked by someone else. Please choose another time.');
-                } else if (fallbackError.code === '42501') {
-                    throw new Error('Database permission error. Please contact support.');
-                } else if (fallbackError.message.includes('column')) {
-                    throw new Error(`Database error: ${fallbackError.message}. Please contact support.`);
-                } else {
-                    throw new Error(`Booking failed: ${fallbackError.message || 'Unknown error'}`);
-                }
-            }
-            
-            console.log('Booking saved via fallback');
-            data = fallbackResult;
+            console.error('Supabase insert error:', error);
+            throw new Error(`Booking failed: ${error.message}`);
         }
         
         console.log('Booking saved to Supabase successfully');
         
-        // Try to save to customers table (non-critical - only if table exists)
-        try {
-            const { error: customerError } = await window.supabase
-                .from('customers')
-                .upsert({
-                    phone: bookingData.customer_phone,
-                    email: bookingData.customer_email,
-                    full_name: bookingData.customer_name,
-                    last_visit: bookingData.appointment_date
-                }, {
-                    onConflict: 'phone'
-                });
-            
-            if (customerError) {
-                console.warn('Could not update customers table:', customerError);
-                // Non-critical error, continue
-            }
-        } catch (customerErr) {
-            console.warn('Customers table update error:', customerErr);
-            // Ignore this error - customers table is optional
-        }
-        
         return {
             success: true,
             booking_ref: bookingData.booking_reference,
-            message: 'Booking confirmed successfully! You will receive a confirmation shortly.'
+            message: 'Booking confirmed successfully!'
         };
         
     } catch (error) {
         console.error('Failed to save to Supabase:', error);
-        
-        // Provide better error messages for common issues
-        if (error.message.includes('Missing required fields')) {
-            throw new Error('Please fill in all required fields.');
-        } else if (error.message.includes('date') || error.message.includes('time')) {
-            throw new Error('Please select a valid date and time.');
-        } else if (error.message.includes('slot') || error.message.includes('available')) {
-            throw error; // Keep original message for slot errors
-        } else {
-            throw new Error(`Booking failed: ${error.message || 'Please try again or contact us.'}`);
-        }
+        throw error;
     }
 }
 
 function saveBookingLocally(bookingData) {
     try {
-        // Get existing bookings from localStorage
         let localBookings = JSON.parse(localStorage.getItem('kenbarber_local_bookings') || '[]');
         
-        // Add new booking with timestamp
         const localBooking = {
             ...bookingData,
             saved_locally: true,
@@ -1424,98 +1087,22 @@ function saveBookingLocally(bookingData) {
         
         localBookings.push(localBooking);
         
-        // Keep only last 50 bookings
         if (localBookings.length > 50) {
             localBookings = localBookings.slice(-50);
         }
         
-        // Save back to localStorage
         localStorage.setItem('kenbarber_local_bookings', JSON.stringify(localBookings));
         
         console.log('Booking saved locally with ID:', localBooking.local_id);
-        
-        // Try to sync local bookings to server in background
-        setTimeout(() => {
-            syncLocalBookings();
-        }, 5000);
         
     } catch (error) {
         console.error('Error saving booking locally:', error);
     }
 }
 
-async function syncLocalBookings() {
-    try {
-        const localBookings = JSON.parse(localStorage.getItem('kenbarber_local_bookings') || '[]');
-        const unsyncedBookings = localBookings.filter(booking => booking.saved_locally && !booking.synced_to_server);
-        
-        if (unsyncedBookings.length === 0 || !window.supabase) {
-            return;
-        }
-        
-        console.log(`Found ${unsyncedBookings.length} unsynced bookings to sync`);
-        
-        for (const booking of unsyncedBookings) {
-            try {
-                // Check if booking already exists - Use proper error handling
-                const { data: existing, error: selectError } = await window.supabase
-                    .from('appointments')
-                    .select('id')
-                    .eq('booking_reference', booking.booking_reference)
-                    .maybeSingle(); // Use maybeSingle instead of single
-                
-                if (selectError) {
-                    console.warn('Select error:', selectError);
-                    // Continue anyway
-                }
-                
-                if (!existing) {
-                    // Insert to Supabase
-                    const bookingDataToInsert = {
-                        customer_name: booking.customer_name,
-                        customer_phone: booking.customer_phone,
-                        customer_email: booking.customer_email,
-                        service_name: booking.service_name,
-                        service_price: booking.service_price,
-                        appointment_date: booking.appointment_date,
-                        appointment_time: booking.appointment_time,
-                        barber_name: booking.barber_name,
-                        special_requests: booking.special_requests || '',
-                        payment_method: booking.payment_method,
-                        payment_status: booking.payment_status || 'pending',
-                        booking_reference: booking.booking_reference,
-                        status: 'confirmed'
-                    };
-                    
-                    const { error: insertError } = await window.supabase
-                        .from('appointments')
-                        .insert([bookingDataToInsert]);
-                    
-                    if (!insertError) {
-                        booking.synced_to_server = true;
-                        console.log('Synced local booking:', booking.booking_reference);
-                    } else {
-                        console.warn('Insert error:', insertError);
-                    }
-                }
-            } catch (syncError) {
-                console.warn('Failed to sync local booking:', syncError);
-            }
-        }
-        
-        // Update localStorage with sync status
-        localStorage.setItem('kenbarber_local_bookings', JSON.stringify(localBookings));
-        
-    } catch (error) {
-        console.error('Error syncing local bookings:', error);
-    }
-}
-
 function showSuccessModal(bookingData, bookingResult) {
     const modal = document.getElementById('successModal');
     if (!modal) {
-        console.error('Success modal not found');
-        // Fallback: show alert
         alert(`Booking Confirmed!\nReference: ${bookingData.booking_reference}\nDate: ${bookingData.appointment_date}\nTime: ${bookingData.appointment_time}`);
         return;
     }
@@ -1551,30 +1138,6 @@ function showSuccessModal(bookingData, bookingResult) {
     
     // Setup close buttons
     setupModalCloseButtons();
-    
-    // Setup print button
-    const printBtn = document.getElementById('printBooking');
-    if (printBtn) {
-        printBtn.onclick = function() {
-            printBookingDetails(bookingData);
-        };
-    }
-    
-    // Setup share button
-    const shareBtn = document.getElementById('shareBooking');
-    if (shareBtn) {
-        shareBtn.onclick = function() {
-            shareBookingDetails(bookingData);
-        };
-    }
-    
-    // Auto-close after 30 seconds if user doesn't interact
-    setTimeout(() => {
-        if (modal.style.display === 'block') {
-            const closeBtn = document.getElementById('closeSuccessModal');
-            if (closeBtn) closeBtn.click();
-        }
-    }, 30000);
 }
 
 function setupModalCloseButtons() {
@@ -1639,7 +1202,6 @@ function resetBookingForm() {
         // Restore service selection
         if (selectedService && selectedService.value) {
             serviceSelect.value = selectedService.value;
-            // Trigger change event to update price
             serviceSelect.dispatchEvent(new Event('change'));
         }
         
@@ -1653,7 +1215,6 @@ function resetBookingForm() {
             if (manualInfo) manualInfo.style.display = 'block';
             if (stkInfo) stkInfo.style.display = 'none';
         } else {
-            // Default to cash and hide M-Pesa sections
             if (stkInfo) stkInfo.style.display = 'none';
             if (manualInfo) manualInfo.style.display = 'none';
         }
@@ -1671,22 +1232,13 @@ function resetBookingForm() {
                 timeSelect.innerHTML = '<option value="">Select a date first</option>';
                 timeSelect.disabled = true;
             }
-            
-            // Trigger date change after a short delay
-            setTimeout(() => {
-                dateInput.dispatchEvent(new Event('change'));
-            }, 100);
         }
-        
-        // Clear error highlights
-        document.querySelectorAll('.error-highlight, .success-highlight').forEach(el => {
-            el.classList.remove('error-highlight', 'success-highlight');
-        });
         
         console.log('Form reset complete');
     }
 }
 
+// Utility functions
 function formatDate(dateString) {
     try {
         const date = new Date(dateString);
@@ -1707,7 +1259,6 @@ function formatTime(timeString) {
     try {
         if (!timeString) return 'N/A';
         
-        // Handle HH:MM:SS format
         const parts = timeString.split(':');
         if (parts.length < 2) return timeString;
         
@@ -1743,7 +1294,7 @@ function showBookingError(message, type = 'error') {
         return;
     }
     
-    // Fallback: create a temporary notification
+    // Fallback notification
     const notification = document.createElement('div');
     notification.className = `booking-notification ${type}`;
     notification.innerHTML = `
@@ -1751,7 +1302,6 @@ function showBookingError(message, type = 'error') {
         <button onclick="this.parentElement.remove()">×</button>
     `;
     
-    // Style the notification
     notification.style.cssText = `
         position: fixed;
         top: 20px;
@@ -1769,7 +1319,6 @@ function showBookingError(message, type = 'error') {
         animation: slideIn 0.3s ease-out;
     `;
     
-    // Add close button style
     notification.querySelector('button').style.cssText = `
         background: none;
         border: none;
@@ -1781,7 +1330,6 @@ function showBookingError(message, type = 'error') {
         line-height: 1;
     `;
     
-    // Add CSS animation
     const style = document.createElement('style');
     style.textContent = `
         @keyframes slideIn {
@@ -1793,197 +1341,11 @@ function showBookingError(message, type = 'error') {
     
     document.body.appendChild(notification);
     
-    // Auto-remove after 5 seconds
     setTimeout(() => {
         if (notification.parentElement) {
             notification.remove();
         }
     }, 5000);
-}
-
-function printBookingDetails(bookingData) {
-    const printWindow = window.open('', '_blank');
-    
-    const printContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>KenBarber Booking Confirmation</title>
-            <style>
-                @media print {
-                    body { font-family: Arial, sans-serif; padding: 20px; }
-                    .no-print { display: none !important; }
-                }
-                body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
-                .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-                .logo { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 10px; }
-                .tagline { color: #666; font-style: italic; }
-                .confirmation { color: #00C851; font-weight: bold; margin-top: 10px; }
-                .details { margin: 30px 0; }
-                .detail-row { margin: 12px 0; padding: 8px 0; border-bottom: 1px solid #eee; }
-                .label { font-weight: bold; display: inline-block; width: 180px; color: #333; }
-                .value { color: #555; }
-                .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #333; text-align: center; font-size: 14px; color: #666; }
-                .important { background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0; }
-                .qr-code { text-align: center; margin: 20px 0; }
-                .buttons { margin-top: 30px; text-align: center; }
-                button { padding: 10px 20px; margin: 0 5px; cursor: pointer; }
-                @media print {
-                    .buttons { display: none; }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <div class="logo">KenBarber Shop</div>
-                <div class="tagline">Premium Grooming & Styling</div>
-                <div class="confirmation">BOOKING CONFIRMED</div>
-            </div>
-            
-            <div class="details">
-                <div class="detail-row">
-                    <span class="label">Booking Reference:</span>
-                    <span class="value">${bookingData.booking_reference}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Customer Name:</span>
-                    <span class="value">${bookingData.customer_name}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Phone Number:</span>
-                    <span class="value">${formatPhone(bookingData.customer_phone)}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Email:</span>
-                    <span class="value">${bookingData.customer_email}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Service:</span>
-                    <span class="value">${bookingData.service_name}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Date:</span>
-                    <span class="value">${formatDate(bookingData.appointment_date)}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Time:</span>
-                    <span class="value">${formatTime(bookingData.appointment_time)}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Barber:</span>
-                    <span class="value">${bookingData.barber_name}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Amount:</span>
-                    <span class="value">KES ${bookingData.service_price}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Payment Method:</span>
-                    <span class="value">${bookingData.payment_method === 'mpesa_stk' ? 'M-Pesa STK Push' : bookingData.payment_method === 'mpesa_manual' ? 'M-Pesa (Manual)' : bookingData.payment_method === 'cash' ? 'Cash at Shop' : bookingData.payment_method}</span>
-                </div>
-                ${bookingData.special_requests ? `
-                <div class="detail-row">
-                    <span class="label">Special Requests:</span>
-                    <span class="value">${bookingData.special_requests}</span>
-                </div>
-                ` : ''}
-            </div>
-            
-            <div class="important">
-                <strong>Important Information:</strong>
-                <ul>
-                    <li>Please arrive 5-10 minutes before your appointment time</li>
-                    <li>Bring this confirmation with you (digital or printed)</li>
-                    <li>Cancellations must be made at least 2 hours in advance</li>
-                    <li>Late arrivals may result in reduced service time or rescheduling</li>
-                </ul>
-            </div>
-            
-            <div class="footer">
-                <p><strong>KenBarber Shop</strong></p>
-                <p>London Ward, Nakuru, Kenya</p>
-                <p>Phone: 0790 969 743 | Email: info@kenbarber.co.ke</p>
-                <p>Website: www.kenbarber.co.ke</p>
-                <p style="margin-top: 20px; font-size: 12px; color: #999;">
-                    Generated on ${new Date().toLocaleString('en-KE')}
-                </p>
-            </div>
-            
-            <div class="buttons no-print">
-                <button onclick="window.print()">Print Confirmation</button>
-                <button onclick="window.close()">Close Window</button>
-            </div>
-            
-            <script>
-                // Auto-print
-                window.onload = function() {
-                    setTimeout(function() {
-                        window.print();
-                    }, 500);
-                };
-            </script>
-        </body>
-        </html>
-    `;
-    
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-}
-
-function shareBookingDetails(bookingData) {
-    const shareText = `✅ KenBarber Appointment Confirmed!
-
-👤 Customer: ${bookingData.customer_name}
-📅 Date: ${formatDate(bookingData.appointment_date)}
-⏰ Time: ${formatTime(bookingData.appointment_time)}
-💈 Service: ${bookingData.service_name}
-✂️ Barber: ${bookingData.barber_name}
-💰 Amount: KES ${bookingData.service_price}
-💳 Payment: ${bookingData.payment_method === 'mpesa_stk' ? 'M-Pesa STK Push' : bookingData.payment_method === 'mpesa_manual' ? 'M-Pesa (Manual)' : bookingData.payment_method === 'cash' ? 'Cash at Shop' : bookingData.payment_method}
-📱 Ref: ${bookingData.booking_reference}
-
-📍 Location: KenBarber Shop, London Ward, Nakuru
-📞 Phone: 0790 969 743
-
-Please arrive 5 minutes before your appointment.
-Cancellation policy: 2 hours notice required.
-
-Book your appointment at: www.kenbarber.co.ke`;
-
-    if (navigator.share) {
-        navigator.share({
-            title: 'KenBarber Booking Confirmation',
-            text: shareText,
-            url: window.location.href
-        }).catch(error => {
-            console.log('Sharing cancelled or failed:', error);
-            copyToClipboard(shareText);
-        });
-    } else {
-        copyToClipboard(shareText);
-    }
-}
-
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text)
-        .then(() => {
-            showBookingError('Booking details copied to clipboard!', 'success');
-        })
-        .catch(err => {
-            console.error('Failed to copy:', err);
-            // Fallback for older browsers
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                showBookingError('Booking details copied to clipboard!', 'success');
-            } catch (err) {
-                showBookingError('Failed to copy details. Please copy manually.', 'error');
-            }
-            document.body.removeChild(textArea);
-        });
 }
 
 // Export functions for global use
@@ -2022,33 +1384,15 @@ style.textContent = `
         25% { transform: translateX(-5px); }
         75% { transform: translateX(5px); }
     }
-    
-    .booking-notification {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-    }
-    
-    /* Payment pending modal styles */
-    .modal {
-        display: block !important;
-        position: fixed !important;
-        z-index: 1000 !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        background-color: rgba(0,0,0,0.7) !important;
-    }
-    
-    .modal-content {
-        background-color: white !important;
-        margin: 10% auto !important;
-        padding: 30px !important;
-        border-radius: 10px !important;
-        width: 90% !important;
-        max-width: 500px !important;
-        text-align: center !important;
-    }
 `;
 document.head.appendChild(style);
 
 console.log('Booking system loaded and ready!');
+
+// Initialize the booking system when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait a bit to ensure all elements are loaded
+    setTimeout(() => {
+        initializeBooking();
+    }, 500);
+});
