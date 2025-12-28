@@ -1,11 +1,106 @@
 // main.js - Main JavaScript for KenBarber Website with Supabase Integration
-// REAL SUPABASE VERSION - NO DEMO MODE
+// REAL SUPABASE VERSION - FIXED LOADING STATES
 
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('Initializing KenBarber Website with Real Supabase...');
     
     // ============================================
-    // 0. SUPABASE DATA LOADING - REAL DATABASE
+    // 0. INITIAL LOADING STATES
+    // ============================================
+    function showLoadingStates() {
+        // Services loading state
+        const servicesGrid = document.getElementById('servicesGrid');
+        if (servicesGrid) {
+            servicesGrid.innerHTML = `
+                <div class="loading-service">
+                    <div class="service-img" style="background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
+                    </div>
+                    <div class="service-content">
+                        <h3>Loading Services...</h3>
+                        <p>Please wait while we load our service menu</p>
+                        <div class="service-footer">
+                            <span class="price">KES 0</span>
+                            <span class="duration"><i class="far fa-clock"></i> 0 min</span>
+                        </div>
+                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;" disabled>
+                            <i class="fas fa-spinner fa-spin"></i> Loading...
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Barbers loading state
+        const barbersGrid = document.getElementById('barbersGrid');
+        if (barbersGrid) {
+            barbersGrid.innerHTML = `
+                <div class="loading-barber">
+                    <div class="barber-img" style="background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
+                    </div>
+                    <div class="barber-info">
+                        <h3>Loading Barbers...</h3>
+                        <p class="barber-title">Please wait</p>
+                        <p>Our barber information is loading</p>
+                        <div class="barber-social">
+                            <a href="#"><i class="fab fa-instagram"></i></a>
+                            <a href="#"><i class="fab fa-facebook"></i></a>
+                            <a href="tel:+254712345678"><i class="fas fa-phone"></i></a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Testimonials loading state
+        const testimonialsGrid = document.getElementById('testimonialsGrid');
+        if (testimonialsGrid) {
+            testimonialsGrid.innerHTML = `
+                <div class="testimonial-card">
+                    <div class="rating">
+                        <i class="fas fa-spinner fa-spin" style="color: gold;"></i>
+                        <i class="fas fa-spinner fa-spin" style="color: gold;"></i>
+                        <i class="fas fa-spinner fa-spin" style="color: gold;"></i>
+                        <i class="fas fa-spinner fa-spin" style="color: gold;"></i>
+                        <i class="fas fa-spinner fa-spin" style="color: gold;"></i>
+                    </div>
+                    <p>Loading customer reviews from our database...</p>
+                    <div class="customer-info">
+                        <strong>Loading...</strong>
+                        <span>Please wait</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Service dropdown loading state
+        const serviceSelect = document.getElementById('serviceType');
+        if (serviceSelect) {
+            serviceSelect.innerHTML = '<option value="">Loading Services...</option>';
+            serviceSelect.disabled = true;
+        }
+        
+        // Barber dropdown loading state
+        const barberSelect = document.getElementById('barberSelect');
+        if (barberSelect) {
+            barberSelect.innerHTML = '<option value="">Loading Barbers...</option>';
+            barberSelect.disabled = true;
+        }
+        
+        // Submit button loading state
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading Booking System...';
+        }
+    }
+    
+    // Show initial loading states
+    showLoadingStates();
+    
+    // ============================================
+    // 1. SUPABASE DATA LOADING - REAL DATABASE
     // ============================================
     async function loadDataFromSupabase() {
         try {
@@ -13,7 +108,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (!window.supabase) {
                 console.error('Supabase not available');
                 showErrorMessage('Database connection failed. Please refresh the page.');
-                return;
+                return false;
             }
             
             console.log('Loading data from Supabase...');
@@ -86,6 +181,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             if (!services || services.length === 0) {
                 console.warn('No services found in database');
+                showNoServicesMessage();
                 return [];
             }
             
@@ -123,6 +219,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             if (!barbers || barbers.length === 0) {
                 console.warn('No barbers found in database');
+                showNoBarbersMessage();
                 return [];
             }
             
@@ -158,6 +255,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             if (!testimonials || testimonials.length === 0) {
                 console.log('No testimonials found in database');
+                loadDefaultTestimonials();
                 return [];
             }
             
@@ -204,6 +302,57 @@ document.addEventListener('DOMContentLoaded', async function() {
             console.error('Unexpected error loading special offers:', error);
             return null;
         }
+    }
+    
+    function showNoServicesMessage() {
+        const servicesGrid = document.getElementById('servicesGrid');
+        if (servicesGrid) {
+            servicesGrid.innerHTML = `
+                <div class="no-data-message">
+                    <i class="fas fa-cut fa-3x" style="color: #ccc; margin-bottom: 1rem;"></i>
+                    <h3>No Services Available</h3>
+                    <p>Please check back later or contact us directly.</p>
+                </div>
+            `;
+        }
+    }
+    
+    function showNoBarbersMessage() {
+        const barbersGrid = document.getElementById('barbersGrid');
+        if (barbersGrid) {
+            barbersGrid.innerHTML = `
+                <div class="no-data-message">
+                    <i class="fas fa-user-tie fa-3x" style="color: #ccc; margin-bottom: 1rem;"></i>
+                    <h3>No Barbers Available</h3>
+                    <p>Our barbers schedule is being updated. Please check back soon.</p>
+                </div>
+            `;
+        }
+    }
+    
+    function loadDefaultTestimonials() {
+        const defaultTestimonials = [
+            {
+                customer_name: 'John Mwangi',
+                comment: 'Best barber in Nakuru! Always leave looking fresh.',
+                rating: 5,
+                customer_location: 'Nakuru'
+            },
+            {
+                customer_name: 'David Kimani',
+                comment: 'Professional service and friendly staff. Highly recommended!',
+                rating: 5,
+                customer_location: 'London Ward'
+            },
+            {
+                customer_name: 'Peter Omondi',
+                comment: 'Great haircuts at reasonable prices. My go-to barber shop.',
+                rating: 4,
+                customer_location: 'Nakuru Town'
+            }
+        ];
+        
+        updateTestimonialsGrid(defaultTestimonials);
     }
     
     function updateServicesGrid(services) {
@@ -253,6 +402,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         
         serviceSelect.innerHTML = '<option value="">Select Service</option>';
+        serviceSelect.disabled = false;
         
         services.forEach(service => {
             const option = document.createElement('option');
@@ -327,6 +477,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         
         barberSelect.innerHTML = '<option value="">Any Available Barber</option>';
+        barberSelect.disabled = false;
         
         barbers.forEach(barber => {
             const option = document.createElement('option');
@@ -438,6 +589,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             const maxDate = new Date();
             maxDate.setMonth(maxDate.getMonth() + 3);
             dateInput.max = maxDate.toISOString().split('T')[0];
+            
+            // Set initial date to tomorrow
+            dateInput.value = tomorrow.toISOString().split('T')[0];
         }
     }
     
@@ -446,7 +600,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     await loadDataFromSupabase();
     
     // ============================================
-    // 1. MOBILE NAVIGATION TOGGLE
+    // 2. MOBILE NAVIGATION TOGGLE
     // ============================================
     const mobileToggle = document.getElementById('mobileToggle');
     const navMenu = document.getElementById('navMenu');
@@ -490,7 +644,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     // ============================================
-    // 2. SMOOTH SCROLLING FOR ANCHOR LINKS
+    // 3. SMOOTH SCROLLING FOR ANCHOR LINKS
     // ============================================
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
@@ -516,7 +670,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
     
     // ============================================
-    // 3. HEADER SCROLL EFFECT
+    // 4. HEADER SCROLL EFFECT
     // ============================================
     const header = document.querySelector('header');
     
@@ -538,7 +692,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     handleHeaderScroll();
     
     // ============================================
-    // 4. ANIMATION ON SCROLL
+    // 5. ANIMATION ON SCROLL
     // ============================================
     function animateOnScroll() {
         const elements = document.querySelectorAll('.service-card, .barber-card, .testimonial-card');
@@ -565,7 +719,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     animateOnScroll();
     
     // ============================================
-    // 5. COUNTER ANIMATIONS
+    // 6. COUNTER ANIMATIONS
     // ============================================
     function animateCounter(element, target, duration = 2000) {
         let start = 0;
@@ -597,7 +751,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     // ============================================
-    // 6. FORM VALIDATION HELPERS
+    // 7. FORM VALIDATION HELPERS
     // ============================================
     window.validateEmail = function(email) {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -611,7 +765,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     };
     
     // ============================================
-    // 7. NOTIFICATION SYSTEM
+    // 8. NOTIFICATION SYSTEM
     // ============================================
     window.showNotification = function(message, type = 'success') {
         // Remove existing notification
@@ -676,7 +830,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     };
     
     // ============================================
-    // 8. SERVICE BOOKING SHORTCUTS
+    // 9. SERVICE BOOKING SHORTCUTS
     // ============================================
     window.bookService = function(serviceId, price, serviceName) {
         const serviceSelect = document.getElementById('serviceType');
@@ -708,7 +862,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     };
     
     // ============================================
-    // 9. NEWSLETTER SUBSCRIPTION
+    // 10. NEWSLETTER SUBSCRIPTION
     // ============================================
     window.subscribeNewsletter = async function() {
         const emailInput = document.getElementById('newsletterEmail');
@@ -755,7 +909,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     };
     
     // ============================================
-    // 10. ERROR MESSAGE FUNCTION
+    // 11. ERROR MESSAGE FUNCTION
     // ============================================
     function showErrorMessage(message) {
         const errorDiv = document.createElement('div');
@@ -802,7 +956,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     // ============================================
-    // 11. PERFORMANCE OPTIMIZATIONS
+    // 12. PERFORMANCE OPTIMIZATIONS
     // ============================================
     // Debounce scroll events
     let scrollTimer;
@@ -812,7 +966,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
     
     // ============================================
-    // 12. INITIALIZE OTHER COMPONENTS
+    // 13. INITIALIZE OTHER COMPONENTS
     // ============================================
     function initializeNavigation() {
         console.log('Navigation initialized');
@@ -842,7 +996,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     initializeContactForm();
     
     // ============================================
-    // 13. FINAL INITIALIZATION
+    // 14. FINAL INITIALIZATION
     // ============================================
     console.log('KenBarber website with Real Supabase initialized successfully');
 });
