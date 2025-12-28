@@ -1,0 +1,24 @@
+/* ===== Admin Dashboard Styles ===== */
+.admin-body {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    grid-template-rows: 70px 1fr;
+    min-height: 100vh;
+}
+
+.admin-header {
+    grid-column: 1 / -1;
+    background-color: var(--secondary);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.admin-header .header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-badge {
+    background-color: var(--primary);
+    color: var(--secondary);
+    font-size: 0.7rem
