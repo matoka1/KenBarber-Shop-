@@ -1,44 +1,46 @@
-// booking.js - Booking System for KenBarber with Real Supabase
-// REAL DATABASE VERSION - FULLY FIXED
-
-// Global booking variables
-let selectedServicePrice = 0;
-let selectedServiceName = '';
-let selectedServiceId = '';
-let availableTimeSlots = [];
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Initializing Real Supabase Booking System...');
-    
-    // Check if Supabase is available
-    if (!window.supabase) {
-        console.error('Supabase not available for booking system');
-        showBookingError('Booking system is not available. Please refresh the page.');
-        return;
-    }
-    
-    // Initialize booking system
-    initializeBooking();
-});
-
 function initializeBooking() {
     console.log('Setting up booking system...');
     
-    // 1. Initialize form elements
-    initializeFormElements();
+    // Wait for main.js to create form elements and load services
+    const checkFormReady = () => {
+        const serviceSelect = document.getElementById('serviceType');
+        const dateInput = document.getElementById('appointmentDate');
+        const timeSelect = document.getElementById('appointmentTime');
+        
+        // Check if elements exist AND services are loaded (more than 1 option)
+        if (serviceSelect && dateInput && timeSelect && serviceSelect.options.length > 1) {
+            console.log('✅ Form elements ready, initializing booking system...');
+            
+            // 1. Initialize form elements
+            initializeFormElements();
+            
+            // 2. Set up event listeners
+            setupEventListeners();
+            
+            // 3. Initialize date picker with delay
+            setTimeout(() => {
+                initializeDatePicker();
+            }, 100);
+            
+            // 4. Setup payment options
+            setupPaymentOptions();
+            
+            // Enable submit button
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Booking';
+            }
+            
+            console.log('✅ Booking system initialized successfully');
+        } else {
+            console.log('⏳ Waiting for form elements to be ready...');
+            setTimeout(checkFormReady, 500);
+        }
+    };
     
-    // 2. Set up event listeners
-    setupEventListeners();
-    
-    // 3. Initialize date picker with delay
-    setTimeout(() => {
-        initializeDatePicker();
-    }, 100);
-    
-    // 4. Setup payment options
-    setupPaymentOptions();
-    
-    console.log('Booking system initialized');
+    // Start checking for form readiness
+    checkFormReady();
 }
 
 function initializeFormElements() {
