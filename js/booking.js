@@ -1008,9 +1008,9 @@ async function saveBookingToSupabase(bookingData) {
         console.log('Prepared data for Supabase:', supabaseData);
         
         // Save to Supabase - SIMPLIFIED without .select() to avoid issues
-        const { data, error } = await window.supabase
-            .from('appointments')
-            .insert([supabaseData]);
+        let { data, error } = await window.supabase
+    .from('appointments')
+    .insert([supabaseData]);
         
         if (error) {
             console.error('Supabase insert error details:', error);
@@ -1151,36 +1151,48 @@ async function syncLocalBookings() {
         
         for (const booking of unsyncedBookings) {
             try {
-                // Check if booking already exists
-                const { data: existing } = await window.supabase
+                // Check if booking already exists - FIXED: Use proper error handling
+                const { data: existing, error: selectError } = await window.supabase
                     .from('appointments')
                     .select('id')
                     .eq('booking_reference', booking.booking_reference)
-                    .single();
+                    .maybeSingle(); // Use maybeSingle instead of single
+                
+                if (selectError) {
+                    console.warn('Select error:', selectError);
+                    // Continue anyway
+                }
                 
                 if (!existing) {
-                    // Insert to Supabase
-                    const { error } = await window.supabase
-                        .from('appointments')
-                        .insert([{
-                            customer_name: booking.customer_name,
-                            customer_phone: booking.customer_phone,
-                            customer_email: booking.customer_email,
-                            service_name: booking.service_name,
-                            service_price: booking.service_price,
-                            appointment_date: booking.appointment_date,
-                            appointment_time: booking.appointment_time,
-                            barber_name: booking.barber_name,
-                            special_requests: booking.special_requests,
-                            payment_method: booking.payment_method,
-                            payment_status: booking.payment_status,
-                            booking_reference: booking.booking_reference,
-                            status: 'confirmed'
-                        }]);
+                    // Insert to Supabase - remove mpesa_number if not in schema
+                    const bookingDataToInsert = {
+                        customer_name: booking.customer_name,
+                        customer_phone: booking.customer_phone,
+                        customer_email: booking.customer_email,
+                        service_name: booking.service_name,
+                        service_price: booking.service_price,
+                        appointment_date: booking.appointment_date,
+                        appointment_time: booking.appointment_time,
+                        barber_name: booking.barber_name,
+                        special_requests: booking.special_requests || '',
+                        payment_method: booking.payment_method,
+                        payment_status: booking.payment_status || 'pending',
+                        booking_reference: booking.booking_reference,
+                        status: 'confirmed'
+                    };
                     
-                    if (!error) {
+                    // Only add mpesa_number if column exists
+                    // You might want to check schema first or handle errors
+                    
+                    const { error: insertError } = await window.supabase
+                        .from('appointments')
+                        .insert([bookingDataToInsert]);
+                    
+                    if (!insertError) {
                         booking.synced_to_server = true;
                         console.log('Synced local booking:', booking.booking_reference);
+                    } else {
+                        console.warn('Insert error:', insertError);
                     }
                 }
             } catch (syncError) {
