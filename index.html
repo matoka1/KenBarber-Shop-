@@ -137,9 +137,47 @@
         .db-status i {
             font-size: 0.7rem;
         }
+        
+        /* Fix for script loading issues */
+        .script-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            font-family: monospace;
+        }
+        
+        .script-loading .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div id="scriptLoading" class="script-loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Loading booking system...</p>
+        <p id="loadingStatus" style="font-size: 0.8rem; margin-top: 10px; color: #aaa;">Initializing</p>
+    </div>
+
     <!-- Database Status Indicator -->
     <div class="db-status" id="dbStatus">
         <i class="fas fa-circle"></i>
@@ -363,14 +401,14 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="serviceType">Service *</label>
-                                <select id="serviceType" class="form-control" required>
+                                <select id="serviceType" class="form-control" required disabled>
                                     <option value="">Loading Services...</option>
                                 </select>
                             </div>
                             
                             <div class="form-group">
                                 <label for="barberSelect">Preferred Barber</label>
-                                <select id="barberSelect" class="form-control">
+                                <select id="barberSelect" class="form-control" disabled>
                                     <option value="">Loading Barbers...</option>
                                 </select>
                             </div>
@@ -379,7 +417,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="appointmentDate">Date *</label>
-                                <input type="date" id="appointmentDate" class="form-control" required min="">
+                                <input type="date" id="appointmentDate" class="form-control" required min="" disabled>
                             </div>
                             
                             <div class="form-group">
@@ -393,7 +431,7 @@
                         
                         <div class="form-group">
                             <label for="specialRequests">Special Requests (Optional)</label>
-                            <textarea id="specialRequests" class="form-control" rows="3" placeholder="Any specific requests, style preferences, or notes for your barber..."></textarea>
+                            <textarea id="specialRequests" class="form-control" rows="3" placeholder="Any specific requests, style preferences, or notes for your barber..." disabled></textarea>
                         </div>
                         
                         <!-- Price Display -->
@@ -438,14 +476,14 @@
                         
                         <div class="form-group terms-group">
                             <label class="checkbox-label">
-                                <input type="checkbox" id="termsAgree" required>
+                                <input type="checkbox" id="termsAgree" required disabled>
                                 <span>I agree to receive SMS and email notifications about my appointment. I understand that I may receive a reminder 24 hours before my appointment.</span>
                             </label>
                         </div>
                         
                         <div class="form-group terms-group">
                             <label class="checkbox-label">
-                                <input type="checkbox" id="cancellationPolicy" required>
+                                <input type="checkbox" id="cancellationPolicy" required disabled>
                                 <span>I agree to the cancellation policy (free cancellation up to 2 hours before appointment).</span>
                             </label>
                         </div>
@@ -739,122 +777,145 @@
         </div>
     </div>
 
-    <!-- Real Supabase Integration for GitHub Pages - FIXED VERSION -->
-    <script type="module">
-        // Import Supabase client
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    <!-- SIMPLE STATIC SCRIPT LOADING - FIXED ORDER -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/main.js"></script>  <!-- Load FIRST -->
+    <script src="js/booking.js"></script> <!-- Load AFTER main.js -->
+
+    <!-- Simple initialization script -->
+    <script>
+    (function() {
+        console.log('=== KENBARBER INITIALIZATION ===');
         
-        // Your Supabase configuration
-        const SUPABASE_URL = 'https://eqjdkpanqwjhuyavvdaf.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA';
+        // Show loading screen
+        const loadingScreen = document.getElementById('scriptLoading');
+        if (loadingScreen) loadingScreen.style.display = 'flex';
         
-        console.log('Initializing Real Supabase for GitHub Pages...');
+        // Update loading status
+        function updateStatus(status) {
+            const statusEl = document.getElementById('loadingStatus');
+            if (statusEl) statusEl.textContent = status;
+            console.log('Status:', status);
+        }
         
-        // Initialize Supabase client
-        window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-                autoRefreshToken: false,
-                persistSession: false,
-                detectSessionInUrl: false
-            },
-            global: {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': SUPABASE_ANON_KEY
-                }
-            }
-        });
-        
-        // Test database connection
-        async function testDatabaseConnection() {
-            const dbStatus = document.getElementById('dbStatus');
-            if (!dbStatus) return;
-            
+        // Initialize everything in correct order
+        async function initializeApp() {
             try {
-                dbStatus.className = 'db-status';
-                dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Connecting to Database...</span>';
+                updateStatus('Connecting to database...');
                 
+                // Check for Supabase
+                if (!window.supabase) {
+                    console.error('Supabase not found');
+                    updateStatus('Error: Supabase not loaded');
+                    return;
+                }
+                
+                // Test database connection
                 const { data, error } = await window.supabase
                     .from('services')
-                    .select('id')
+                    .select('count')
                     .limit(1);
                 
                 if (error) throw error;
                 
-                dbStatus.className = 'db-status online';
-                dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Connected</span>';
-                console.log('✅ Supabase connection successful');
-                return true;
+                updateStatus('Database connected ✓');
+                
+                // Wait for main.js to initialize
+                let mainReady = false;
+                let checkCount = 0;
+                const maxChecks = 20;
+                
+                function checkMainJS() {
+                    checkCount++;
+                    
+                    // Check if main.js functions are available
+                    if (typeof window.loadServices === 'function' && 
+                        typeof window.loadBarbers === 'function') {
+                        mainReady = true;
+                        updateStatus('Main.js ready ✓');
+                        
+                        // Run main.js initialization
+                        if (typeof window.showLoadingStates === 'function') {
+                            window.showLoadingStates();
+                        }
+                        
+                        // Load data
+                        loadData();
+                    } else if (checkCount < maxChecks) {
+                        updateStatus(`Waiting for main.js... (${checkCount}/${maxChecks})`);
+                        setTimeout(checkMainJS, 500);
+                    } else {
+                        updateStatus('Error: Main.js not loading');
+                        console.error('Main.js functions not found after timeout');
+                    }
+                }
+                
+                function loadData() {
+                    updateStatus('Loading services and barbers...');
+                    
+                    // Load services
+                    if (typeof window.loadServices === 'function') {
+                        window.loadServices().then(() => {
+                            updateStatus('Services loaded ✓');
+                        }).catch(err => {
+                            console.error('Failed to load services:', err);
+                        });
+                    }
+                    
+                    // Load barbers
+                    if (typeof window.loadBarbers === 'function') {
+                        window.loadBarbers().then(() => {
+                            updateStatus('Barbers loaded ✓');
+                        }).catch(err => {
+                            console.error('Failed to load barbers:', err);
+                        });
+                    }
+                    
+                    // Wait for booking system
+                    setTimeout(checkBookingSystem, 2000);
+                }
+                
+                function checkBookingSystem() {
+                    updateStatus('Checking booking system...');
+                    
+                    if (typeof window.initializeBooking === 'function') {
+                        updateStatus('Initializing booking system...');
+                        window.initializeBooking();
+                        
+                        // Hide loading screen after everything is ready
+                        setTimeout(() => {
+                            if (loadingScreen) loadingScreen.style.display = 'none';
+                            updateStatus('System ready!');
+                            console.log('=== KENBARBER READY ===');
+                        }, 1000);
+                    } else {
+                        updateStatus('Waiting for booking system...');
+                        setTimeout(checkBookingSystem, 500);
+                    }
+                }
+                
+                // Start checking main.js
+                checkMainJS();
                 
             } catch (error) {
-                console.error('❌ Database connection failed:', error.message);
-                dbStatus.className = 'db-status offline';
-                dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Connection Error</span>';
-                return false;
+                console.error('Initialization error:', error);
+                updateStatus('Error: ' + error.message);
+                
+                // Hide loading screen after error
+                setTimeout(() => {
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+                }, 3000);
             }
         }
         
-        // Initialize when DOM is loaded
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('DOM loaded, testing Supabase connection...');
-            
-            // Test database connection
-            await testDatabaseConnection();
-            
-            // Set current year in footer
-            document.getElementById('currentYear').textContent = new Date().getFullYear();
-            
-            // Load main script - USE ABSOLUTE PATH
-            const mainScript = document.createElement('script');
-            mainScript.src = 'js/main.js';
-            mainScript.onload = function() {
-                console.log('✅ main.js loaded successfully');
-                // Trigger main.js initialization
-                triggerMainJS();
-            };
-            mainScript.onerror = function() {
-                console.error('❌ Failed to load main.js');
-                // Try alternative path
-                const fallbackScript = document.createElement('script');
-                fallbackScript.src = '/js/main.js';
-                document.body.appendChild(fallbackScript);
-            };
-            document.body.appendChild(mainScript);
-            
-            // Load booking script
-            const bookingScript = document.createElement('script');
-            bookingScript.src = 'js/booking.js';
-            document.body.appendChild(bookingScript);
-        });
-        
-        // Function to trigger main.js initialization
-        function triggerMainJS() {
-            console.log('Attempting to trigger main.js initialization...');
-            
-            // Wait a bit for functions to be available
-            setTimeout(function() {
-                if (typeof showLoadingStates === 'function' && typeof loadAllData === 'function') {
-                    console.log('✅ Main.js functions found, initializing...');
-                    
-                    // Show loading states
-                    showLoadingStates();
-                    
-                    // Load data
-                    loadAllData().then(() => {
-                        console.log('✅ Main.js initialization complete');
-                    }).catch(error => {
-                        console.error('❌ Main.js initialization failed:', error);
-                    });
-                    
-                } else {
-                    console.log('⚠️ Main.js functions not found yet, retrying...');
-                    // Try again in 1 second
-                    setTimeout(triggerMainJS, 1000);
-                }
-            }, 500);
+        // Start initialization when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
         }
         
-        // Export global utility functions
+        // Utility functions
         window.openGoogleMaps = function() {
             window.open('https://maps.google.com/?q=-0.3031,36.0800', '_blank');
         };
@@ -903,47 +964,39 @@
                 document.getElementById('newsletterEmail').value = '';
             }
         };
+        
+        // Set current year
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        
+    })();
     </script>
 
-    <!-- EMERGENCY FIX: Ensure main.js runs properly -->
+    <!-- Database connection status -->
     <script>
-    (function() {
-        console.log('🔧 EMERGENCY FIX INITIALIZED');
+    // Check database status periodically
+    setInterval(async function() {
+        const dbStatus = document.getElementById('dbStatus');
+        if (!dbStatus || !window.supabase) return;
         
-        // Function to check and trigger main.js
-        function ensureMainJSRuns() {
-            // Check if services are still showing loading after 3 seconds
-            setTimeout(function() {
-                const servicesGrid = document.getElementById('servicesGrid');
-                if (servicesGrid && servicesGrid.innerHTML.includes('Loading Services')) {
-                    console.log('⚠️ Services still loading, triggering emergency fix...');
-                    
-                    // Try to manually load data
-                    if (window.supabase && typeof loadServices === 'function') {
-                        console.log('Manually loading services...');
-                        loadServices().then(() => {
-                            console.log('✅ Emergency fix: Services loaded');
-                        }).catch(error => {
-                            console.error('Emergency fix failed:', error);
-                        });
-                    } else {
-                        console.log('Waiting for dependencies...');
-                        // Try again in 2 seconds
-                        setTimeout(ensureMainJSRuns, 2000);
-                    }
-                }
-            }, 3000);
+        try {
+            const { error } = await window.supabase
+                .from('services')
+                .select('count')
+                .limit(1);
+            
+            if (error) throw error;
+            
+            if (!dbStatus.classList.contains('online')) {
+                dbStatus.className = 'db-status online';
+                dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Connected</span>';
+            }
+        } catch (error) {
+            if (!dbStatus.classList.contains('offline')) {
+                dbStatus.className = 'db-status offline';
+                dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Offline</span>';
+            }
         }
-        
-        // Start checking
-        ensureMainJSRuns();
-        
-        // Also check on page load completion
-        window.addEventListener('load', function() {
-            console.log('Page fully loaded, checking main.js...');
-            setTimeout(ensureMainJSRuns, 1000);
-        });
-    })();
+    }, 10000); // Check every 10 seconds
     </script>
 </body>
 </html>
