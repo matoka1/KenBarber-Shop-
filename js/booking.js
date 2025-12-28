@@ -602,51 +602,55 @@ async function initiateSTKPushPayment(bookingData) {
     }
 }
 
-async function pollForPaymentConfirmation(bookingReference, checkoutRequestId) {
+async function pollForPaymentConfirmation(bookingReference, transactionId) {
     console.log('Starting REAL payment polling for:', bookingReference);
+    console.log('Using Transaction ID:', transactionId);
+    
+    if (!transactionId || transactionId === 'undefined') {
+        console.error('❌ ERROR: No transactionId provided for polling!');
+        showBookingError('Payment tracking error. Please contact support.', 'error');
+        return;
+    }
     
     if (currentPaymentPollInterval) {
         clearInterval(currentPaymentPollInterval);
     }
     
     let pollCount = 0;
-    const maxPolls = 60; // 5 minutes (poll every 5 seconds)
+    const maxPolls = 60; // 5 minutes
     
     currentPaymentPollInterval = setInterval(async () => {
         pollCount++;
-        console.log(`Payment polling attempt ${pollCount} for ${checkoutRequestId}`);
+        console.log(`Payment polling attempt ${pollCount} for transaction: ${transactionId}`);
         
         try {
-            // ✅ REAL payment status check
-            const response = await fetch(`https://eqjdkpanqwjhuyavvdaf.supabase.co/functions/v1/check-payment?checkoutId=${checkoutRequestId}`);
+            // ✅ CHANGE: Use transactionId in the query parameter
+            const response = await fetch(`https://eqjdkpanqwjhuyavvdaf.supabase.co/functions/v1/check-payment?transactionId=${transactionId}`);
+            
+            console.log('Polling response status:', response.status);
             
             if (response.ok) {
                 const result = await response.json();
                 console.log('Payment check result:', result);
                 
                 if (result.status === 'success' || result.status === 'completed') {
-                    // ✅ PAYMENT CONFIRMED AUTOMATICALLY!
+                    // ✅ PAYMENT CONFIRMED!
                     clearInterval(currentPaymentPollInterval);
                     currentPaymentPollInterval = null;
                     
-                    // Update booking to confirmed and paid
                     await updateBookingPaymentStatus(
                         bookingReference,
                         'paid',
-                        result.transactionId,
+                        transactionId,
                         result.mpesa_receipt
                     );
                     
-                    // Show success message
                     showPaymentSuccessNotification(bookingReference, result);
-                    
-                    // Reset form
                     resetBookingForm();
                     
                     console.log('✅ Payment automatically confirmed!');
                     
                 } else if (result.status === 'failed' || result.status === 'cancelled') {
-                    // ❌ PAYMENT FAILED
                     clearInterval(currentPaymentPollInterval);
                     currentPaymentPollInterval = null;
                     
@@ -654,12 +658,13 @@ async function pollForPaymentConfirmation(bookingReference, checkoutRequestId) {
                     showBookingError('Payment failed. Please try again.', 'error');
                 }
                 // If still pending, continue polling
+            } else {
+                console.warn('Polling request failed:', response.status);
             }
         } catch (error) {
             console.error('Payment polling error:', error);
         }
         
-        // Stop after max polls (5 minutes)
         if (pollCount >= maxPolls) {
             clearInterval(currentPaymentPollInterval);
             currentPaymentPollInterval = null;
@@ -872,8 +877,8 @@ async function processBooking() {
                 // Start REAL auto-validation polling
                 await pollForPaymentConfirmation(
                     bookingData.booking_reference,
-                    paymentResult.checkout_request_id
-                );
+                    paymentResult.transaction_id  // ← Use this instead of checkout_request_id
+    );
                 
                 // Update booking with transaction ID
                 await updateBookingPaymentStatus(
