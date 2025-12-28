@@ -671,7 +671,33 @@ function initializeAnimations() {
     window.addEventListener('scroll', animateOnScroll);
     animateOnScroll();
 }
-
+// In main.js, after all data is loaded, trigger booking.js initialization
+async function loadAllData() {
+    try {
+        await loadServices();
+        await loadBarbers();
+        await loadTestimonials();
+        
+        console.log('Loaded services and barbers, now enabling booking system...');
+        
+        // Enable booking system after data is loaded
+        setTimeout(() => {
+            if (window.initializeBooking) {
+                window.initializeBooking();
+            } else {
+                console.log('Waiting for booking.js to load...');
+                setTimeout(() => {
+                    if (window.initializeBooking) {
+                        window.initializeBooking();
+                    }
+                }, 1000);
+            }
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Error loading data:', error);
+    }
+}
 function initializeCurrentYear() {
     const yearSpan = document.getElementById('currentYear');
     if (yearSpan) {
