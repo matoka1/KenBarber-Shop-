@@ -739,7 +739,7 @@
         </div>
     </div>
 
-           <!-- Real Supabase Integration for GitHub Pages -->
+    <!-- Real Supabase Integration for GitHub Pages - FIXED VERSION -->
     <script type="module">
         // Import Supabase client
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -750,7 +750,7 @@
         
         console.log('Initializing Real Supabase for GitHub Pages...');
         
-        // Initialize Supabase client with proper configuration for GitHub Pages
+        // Initialize Supabase client
         window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
                 autoRefreshToken: false,
@@ -774,37 +774,12 @@
                 dbStatus.className = 'db-status';
                 dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Connecting to Database...</span>';
                 
-                // Simple test query
                 const { data, error } = await window.supabase
                     .from('services')
                     .select('id')
                     .limit(1);
                 
-                if (error) {
-                    // Try a different approach
-                    console.log('First test failed, trying alternative...');
-                    const { data: testData, error: testError } = await window.supabase.rpc('get_service_count');
-                    
-                    if (testError) {
-                        console.log('RPC test failed, trying basic fetch...');
-                        // Try direct fetch to test CORS
-                        const response = await fetch(`${SUPABASE_URL}/rest/v1/services?select=id&limit=1`, {
-                            headers: {
-                                'apikey': SUPABASE_ANON_KEY,
-                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                            }
-                        });
-                        
-                        if (response.ok) {
-                            console.log('Direct fetch successful');
-                            dbStatus.className = 'db-status online';
-                            dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Connected</span>';
-                            return true;
-                        } else {
-                            throw new Error('CORS issue detected');
-                        }
-                    }
-                }
+                if (error) throw error;
                 
                 dbStatus.className = 'db-status online';
                 dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Connected</span>';
@@ -813,157 +788,10 @@
                 
             } catch (error) {
                 console.error('❌ Database connection failed:', error.message);
-                
-                // Check error type
-                if (error.message.includes('CORS') || error.message.includes('NetworkError') || 
-                    error.message.includes('Failed to fetch') || error.message.includes('origin')) {
-                    
-                    dbStatus.className = 'db-status offline';
-                    dbStatus.innerHTML = `
-                        <i class="fas fa-circle"></i> 
-                        <span>
-                            CORS Error - <a href="https://supabase.com/dashboard/project/eqjdkpanqwjhuyavvdaf/auth/url-configuration" 
-                            target="_blank" style="color: white; text-decoration: underline;">
-                            Click to Configure CORS
-                            </a>
-                        </span>
-                    `;
-                    
-                    // Show CORS help
-                    showCorsHelpMessage();
-                    
-                } else {
-                    dbStatus.className = 'db-status offline';
-                    dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Connection Error</span>';
-                }
-                
+                dbStatus.className = 'db-status offline';
+                dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Connection Error</span>';
                 return false;
             }
-        }
-        
-        // Show CORS configuration help
-        function showCorsHelpMessage() {
-            const existingMessage = document.querySelector('.cors-help-message');
-            if (existingMessage) existingMessage.remove();
-            
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'cors-help-message';
-            messageDiv.innerHTML = `
-                <div style="
-                    position: fixed;
-                    top: 100px;
-                    right: 20px;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 20px;
-                    border-radius: 10px;
-                    z-index: 9999;
-                    max-width: 400px;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-                    animation: slideIn 0.5s ease;
-                    border-left: 5px solid #25D366;
-                ">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 24px; color: #ffd700;"></i>
-                        <h4 style="margin: 0; font-size: 18px;">CORS Configuration Required</h4>
-                    </div>
-                    
-                    <p style="margin: 0 0 15px 0; font-size: 14px; opacity: 0.9;">
-                        Your Supabase project needs CORS configuration for GitHub Pages:
-                    </p>
-                    
-                    <ol style="margin: 0 0 20px 0; padding-left: 20px; font-size: 13px;">
-                        <li style="margin-bottom: 8px;">
-                            <strong>Go to</strong> Supabase Dashboard → Authentication → URL Configuration
-                        </li>
-                        <li style="margin-bottom: 8px;">
-                            <strong>Add this URL</strong> to both Site URL and Redirect URLs:
-                            <div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 5px; margin: 5px 0; font-family: monospace;">
-                                https://matoka1.github.io
-                            </div>
-                        </li>
-                        <li style="margin-bottom: 8px;">
-                            <strong>Click Save</strong> and wait 2 minutes
-                        </li>
-                        <li>
-                            <strong>Refresh</strong> this page
-                        </li>
-                    </ol>
-                    
-                    <div style="display: flex; gap: 10px;">
-                        <a href="https://supabase.com/dashboard/project/eqjdkpanqwjhuyavvdaf/auth/url-configuration" 
-                           target="_blank" 
-                           style="
-                               flex: 1;
-                               background: white;
-                               color: #667eea;
-                               padding: 10px 20px;
-                               border-radius: 5px;
-                               text-decoration: none;
-                               font-weight: bold;
-                               text-align: center;
-                               transition: all 0.3s;
-                               display: flex;
-                               align-items: center;
-                               justify-content: center;
-                               gap: 8px;
-                           "
-                           onmouseover="this.style.transform='translateY(-2px)';"
-                           onmouseout="this.style.transform='translateY(0)';">
-                            <i class="fas fa-external-link-alt"></i> Configure Now
-                        </a>
-                        
-                        <button onclick="this.closest('.cors-help-message').remove();"
-                           style="
-                               background: rgba(255,255,255,0.2);
-                               color: white;
-                               border: 1px solid rgba(255,255,255,0.3);
-                               padding: 10px 20px;
-                               border-radius: 5px;
-                               cursor: pointer;
-                               font-size: 14px;
-                               transition: all 0.3s;
-                           "
-                           onmouseover="this.style.background='rgba(255,255,255,0.3)';"
-                           onmouseout="this.style.background='rgba(255,255,255,0.2)';">
-                            Dismiss
-                        </button>
-                    </div>
-                    
-                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 12px;">
-                        <p style="margin: 0; opacity: 0.8;">
-                            <i class="fas fa-info-circle"></i> Need help? 
-                            <a href="https://supabase.com/docs/guides/auth#redirect-urls-and-wildcards" 
-                               target="_blank" 
-                               style="color: #25D366; text-decoration: underline;">
-                                View Documentation
-                            </a>
-                        </p>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(messageDiv);
-            
-            // Add animation
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes slideIn {
-                    from { 
-                        transform: translateX(100%); 
-                        opacity: 0; 
-                    }
-                    to { 
-                        transform: translateX(0); 
-                        opacity: 1; 
-                    }
-                }
-                
-                .cors-help-message {
-                    animation: slideIn 0.5s ease forwards;
-                }
-            `;
-            document.head.appendChild(style);
         }
         
         // Initialize when DOM is loaded
@@ -971,48 +799,60 @@
             console.log('DOM loaded, testing Supabase connection...');
             
             // Test database connection
-            const isConnected = await testDatabaseConnection();
+            await testDatabaseConnection();
             
             // Set current year in footer
             document.getElementById('currentYear').textContent = new Date().getFullYear();
             
-            // Load main script
+            // Load main script - USE ABSOLUTE PATH
             const mainScript = document.createElement('script');
             mainScript.src = 'js/main.js';
+            mainScript.onload = function() {
+                console.log('✅ main.js loaded successfully');
+                // Trigger main.js initialization
+                triggerMainJS();
+            };
+            mainScript.onerror = function() {
+                console.error('❌ Failed to load main.js');
+                // Try alternative path
+                const fallbackScript = document.createElement('script');
+                fallbackScript.src = '/js/main.js';
+                document.body.appendChild(fallbackScript);
+            };
             document.body.appendChild(mainScript);
             
             // Load booking script
             const bookingScript = document.createElement('script');
             bookingScript.src = 'js/booking.js';
             document.body.appendChild(bookingScript);
-            
-            // If not connected, show demo notice
-            if (!isConnected) {
-                setTimeout(() => {
-                    const demoNotice = document.createElement('div');
-                    demoNotice.style.cssText = `
-                        position: fixed;
-                        top: 70px;
-                        right: 20px;
-                        background: linear-gradient(90deg, #ff6b6b, #ff8e53);
-                        color: white;
-                        padding: 10px 15px;
-                        border-radius: 5px;
-                        z-index: 9998;
-                        font-size: 13px;
-                        max-width: 300px;
-                        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                        animation: slideIn 0.5s ease;
-                        border-left: 4px solid #ffd700;
-                    `;
-                    demoNotice.innerHTML = `
-                        <strong><i class="fas fa-exclamation-circle"></i> Using Local Storage</strong><br>
-                        <small>Bookings will save to your browser until CORS is configured.</small>
-                    `;
-                    document.body.appendChild(demoNotice);
-                }, 1000);
-            }
         });
+        
+        // Function to trigger main.js initialization
+        function triggerMainJS() {
+            console.log('Attempting to trigger main.js initialization...');
+            
+            // Wait a bit for functions to be available
+            setTimeout(function() {
+                if (typeof showLoadingStates === 'function' && typeof loadAllData === 'function') {
+                    console.log('✅ Main.js functions found, initializing...');
+                    
+                    // Show loading states
+                    showLoadingStates();
+                    
+                    // Load data
+                    loadAllData().then(() => {
+                        console.log('✅ Main.js initialization complete');
+                    }).catch(error => {
+                        console.error('❌ Main.js initialization failed:', error);
+                    });
+                    
+                } else {
+                    console.log('⚠️ Main.js functions not found yet, retrying...');
+                    // Try again in 1 second
+                    setTimeout(triggerMainJS, 1000);
+                }
+            }, 500);
+        }
         
         // Export global utility functions
         window.openGoogleMaps = function() {
@@ -1063,6 +903,47 @@
                 document.getElementById('newsletterEmail').value = '';
             }
         };
+    </script>
+
+    <!-- EMERGENCY FIX: Ensure main.js runs properly -->
+    <script>
+    (function() {
+        console.log('🔧 EMERGENCY FIX INITIALIZED');
+        
+        // Function to check and trigger main.js
+        function ensureMainJSRuns() {
+            // Check if services are still showing loading after 3 seconds
+            setTimeout(function() {
+                const servicesGrid = document.getElementById('servicesGrid');
+                if (servicesGrid && servicesGrid.innerHTML.includes('Loading Services')) {
+                    console.log('⚠️ Services still loading, triggering emergency fix...');
+                    
+                    // Try to manually load data
+                    if (window.supabase && typeof loadServices === 'function') {
+                        console.log('Manually loading services...');
+                        loadServices().then(() => {
+                            console.log('✅ Emergency fix: Services loaded');
+                        }).catch(error => {
+                            console.error('Emergency fix failed:', error);
+                        });
+                    } else {
+                        console.log('Waiting for dependencies...');
+                        // Try again in 2 seconds
+                        setTimeout(ensureMainJSRuns, 2000);
+                    }
+                }
+            }, 3000);
+        }
+        
+        // Start checking
+        ensureMainJSRuns();
+        
+        // Also check on page load completion
+        window.addEventListener('load', function() {
+            console.log('Page fully loaded, checking main.js...');
+            setTimeout(ensureMainJSRuns, 1000);
+        });
+    })();
     </script>
 </body>
 </html>
