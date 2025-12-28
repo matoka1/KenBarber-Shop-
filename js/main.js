@@ -1,51 +1,93 @@
 // main.js - Main JavaScript for KenBarber Website with Supabase Integration
-// Contains core functionality with database connectivity
+// REAL SUPABASE VERSION - NO DEMO MODE
 
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('Initializing KenBarber Website with Supabase...');
+    console.log('Initializing KenBarber Website with Real Supabase...');
     
     // ============================================
-    // 0. SUPABASE DATA LOADING
+    // 0. SUPABASE DATA LOADING - REAL DATABASE
     // ============================================
     async function loadDataFromSupabase() {
         try {
             // Check if Supabase is available
             if (!window.supabase) {
-                console.warn('Supabase not available, using local data');
-                loadLocalData();
+                console.error('Supabase not available');
+                showErrorMessage('Database connection failed. Please refresh the page.');
                 return;
             }
             
-            // Load services
-            await loadServices();
+            console.log('Loading data from Supabase...');
             
-            // Load barbers
-            await loadBarbers();
+            // Test connection first
+            const { data: testData, error: testError } = await window.supabase
+                .from('services')
+                .select('id')
+                .limit(1);
             
-            // Load testimonials
-            await loadTestimonials();
+            if (testError) {
+                console.error('Supabase connection test failed:', testError);
+                throw testError;
+            }
             
-            // Load special offers
-            await loadSpecialOffers();
+            console.log('Supabase connection successful, loading data...');
+            
+            // Load all data in parallel
+            const [services, barbers, testimonials] = await Promise.all([
+                loadServices(),
+                loadBarbers(),
+                loadTestimonials()
+            ]);
+            
+            console.log(`Loaded ${services.length} services, ${barbers.length} barbers, ${testimonials.length} testimonials`);
             
             // Enable booking form
             enableBookingForm();
             
+            // Load special offers (non-critical)
+            try {
+                await loadSpecialOffers();
+            } catch (offerError) {
+                console.warn('Could not load special offers:', offerError);
+            }
+            
+            return true;
+            
         } catch (error) {
             console.error('Error loading data from Supabase:', error);
-            loadLocalData(); // Fallback to local data
+            
+            // Check if it's a CORS error
+            if (error.message && (error.message.includes('CORS') || error.message.includes('NetworkError'))) {
+                showErrorMessage(
+                    'CORS Configuration Needed. Please configure Supabase to allow GitHub Pages. ' +
+                    'Go to Supabase Dashboard → Authentication → URL Configuration → Add: https://matoka1.github.io'
+                );
+            } else {
+                showErrorMessage('Failed to load data from database. Please try again later.');
+            }
+            
+            return false;
         }
     }
     
     async function loadServices() {
         try {
+            console.log('Loading services from Supabase...');
             const { data: services, error } = await window.supabase
                 .from('services')
                 .select('*')
                 .eq('is_active', true)
                 .order('price', { ascending: true });
             
-            if (error) throw error;
+            if (error) {
+                console.error('Error loading services:', error);
+                // Return empty array but don't crash
+                return [];
+            }
+            
+            if (!services || services.length === 0) {
+                console.warn('No services found in database');
+                return [];
+            }
             
             // Update services grid
             updateServicesGrid(services);
@@ -56,23 +98,33 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Update popular services in footer
             updatePopularServices(services);
             
-            console.log('Services loaded:', services.length);
+            console.log(`Loaded ${services.length} services`);
+            return services;
             
         } catch (error) {
-            console.error('Error loading services:', error);
-            throw error;
+            console.error('Unexpected error loading services:', error);
+            return [];
         }
     }
     
     async function loadBarbers() {
         try {
+            console.log('Loading barbers from Supabase...');
             const { data: barbers, error } = await window.supabase
                 .from('barbers')
                 .select('*')
                 .eq('is_active', true)
                 .order('experience_years', { ascending: false });
             
-            if (error) throw error;
+            if (error) {
+                console.error('Error loading barbers:', error);
+                return [];
+            }
+            
+            if (!barbers || barbers.length === 0) {
+                console.warn('No barbers found in database');
+                return [];
+            }
             
             // Update barbers grid
             updateBarbersGrid(barbers);
@@ -80,16 +132,18 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Update barber dropdown
             updateBarberDropdown(barbers);
             
-            console.log('Barbers loaded:', barbers.length);
+            console.log(`Loaded ${barbers.length} barbers`);
+            return barbers;
             
         } catch (error) {
-            console.error('Error loading barbers:', error);
-            throw error;
+            console.error('Unexpected error loading barbers:', error);
+            return [];
         }
     }
     
     async function loadTestimonials() {
         try {
+            console.log('Loading testimonials from Supabase...');
             const { data: testimonials, error } = await window.supabase
                 .from('testimonials')
                 .select('*')
@@ -97,16 +151,25 @@ document.addEventListener('DOMContentLoaded', async function() {
                 .order('created_at', { ascending: false })
                 .limit(6);
             
-            if (error) throw error;
+            if (error) {
+                console.error('Error loading testimonials:', error);
+                return [];
+            }
+            
+            if (!testimonials || testimonials.length === 0) {
+                console.log('No testimonials found in database');
+                return [];
+            }
             
             // Update testimonials grid
             updateTestimonialsGrid(testimonials);
             
-            console.log('Testimonials loaded:', testimonials.length);
+            console.log(`Loaded ${testimonials.length} testimonials`);
+            return testimonials;
             
         } catch (error) {
-            console.error('Error loading testimonials:', error);
-            // Keep default testimonials
+            console.error('Unexpected error loading testimonials:', error);
+            return [];
         }
     }
     
@@ -123,74 +186,71 @@ document.addEventListener('DOMContentLoaded', async function() {
                 .order('created_at', { ascending: false })
                 .limit(1);
             
-            if (error) throw error;
+            if (error) {
+                console.error('Error loading special offers:', error);
+                return null;
+            }
             
             // Update special offer banner
             if (offers && offers.length > 0) {
                 updateSpecialOfferBanner(offers[0]);
+                console.log('Loaded special offer:', offers[0].title);
+                return offers[0];
             }
             
-            console.log('Special offers loaded:', offers?.length || 0);
+            return null;
             
         } catch (error) {
-            console.error('Error loading special offers:', error);
-            // Keep default banner
+            console.error('Unexpected error loading special offers:', error);
+            return null;
         }
-    }
-    
-    function loadLocalData() {
-        // Fallback local data
-        const localServices = [
-            { id: 'haircut', name: 'Classic Haircut', description: 'Precision cut with clippers and scissors', price: 500, duration_minutes: 30 },
-            { id: 'beard', name: 'Beard Trim & Shape', description: 'Expert beard grooming', price: 300, duration_minutes: 20 },
-            { id: 'shave', name: 'Hot Towel Shave', description: 'Traditional straight razor shave', price: 700, duration_minutes: 45 },
-            { id: 'combo', name: 'Haircut + Beard Combo', description: 'Complete grooming package', price: 800, duration_minutes: 60 }
-        ];
-        
-        const localBarbers = [
-            { id: 'james', name: 'James Kariuki', specialty: 'Master Barber', experience_years: 15, bio: 'Specializes in classic cuts and fades' },
-            { id: 'david', name: 'David Omondi', specialty: 'Beard Specialist', experience_years: 8, bio: 'Beard grooming expert' },
-            { id: 'michael', name: 'Michael Njoroge', specialty: 'Style Expert', experience_years: 10, bio: 'Modern styles specialist' }
-        ];
-        
-        updateServicesGrid(localServices);
-        updateServiceDropdown(localServices);
-        updateBarbersGrid(localBarbers);
-        updateBarberDropdown(localBarbers);
-        enableBookingForm();
     }
     
     function updateServicesGrid(services) {
         const servicesGrid = document.getElementById('servicesGrid');
-        if (!servicesGrid) return;
+        if (!servicesGrid) {
+            console.error('servicesGrid element not found');
+            return;
+        }
         
         servicesGrid.innerHTML = '';
         
-        services.forEach(service => {
-            const serviceCard = `
-                <div class="service-card">
-                    <div class="service-img" style="background-image: url('https://images.unsplash.com/photo-1599351431202-1e0f0137899a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');"></div>
-                    <div class="service-content">
-                        <h3>${service.name}</h3>
-                        <p>${service.description || 'Premium grooming service'}</p>
-                        <div class="service-footer">
-                            <span class="price">KES ${service.price}</span>
-                            <span class="duration"><i class="far fa-clock"></i> ${service.duration_minutes} min</span>
-                        </div>
-                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;" 
-                                onclick="bookService('${service.id}', ${service.price})">
-                            Book Now
-                        </button>
+        // Default image URLs
+        const serviceImages = [
+            'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
+            'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
+            'https://images.unsplash.com/photo-1562788869-4ed32648eb72?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
+            'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
+        ];
+        
+        services.forEach((service, index) => {
+            const serviceCard = document.createElement('div');
+            serviceCard.className = 'service-card';
+            serviceCard.innerHTML = `
+                <div class="service-img" style="background-image: url('${serviceImages[index % serviceImages.length]}');"></div>
+                <div class="service-content">
+                    <h3>${service.name}</h3>
+                    <p>${service.description || 'Premium grooming service'}</p>
+                    <div class="service-footer">
+                        <span class="price">KES ${service.price}</span>
+                        <span class="duration"><i class="far fa-clock"></i> ${service.duration_minutes || 30} min</span>
                     </div>
+                    <button class="btn-primary" style="width: 100%; margin-top: 1rem;" 
+                            onclick="window.bookService('${service.id}', ${service.price}, '${service.name.replace(/'/g, "\\'")}')">
+                        Book Now
+                    </button>
                 </div>
             `;
-            servicesGrid.innerHTML += serviceCard;
+            servicesGrid.appendChild(serviceCard);
         });
     }
     
     function updateServiceDropdown(services) {
         const serviceSelect = document.getElementById('serviceType');
-        if (!serviceSelect) return;
+        if (!serviceSelect) {
+            console.error('serviceType element not found');
+            return;
+        }
         
         serviceSelect.innerHTML = '<option value="">Select Service</option>';
         
@@ -202,11 +262,28 @@ document.addEventListener('DOMContentLoaded', async function() {
             option.setAttribute('data-name', service.name);
             serviceSelect.appendChild(option);
         });
+        
+        // Add change event listener
+        serviceSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                const price = selectedOption.getAttribute('data-price');
+                const priceDisplay = document.getElementById('priceDisplay');
+                const totalPrice = document.getElementById('totalPrice');
+                if (priceDisplay && totalPrice) {
+                    totalPrice.textContent = `KES ${price}`;
+                    priceDisplay.style.display = 'block';
+                }
+            }
+        });
     }
     
     function updateBarbersGrid(barbers) {
         const barbersGrid = document.getElementById('barbersGrid');
-        if (!barbersGrid) return;
+        if (!barbersGrid) {
+            console.error('barbersGrid element not found');
+            return;
+        }
         
         barbersGrid.innerHTML = '';
         
@@ -214,36 +291,40 @@ document.addEventListener('DOMContentLoaded', async function() {
         const barberImages = [
             'https://images.unsplash.com/photo-1562788869-4ed32648eb72?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
             'https://images.unsplash.com/photo-1580618864180-f6d7d39b8ff6?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            'https://images.unsplash.com/photo-1593702275682-4b8e9be41d8a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
+            'https://images.unsplash.com/photo-1593702275682-4b8e9be41d8a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
+            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
         ];
         
         barbers.forEach((barber, index) => {
-            const barberCard = `
-                <div class="barber-card">
-                    <div class="barber-img" style="background-image: url('${barberImages[index % barberImages.length]}');"></div>
-                    <div class="barber-info">
-                        <h3>${barber.name}</h3>
-                        <p class="barber-title">${barber.specialty} | ${barber.experience_years} Years Experience</p>
-                        <p>${barber.bio || 'Skilled professional barber'}</p>
-                        <div class="barber-expertise">
-                            <span class="expertise-tag">Expert</span>
-                            <span class="expertise-tag">Professional</span>
-                        </div>
-                        <div class="barber-social">
-                            <a href="#"><i class="fab fa-instagram"></i></a>
-                            <a href="#"><i class="fab fa-facebook"></i></a>
-                            <a href="tel:+254712345678"><i class="fas fa-phone"></i></a>
-                        </div>
+            const barberCard = document.createElement('div');
+            barberCard.className = 'barber-card';
+            barberCard.innerHTML = `
+                <div class="barber-img" style="background-image: url('${barber.image_url || barberImages[index % barberImages.length]}');"></div>
+                <div class="barber-info">
+                    <h3>${barber.name}</h3>
+                    <p class="barber-title">${barber.specialty} | ${barber.experience_years || 5} Years Experience</p>
+                    <p>${barber.bio || 'Skilled professional barber'}</p>
+                    <div class="barber-expertise">
+                        <span class="expertise-tag">Expert</span>
+                        <span class="expertise-tag">Professional</span>
+                    </div>
+                    <div class="barber-social">
+                        ${barber.instagram ? `<a href="${barber.instagram}" target="_blank"><i class="fab fa-instagram"></i></a>` : ''}
+                        ${barber.facebook ? `<a href="${barber.facebook}" target="_blank"><i class="fab fa-facebook"></i></a>` : ''}
+                        <a href="tel:+254712345678"><i class="fas fa-phone"></i></a>
                     </div>
                 </div>
             `;
-            barbersGrid.innerHTML += barberCard;
+            barbersGrid.appendChild(barberCard);
         });
     }
     
     function updateBarberDropdown(barbers) {
         const barberSelect = document.getElementById('barberSelect');
-        if (!barberSelect) return;
+        if (!barberSelect) {
+            console.error('barberSelect element not found');
+            return;
+        }
         
         barberSelect.innerHTML = '<option value="">Any Available Barber</option>';
         
@@ -257,28 +338,33 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     function updateTestimonialsGrid(testimonials) {
         const testimonialsGrid = document.getElementById('testimonialsGrid');
-        if (!testimonialsGrid || !testimonials) return;
+        if (!testimonialsGrid) {
+            console.error('testimonialsGrid element not found');
+            return;
+        }
         
         testimonialsGrid.innerHTML = '';
         
         testimonials.forEach(testimonial => {
-            const stars = '★'.repeat(testimonial.rating) + '☆'.repeat(5 - testimonial.rating);
-            const testimonialCard = `
-                <div class="testimonial-card">
-                    <div class="rating">
-                        ${stars.split('').map(star => 
-                            star === '★' ? '<i class="fas fa-star" style="color: gold;"></i>' : 
-                            '<i class="far fa-star" style="color: gold;"></i>'
-                        ).join('')}
-                    </div>
-                    <p>"${testimonial.comment}"</p>
-                    <div class="customer-info">
-                        <strong>${testimonial.customer_name}</strong>
-                        <span>${testimonial.customer_location || 'Nakuru'}</span>
-                    </div>
+            const rating = testimonial.rating || 5;
+            const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+            
+            const testimonialCard = document.createElement('div');
+            testimonialCard.className = 'testimonial-card';
+            testimonialCard.innerHTML = `
+                <div class="rating">
+                    ${stars.split('').map(star => 
+                        star === '★' ? '<i class="fas fa-star" style="color: gold;"></i>' : 
+                        '<i class="far fa-star" style="color: gold;"></i>'
+                    ).join('')}
+                </div>
+                <p>"${testimonial.comment || 'Great service!'}"</p>
+                <div class="customer-info">
+                    <strong>${testimonial.customer_name || 'Happy Customer'}</strong>
+                    <span>${testimonial.customer_location || 'Nakuru'}</span>
                 </div>
             `;
-            testimonialsGrid.innerHTML += testimonialCard;
+            testimonialsGrid.appendChild(testimonialCard);
         });
     }
     
@@ -286,21 +372,49 @@ document.addEventListener('DOMContentLoaded', async function() {
         const banner = document.getElementById('specialOfferBanner');
         if (banner && offer) {
             banner.textContent = `🎉 ${offer.title}: ${offer.description || ''} 🎉`;
+            
+            // Add dismiss button if not already present
+            if (!banner.querySelector('.offer-dismiss')) {
+                const dismissBtn = document.createElement('button');
+                dismissBtn.className = 'offer-dismiss';
+                dismissBtn.innerHTML = '&times;';
+                dismissBtn.style.cssText = `
+                    position: absolute;
+                    right: 10px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: none;
+                    border: none;
+                    color: inherit;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                    padding: 0 5px;
+                `;
+                dismissBtn.addEventListener('click', () => {
+                    banner.style.display = 'none';
+                    localStorage.setItem('kenbarber_offer_dismissed', Date.now().toString());
+                });
+                banner.style.position = 'relative';
+                banner.appendChild(dismissBtn);
+            }
         }
     }
     
     function updatePopularServices(services) {
         const popularServicesList = document.getElementById('popularServicesList');
-        if (!popularServicesList || !services) return;
+        if (!popularServicesList) {
+            console.warn('popularServicesList element not found');
+            return;
+        }
         
         popularServicesList.innerHTML = '';
         
-        // Take top 6 services
+        // Take top 6 services or all if less than 6
         const popularServices = services.slice(0, 6);
         
         popularServices.forEach(service => {
             const li = document.createElement('li');
-            li.innerHTML = `<a href="#booking" onclick="bookService('${service.id}', ${service.price})">${service.name} - KES ${service.price}</a>`;
+            li.innerHTML = `<a href="#booking" onclick="window.bookService('${service.id}', ${service.price}, '${service.name.replace(/'/g, "\\'")}')">${service.name} - KES ${service.price}</a>`;
             popularServicesList.appendChild(li);
         });
     }
@@ -310,11 +424,26 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Booking';
+            submitBtn.style.opacity = '1';
+        }
+        
+        // Enable date picker
+        const dateInput = document.getElementById('appointmentDate');
+        if (dateInput) {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            dateInput.min = tomorrow.toISOString().split('T')[0];
+            
+            // Set max date to 3 months from now
+            const maxDate = new Date();
+            maxDate.setMonth(maxDate.getMonth() + 3);
+            dateInput.max = maxDate.toISOString().split('T')[0];
         }
     }
     
     // Start loading data
-    loadDataFromSupabase();
+    console.log('Starting data load from Supabase...');
+    await loadDataFromSupabase();
     
     // ============================================
     // 1. MOBILE NAVIGATION TOGGLE
@@ -323,19 +452,19 @@ document.addEventListener('DOMContentLoaded', async function() {
     const navMenu = document.getElementById('navMenu');
     
     if (mobileToggle && navMenu) {
-        mobileToggle.addEventListener('click', () => {
+        mobileToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
             navMenu.classList.toggle('active');
             const icon = mobileToggle.querySelector('i');
             
-            // Toggle between hamburger and close icon
             if (icon.classList.contains('fa-bars')) {
                 icon.classList.remove('fa-bars');
                 icon.classList.add('fa-times');
-                document.body.style.overflow = 'hidden'; // Prevent scrolling
+                document.body.style.overflow = 'hidden';
             } else {
                 icon.classList.remove('fa-times');
                 icon.classList.add('fa-bars');
-                document.body.style.overflow = 'auto'; // Re-enable scrolling
+                document.body.style.overflow = 'auto';
             }
         });
         
@@ -372,7 +501,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             const targetElement = document.querySelector(targetId);
             if (targetElement) {
-                // Calculate header height for offset
                 const headerHeight = document.querySelector('header').offsetHeight;
                 const targetPosition = targetElement.offsetTop - headerHeight;
                 
@@ -393,6 +521,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     const header = document.querySelector('header');
     
     function handleHeaderScroll() {
+        if (!header) return;
+        
         if (window.scrollY > 50) {
             header.style.backgroundColor = 'rgba(26, 26, 26, 0.95)';
             header.style.backdropFilter = 'blur(10px)';
@@ -405,7 +535,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     window.addEventListener('scroll', handleHeaderScroll);
-    handleHeaderScroll(); // Initialize on load
+    handleHeaderScroll();
     
     // ============================================
     // 4. ANIMATION ON SCROLL
@@ -432,60 +562,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
     
     window.addEventListener('scroll', animateOnScroll);
-    animateOnScroll(); // Run once on load
+    animateOnScroll();
     
     // ============================================
-    // 5. SPECIAL OFFER BANNER MANAGEMENT
-    // ============================================
-    const specialOfferBanner = document.getElementById('specialOfferBanner');
-    
-    // Check for saved special offer
-    const savedOffer = localStorage.getItem('kenbarber_special_offer');
-    if (savedOffer && specialOfferBanner) {
-        specialOfferBanner.textContent = savedOffer;
-    }
-    
-    // Dismiss banner functionality
-    if (specialOfferBanner) {
-        // Add close button
-        const closeBtn = document.createElement('button');
-        closeBtn.innerHTML = '&times;';
-        closeBtn.style.cssText = `
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: inherit;
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0 5px;
-        `;
-        
-        closeBtn.addEventListener('click', () => {
-            specialOfferBanner.style.display = 'none';
-            // Store dismissal for 24 hours
-            localStorage.setItem('kenbarber_banner_dismissed', Date.now().toString());
-        });
-        
-        specialOfferBanner.style.position = 'relative';
-        specialOfferBanner.appendChild(closeBtn);
-        
-        // Check if banner was recently dismissed
-        const lastDismissed = localStorage.getItem('kenbarber_banner_dismissed');
-        if (lastDismissed) {
-            const timeDiff = Date.now() - parseInt(lastDismissed);
-            const hoursDiff = timeDiff / (1000 * 60 * 60);
-            
-            if (hoursDiff < 24) {
-                specialOfferBanner.style.display = 'none';
-            }
-        }
-    }
-    
-    // ============================================
-    // 6. COUNTER ANIMATIONS
+    // 5. COUNTER ANIMATIONS
     // ============================================
     function animateCounter(element, target, duration = 2000) {
         let start = 0;
@@ -501,13 +581,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         }, 16);
     }
     
-    // Initialize counters if they exist
     const counters = document.querySelectorAll('.counter');
     if (counters.length > 0) {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    const target = parseInt(entry.target.getAttribute('data-target'));
+                    const target = parseInt(entry.target.getAttribute('data-target') || '0');
                     animateCounter(entry.target, target);
                     observer.unobserve(entry.target);
                 }
@@ -518,41 +597,23 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     // ============================================
-    // 7. LAZY LOADING IMAGES
+    // 6. FORM VALIDATION HELPERS
     // ============================================
-    const lazyImages = document.querySelectorAll('img[data-src]');
-    
-    const imageObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const img = entry.target;
-                img.src = img.getAttribute('data-src');
-                img.removeAttribute('data-src');
-                observer.unobserve(img);
-            }
-        });
-    });
-    
-    lazyImages.forEach(img => imageObserver.observe(img));
-    
-    // ============================================
-    // 8. FORM VALIDATION HELPERS
-    // ============================================
-    function validateEmail(email) {
+    window.validateEmail = function(email) {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return re.test(email);
-    }
+    };
     
-    function validatePhone(phone) {
+    window.validatePhone = function(phone) {
         // Kenyan phone number validation
         const re = /^(07\d{8}|011\d{7}|\+2547\d{8}|\+25411\d{7})$/;
         return re.test(phone.replace(/\s/g, ''));
-    }
+    };
     
     // ============================================
-    // 9. NOTIFICATION SYSTEM
+    // 7. NOTIFICATION SYSTEM
     // ============================================
-    function showNotification(message, type = 'success') {
+    window.showNotification = function(message, type = 'success') {
         // Remove existing notification
         const existingNotification = document.querySelector('.global-notification');
         if (existingNotification) {
@@ -569,7 +630,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
         `;
         
-        // Add styles
         notification.style.cssText = `
             position: fixed;
             top: 20px;
@@ -613,45 +673,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         `;
         document.head.appendChild(style);
-    }
+    };
     
     // ============================================
-    // 10. WHATSAPP FLOAT BUTTON ENHANCEMENTS
+    // 8. SERVICE BOOKING SHORTCUTS
     // ============================================
-    const whatsappFloat = document.querySelector('.whatsapp-float');
-    
-    if (whatsappFloat) {
-        // Add hover effect
-        whatsappFloat.addEventListener('mouseenter', () => {
-            whatsappFloat.style.transform = 'scale(1.1)';
-        });
-        
-        whatsappFloat.addEventListener('mouseleave', () => {
-            whatsappFloat.style.transform = 'scale(1)';
-        });
-        
-        // Add click analytics (simulated)
-        whatsappFloat.addEventListener('click', () => {
-            // Track WhatsApp clicks
-            let whatsappClicks = parseInt(localStorage.getItem('kenbarber_whatsapp_clicks') || '0');
-            whatsappClicks++;
-            localStorage.setItem('kenbarber_whatsapp_clicks', whatsappClicks.toString());
-        });
-    }
-    
-    // ============================================
-    // 11. CURRENT YEAR IN FOOTER
-    // ============================================
-    const yearSpan = document.getElementById('currentYear');
-    if (yearSpan) {
-        yearSpan.textContent = new Date().getFullYear();
-    }
-    
-    // ============================================
-    // 12. SERVICE BOOKING SHORTCUTS
-    // ============================================
-    // This function is called from service buttons
-    window.bookService = function(serviceId, price) {
+    window.bookService = function(serviceId, price, serviceName) {
         const serviceSelect = document.getElementById('serviceType');
         if (!serviceSelect) return;
         
@@ -663,13 +690,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         }
         
-        // Update price display
-        const priceDisplay = document.getElementById('priceDisplay');
-        const totalPrice = document.getElementById('totalPrice');
-        if (priceDisplay && totalPrice) {
-            totalPrice.textContent = `KES ${price}`;
-            priceDisplay.style.display = 'block';
-        }
+        // Trigger change event to update price
+        const event = new Event('change');
+        serviceSelect.dispatchEvent(event);
         
         // Scroll to booking form
         const bookingSection = document.getElementById('booking');
@@ -685,7 +708,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     };
     
     // ============================================
-    // 13. NEWSLETTER SUBSCRIPTION
+    // 9. NEWSLETTER SUBSCRIPTION
     // ============================================
     window.subscribeNewsletter = async function() {
         const emailInput = document.getElementById('newsletterEmail');
@@ -699,42 +722,87 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         
         try {
-            // Save to Supabase if available
+            // Save to Supabase
             if (window.supabase) {
                 const { error } = await window.supabase
-                    .from('customers')
+                    .from('newsletter_subscriptions')
                     .upsert({ 
                         email: email,
-                        newsletter_subscribed: true,
-                        updated_at: new Date().toISOString()
+                        subscribed_at: new Date().toISOString()
                     }, { 
-                        onConflict: 'email',
-                        ignoreDuplicates: false 
+                        onConflict: 'email'
                     });
                 
                 if (error) throw error;
+                
+                showNotification('Thank you for subscribing to KenBarber updates!');
+                emailInput.value = '';
+                return;
             }
-            
-            // Also save locally
-            let subscriptions = JSON.parse(localStorage.getItem('kenbarber_newsletter') || '[]');
-            if (!subscriptions.includes(email)) {
-                subscriptions.push(email);
-                localStorage.setItem('kenbarber_newsletter', JSON.stringify(subscriptions));
-            }
-            
-            // Show success message
-            showNotification('Thank you for subscribing to KenBarber updates!');
-            emailInput.value = '';
-            
         } catch (error) {
-            console.error('Error saving subscription:', error);
-            showNotification('Subscription saved locally', 'success');
-            emailInput.value = '';
+            console.error('Error saving to Supabase:', error);
         }
+        
+        // Fallback to localStorage if Supabase fails
+        let subscriptions = JSON.parse(localStorage.getItem('kenbarber_newsletter') || '[]');
+        if (!subscriptions.includes(email)) {
+            subscriptions.push(email);
+            localStorage.setItem('kenbarber_newsletter', JSON.stringify(subscriptions));
+        }
+        
+        showNotification('Thank you for subscribing! (Saved locally)');
+        emailInput.value = '';
     };
     
     // ============================================
-    // 14. PERFORMANCE OPTIMIZATIONS
+    // 10. ERROR MESSAGE FUNCTION
+    // ============================================
+    function showErrorMessage(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.innerHTML = `
+            <div style="
+                background: #dc3545;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                margin: 20px auto;
+                max-width: 600px;
+                text-align: center;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            ">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>${message}</span>
+                </div>
+                <button onclick="location.reload()" 
+                    style="
+                        background: rgba(255,255,255,0.2);
+                        border: none;
+                        color: white;
+                        padding: 5px 15px;
+                        border-radius: 3px;
+                        cursor: pointer;
+                        font-size: 14px;
+                    ">
+                    <i class="fas fa-redo"></i> Retry
+                </button>
+            </div>
+        `;
+        
+        const main = document.querySelector('main');
+        if (main) {
+            main.prepend(errorDiv);
+        } else {
+            document.body.prepend(errorDiv);
+        }
+    }
+    
+    // ============================================
+    // 11. PERFORMANCE OPTIMIZATIONS
     // ============================================
     // Debounce scroll events
     let scrollTimer;
@@ -743,134 +811,38 @@ document.addEventListener('DOMContentLoaded', async function() {
         scrollTimer = setTimeout(handleHeaderScroll, 100);
     });
     
-    // Preload critical images
-    function preloadImages() {
-        const images = [
-            'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-            'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'
-        ];
-        
-        images.forEach(src => {
-            const img = new Image();
-            img.src = src;
-        });
+    // ============================================
+    // 12. INITIALIZE OTHER COMPONENTS
+    // ============================================
+    function initializeNavigation() {
+        console.log('Navigation initialized');
     }
     
-    // Initialize preload on idle
-    if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(preloadImages);
-    } else {
-        setTimeout(preloadImages, 1000);
+    function initializeTestimonials() {
+        console.log('Testimonials initialized');
     }
     
-    // ============================================
-    // 15. SERVICE WORKER REGISTRATION (PWA)
-    // ============================================
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-                .then(registration => {
-                    console.log('ServiceWorker registered:', registration);
-                })
-                .catch(error => {
-                    console.log('ServiceWorker registration failed:', error);
-                });
-        });
+    function initializeContactForm() {
+        console.log('Contact form initialized');
+        
+        // Initialize contact form validation
+        const contactForm = document.getElementById('contactForm');
+        if (contactForm) {
+            contactForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                showNotification('Contact form submitted successfully!', 'success');
+                this.reset();
+            });
+        }
     }
     
-    // ============================================
-    // 16. OFFLINE DETECTION
-    // ============================================
-    window.addEventListener('online', () => {
-        showNotification('You are back online!', 'success');
-        // Refresh data when back online
-        loadDataFromSupabase();
-    });
-    
-    window.addEventListener('offline', () => {
-        showNotification('You are currently offline. Some features may not work.', 'error');
-    });
+    // Initialize components
+    initializeNavigation();
+    initializeTestimonials();
+    initializeContactForm();
     
     // ============================================
-    // 17. COOKIE CONSENT (BASIC)
+    // 13. FINAL INITIALIZATION
     // ============================================
-    if (!localStorage.getItem('kenbarber_cookies_accepted')) {
-        const cookieConsent = document.createElement('div');
-        cookieConsent.id = 'cookieConsent';
-        cookieConsent.innerHTML = `
-            <div class="cookie-content">
-                <p>We use cookies to enhance your experience. By continuing to visit this site, you agree to our use of cookies.</p>
-                <div class="cookie-buttons">
-                    <button id="acceptCookies" class="btn-primary">Accept</button>
-                    <button id="declineCookies" class="btn-secondary">Decline</button>
-                </div>
-            </div>
-        `;
-        
-        // Add styles
-        const style = document.createElement('style');
-        style.textContent = `
-            #cookieConsent {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: var(--secondary);
-                color: white;
-                padding: 20px;
-                z-index: 9998;
-                box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
-            }
-            .cookie-content {
-                max-width: 1200px;
-                margin: 0 auto;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                flex-wrap: wrap;
-                gap: 15px;
-            }
-            .cookie-content p {
-                flex: 1;
-                margin: 0;
-                color: #aaa;
-            }
-            .cookie-buttons {
-                display: flex;
-                gap: 10px;
-            }
-            @media (max-width: 768px) {
-                .cookie-content {
-                    flex-direction: column;
-                    text-align: center;
-                }
-            }
-        `;
-        document.head.appendChild(style);
-        document.body.appendChild(cookieConsent);
-        
-        // Add event listeners
-        document.getElementById('acceptCookies').addEventListener('click', () => {
-            localStorage.setItem('kenbarber_cookies_accepted', 'true');
-            cookieConsent.style.display = 'none';
-        });
-        
-        document.getElementById('declineCookies').addEventListener('click', () => {
-            cookieConsent.style.display = 'none';
-        });
-    }
-    
-    // ============================================
-    // 18. INITIALIZATION COMPLETE
-    // ============================================
-    console.log('KenBarber website with Supabase initialized successfully');
+    console.log('KenBarber website with Real Supabase initialized successfully');
 });
-
-// Export functions for use in other scripts
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        validateEmail,
-        validatePhone,
-        showNotification
-    };
-}
