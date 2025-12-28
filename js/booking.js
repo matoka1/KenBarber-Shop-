@@ -834,6 +834,86 @@ async function initiateSTKPushPayment(bookingData) {
         };
     }
 }
+function showPaymentPendingModal(bookingData, paymentResult) {
+    console.log('Showing payment pending modal for booking:', bookingData.booking_reference);
+    
+    // Create a simple modal or notification
+    const modalHtml = `
+        <div id="paymentModal" style="
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+            z-index: 10000;
+            max-width: 400px;
+            text-align: center;
+        ">
+            <h3>Complete Payment</h3>
+            <p>💰 Amount: <strong>KES ${bookingData.service_price}</strong></p>
+            <p>📱 Phone: <strong>${formatPhone(bookingData.customer_phone)}</strong></p>
+            <p>📋 Reference: <strong>${bookingData.booking_reference}</strong></p>
+            
+            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                <p><strong>Next Steps:</strong></p>
+                <ol style="text-align: left; margin-left: 20px;">
+                    <li>Check your phone for M-Pesa prompt</li>
+                    <li>Enter your M-Pesa PIN</li>
+                    <li>Wait for confirmation</li>
+                </ol>
+            </div>
+            
+            <button onclick="closePaymentModal()" style="
+                padding: 10px 25px;
+                background: #007bff;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+            ">
+                I've Completed Payment
+            </button>
+            
+            <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                <i>Payment status: ${paymentResult.test ? 'TEST MODE' : 'Pending'}</i>
+            </p>
+        </div>
+        <div id="modalOverlay" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+        "></div>
+    `;
+    
+    // Add to page
+    const modalContainer = document.createElement('div');
+    modalContainer.innerHTML = modalHtml;
+    document.body.appendChild(modalContainer);
+    
+    // Add close function to window
+    window.closePaymentModal = function() {
+        document.body.removeChild(modalContainer);
+        showBookingError('Thank you! We\'ll verify your payment and confirm your booking.', 'success');
+    };
+    
+    // Close on overlay click
+    document.getElementById('modalOverlay').addEventListener('click', window.closePaymentModal);
+    
+    // Auto-close after 30 seconds
+    setTimeout(() => {
+        if (document.body.contains(modalContainer)) {
+            window.closePaymentModal();
+        }
+    }, 30000);
+}
 async function processBooking() {
     console.log('processBooking called');
     
