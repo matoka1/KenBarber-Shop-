@@ -759,17 +759,23 @@ function highlightField(element, isError) {
 // STK PUSH PAYMENT FUNCTIONS
 async function initiateSTKPushPayment(bookingData) {
     try {
-        console.log('Initiating STK Push payment...');
+        console.log('Initiating STK Push payment via Supabase Edge Function...');
         
-        // Get the phone number (remove spaces and ensure format)
+        // Format phone number for Lipana
         let phoneNumber = bookingData.customer_phone.replace(/\s/g, '');
         
-        // Convert to 254 format if needed
+        // Convert to required format (+254XXXXXXXXX)
         if (phoneNumber.startsWith('0')) {
-            phoneNumber = '254' + phoneNumber.substring(1);
+            phoneNumber = '+254' + phoneNumber.substring(1);
+        } else if (phoneNumber.startsWith('254')) {
+            phoneNumber = '+' + phoneNumber;
+        } else if (!phoneNumber.startsWith('+254')) {
+            phoneNumber = '+254' + phoneNumber;
         }
         
-        // Prepare STK Push request
+        console.log('Formatted phone number:', phoneNumber);
+        
+        // Prepare request for your Edge Function
         const stkRequest = {
             phoneNumber: phoneNumber,
             amount: bookingData.service_price,
@@ -779,9 +785,12 @@ async function initiateSTKPushPayment(bookingData) {
             bookingId: bookingData.booking_reference
         };
         
-        console.log('STK Push request:', stkRequest);
+        console.log('Request to Edge Function:', stkRequest);
         
-        const response = await fetch('/api/mpesa/stk-push', {
+        // Use YOUR Supabase Edge Function URL
+        const supabaseFunctionUrl = 'https://eqjdkpanqwjhuyavvdaf.supabase.co/functions/v1/process-mpesa-payment';
+        
+        const response = await fetch(supabaseFunctionUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -789,22 +798,31 @@ async function initiateSTKPushPayment(bookingData) {
             body: JSON.stringify(stkRequest)
         });
         
+        console.log('Edge Function response status:', response.status);
+        
+        // Try to parse response text first for debugging
+        const responseText = await response.text();
+        console.log('Edge Function raw response:', responseText);
+        
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to initiate STK Push');
+            console.error('Edge Function error response:', responseText);
+            throw new Error(`Edge Function failed with status: ${response.status}`);
         }
         
-        const result = await response.json();
+        // Parse JSON response
+        const result = JSON.parse(responseText);
+        console.log('Parsed Edge Function result:', result);
         
         if (result.success) {
             return {
                 success: true,
-                transaction_id: result.CheckoutRequestID || result.TransactionID,
-                message: 'STK Push sent to your phone. Please enter your M-Pesa PIN.',
+                transaction_id: result.transactionId || result.checkoutRequestID || result.data?.transactionId,
+                checkout_request_id: result.checkoutRequestID || result.data?.checkoutRequestID,
+                message: result.message || 'STK Push sent to your phone. Please enter your M-Pesa PIN.',
                 rawResponse: result
             };
         } else {
-            throw new Error(result.message || 'STK Push failed');
+            throw new Error(result.message || result.error || 'STK Push failed');
         }
         
     } catch (error) {
@@ -816,7 +834,6 @@ async function initiateSTKPushPayment(bookingData) {
         };
     }
 }
-
 async function processBooking() {
     console.log('processBooking called');
     
