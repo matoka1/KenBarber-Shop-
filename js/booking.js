@@ -175,7 +175,7 @@ function initializeDatePicker() {
             timeSelect.disabled = true;
         }
     });
-
+} 
 async function loadAvailableTimeSlots(date) {
      // ADD THIS PROTECTION:
     if (!date || date.trim() === '') {
