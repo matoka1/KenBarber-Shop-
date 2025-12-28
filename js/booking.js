@@ -774,6 +774,18 @@ function collectFormData() {
     const form = document.getElementById('appointmentForm');
     const formData = new FormData(form);
     
+    // Get form values - MAKE SURE THEY'RE NOT EMPTY
+    const fullName = document.getElementById('fullName').value.trim();
+    const phoneNumber = document.getElementById('phoneNumber').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const appointmentDate = document.getElementById('appointmentDate').value;
+    const appointmentTime = document.getElementById('appointmentTime').value;
+    
+    // Validate required fields are not empty
+    if (!fullName || !phoneNumber || !email || !appointmentDate || !appointmentTime) {
+        throw new Error('Please fill in all required fields');
+    }
+    
     // Get service details
     const serviceSelect = document.getElementById('serviceType');
     const selectedService = serviceSelect.options[serviceSelect.selectedIndex];
@@ -789,21 +801,21 @@ function collectFormData() {
     // Generate booking reference
     const bookingRef = 'KB-' + Date.now().toString().slice(-8) + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
     
-    // Prepare booking data
+    // Prepare booking data - MATCH YOUR TABLE SCHEMA
     const bookingData = {
-        customer_name: formData.get('fullName') || '',
-        customer_phone: (formData.get('phoneNumber') || '').replace(/\s/g, ''),
-        customer_email: formData.get('email') || '',
+        customer_name: fullName,
+        customer_phone: phoneNumber.replace(/\s/g, ''),
+        customer_email: email,
         service_id: selectedService.value,
         service_name: selectedService.getAttribute('data-name') || '',
         service_price: selectedServicePrice,
         barber_id: selectedBarber ? selectedBarber.value : '',
         barber_name: selectedBarber ? selectedBarber.textContent : 'Any Available Barber',
-        appointment_date: formData.get('appointmentDate') || '',
-        appointment_time: formData.get('appointmentTime') || '',
-        special_requests: formData.get('specialRequests') || '',
+        appointment_date: appointmentDate,
+        appointment_time: appointmentTime,
+        special_requests: formData.get('specialRequests') || '',  // Use 'special_requests' not 'notes'
         payment_method: paymentMethod,
-        payment_status: paymentMethod === 'mpesa' ? 'pending' : 'to_pay_at_shop',
+        payment_status: paymentMethod === 'mpesa' ? 'pending' : 'paid',
         booking_reference: bookingRef,
         status: 'confirmed',
         created_at: new Date().toISOString()
@@ -811,7 +823,8 @@ function collectFormData() {
     
     // Add M-Pesa number if M-Pesa payment
     if (paymentMethod === 'mpesa') {
-        bookingData.mpesa_number = (formData.get('mpesaNumber') || '').replace(/\s/g, '');
+        const mpesaNumber = document.getElementById('mpesaNumber');
+        bookingData.mpesa_number = mpesaNumber ? mpesaNumber.value.replace(/\s/g, '') : '';
     }
     
     return bookingData;
@@ -825,6 +838,40 @@ async function saveBookingToSupabase(bookingData) {
     }
     
     try {
+        // VALIDATE REQUIRED FIELDS BEFORE ANYTHING
+        const requiredFields = [
+            'customer_name', 
+            'customer_phone', 
+            'customer_email',
+            'appointment_date', 
+            'appointment_time', 
+            'service_name',
+            'booking_reference'
+        ];
+        
+        const missingFields = [];
+        for (const field of requiredFields) {
+            if (!bookingData[field] || bookingData[field].toString().trim() === '') {
+                missingFields.push(field);
+            }
+        }
+        
+        if (missingFields.length > 0) {
+            throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+        }
+        
+        // Validate date format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(bookingData.appointment_date)) {
+            throw new Error('Invalid date format. Please use YYYY-MM-DD format.');
+        }
+        
+        // Validate time format
+        const timeRegex = /^\d{2}:\d{2}:\d{2}$/;
+        if (!timeRegex.test(bookingData.appointment_time)) {
+            throw new Error('Invalid time format. Please use HH:MM:SS format.');
+        }
+        
         // Double-check slot availability
         const { data: existingAppointments, error: checkError } = await window.supabase
             .from('appointments')
@@ -835,84 +882,135 @@ async function saveBookingToSupabase(bookingData) {
         
         if (checkError) {
             console.warn('Could not check slot availability:', checkError);
+            // Continue anyway, but log the warning
         } else if (existingAppointments && existingAppointments.length > 0) {
             throw new Error('Time slot is no longer available. Please choose another time.');
         }
         
-        // Prepare data for Supabase
+        // Prepare data for Supabase - MATCH YOUR TABLE SCHEMA EXACTLY
         const supabaseData = {
-            customer_name: bookingData.customer_name,
-            customer_phone: bookingData.customer_phone,
-            customer_email: bookingData.customer_email,
-            service_name: bookingData.service_name,
-            service_price: bookingData.service_price,
-            appointment_date: bookingData.appointment_date,
-            appointment_time: bookingData.appointment_time,
-            barber_name: bookingData.barber_name,
-            notes: bookingData.special_requests,
-            payment_method: bookingData.payment_method,
-            payment_status: bookingData.payment_status,
-            booking_reference: bookingData.booking_reference,
-            status: 'confirmed'
+            // Text fields that match your table columns
+            customer_name: bookingData.customer_name || '',
+            customer_phone: bookingData.customer_phone || '',
+            customer_email: bookingData.customer_email || '',
+            service_name: bookingData.service_name || '',
+            barber_name: bookingData.barber_name || 'Any Available Barber',
+            special_requests: bookingData.special_requests || '', // NOT 'notes'
+            payment_method: bookingData.payment_method || 'cash',
+            payment_status: bookingData.payment_status || 'pending',
+            booking_reference: bookingData.booking_reference || '',
+            status: 'confirmed',
+            
+            // Numeric fields
+            service_price: parseFloat(bookingData.service_price) || 0,
+            amount_paid: parseFloat(bookingData.service_price) || 0,
+            
+            // Date/time fields
+            appointment_date: bookingData.appointment_date || '',
+            appointment_time: bookingData.appointment_time || '',
+            
+            // Optional fields (check if your table has these)
+            mpesa_number: bookingData.mpesa_number || null,
+            mpesa_transaction_id: bookingData.mpesa_number ? `MPESA-${Date.now()}` : null
         };
         
-        // Add M-Pesa number if applicable
-        if (bookingData.mpesa_number) {
-            supabaseData.mpesa_number = bookingData.mpesa_number;
-        }
+        console.log('Prepared data for Supabase:', supabaseData);
         
-        // Save to Supabase
+        // Save to Supabase - SIMPLIFIED without .select() to avoid issues
         const { data, error } = await window.supabase
             .from('appointments')
-            .insert([supabaseData])
-            .select();
+            .insert([supabaseData]);
         
         if (error) {
-            console.error('Supabase insert error:', error);
+            console.error('Supabase insert error details:', error);
             
-            // Check for specific errors
-            if (error.code === '23505') { // Unique violation
-                throw new Error('This time slot was just booked by someone else. Please choose another time.');
-            } else if (error.code === '42501') { // Permission error
-                throw new Error('Database permission error. Please contact support.');
-            } else {
-                throw error;
+            // Try alternative approach without certain fields
+            const fallbackData = {
+                customer_name: supabaseData.customer_name,
+                customer_phone: supabaseData.customer_phone,
+                customer_email: supabaseData.customer_email,
+                appointment_date: supabaseData.appointment_date,
+                appointment_time: supabaseData.appointment_time,
+                service_name: supabaseData.service_name,
+                service_price: supabaseData.service_price,
+                barber_name: supabaseData.barber_name,
+                special_requests: supabaseData.special_requests,
+                payment_method: supabaseData.payment_method,
+                payment_status: supabaseData.payment_status,
+                booking_reference: supabaseData.booking_reference,
+                status: supabaseData.status
+            };
+            
+            console.log('Trying fallback with minimal fields:', fallbackData);
+            
+            const { data: fallbackResult, error: fallbackError } = await window.supabase
+                .from('appointments')
+                .insert([fallbackData]);
+            
+            if (fallbackError) {
+                console.error('Fallback also failed:', fallbackError);
+                
+                // Provide user-friendly error messages
+                if (fallbackError.code === '23505') {
+                    throw new Error('This time slot was just booked by someone else. Please choose another time.');
+                } else if (fallbackError.code === '42501') {
+                    throw new Error('Database permission error. Please contact support.');
+                } else if (fallbackError.message.includes('column')) {
+                    throw new Error(`Database error: ${fallbackError.message}. Please contact support.`);
+                } else {
+                    throw new Error(`Booking failed: ${fallbackError.message || 'Unknown error'}`);
+                }
             }
+            
+            console.log('Booking saved via fallback');
+            data = fallbackResult;
         }
         
-        console.log('Booking saved to Supabase:', data);
+        console.log('Booking saved to Supabase successfully');
         
-        // Try to save to customers table (non-critical)
+        // Try to save to customers table (non-critical - only if table exists)
         try {
-            await window.supabase
+            const { error: customerError } = await window.supabase
                 .from('customers')
                 .upsert({
                     phone: bookingData.customer_phone,
                     email: bookingData.customer_email,
                     name: bookingData.customer_name,
-                    last_visit: bookingData.appointment_date,
-                    total_visits: 1
+                    last_visit: bookingData.appointment_date
                 }, {
                     onConflict: 'phone'
                 });
-        } catch (customerError) {
-            console.warn('Could not update customers table:', customerError);
-            // Non-critical error, continue
+            
+            if (customerError) {
+                console.warn('Could not update customers table:', customerError);
+                // Non-critical error, continue
+            }
+        } catch (customerErr) {
+            console.warn('Customers table might not exist:', customerErr);
+            // Ignore this error - customers table is optional
         }
         
         return {
             success: true,
-            data: data,
             booking_ref: bookingData.booking_reference,
-            message: 'Booking confirmed successfully!'
+            message: 'Booking confirmed successfully! You will receive a confirmation shortly.'
         };
         
     } catch (error) {
         console.error('Failed to save to Supabase:', error);
-        throw error;
+        
+        // Provide better error messages for common issues
+        if (error.message.includes('Missing required fields')) {
+            throw new Error('Please fill in all required fields.');
+        } else if (error.message.includes('date') || error.message.includes('time')) {
+            throw new Error('Please select a valid date and time.');
+        } else if (error.message.includes('slot') || error.message.includes('available')) {
+            throw error; // Keep original message for slot errors
+        } else {
+            throw new Error(`Booking failed: ${error.message || 'Please try again or contact us.'}`);
+        }
     }
 }
-
 function saveBookingLocally(bookingData) {
     try {
         // Get existing bookings from localStorage
