@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KenBarber Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto+Slab:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+    <!-- Security Check Script -->
+    <script>
+        // Check if user is logged in
+        if (localStorage.getItem('adminLoggedIn') !== 'true') {
+            window.location.href = 'admin-login.html';
+        }
+        
+        // Get user info
+        const currentUser = localStorage.getItem('adminUser');
+        const currentRole = localStorage.getItem('adminRole');
+    </script>
+    
+    <!-- Admin Header -->
+    <header class="admin-header">
+        <div class="container header-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-cut"></i> KenBarber <span class="admin-badge">ADMIN</span>
+            </a>
+            
+            <div class="admin-user">
+                <div class="user-info">
+                    <span class="user-name" id="currentUserName">Loading...</span>
+                    <span class="user-role" id="currentUserRole">Loading...</span>
+                </div>
+                <button class="logout-btn" onclick="logoutAdmin()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin Sidebar -->
+    <nav class="admin-sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-tachometer-alt"></i> Dashboard</h3>
+            <p id="sidebarRole">Role: Loading...</p>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li class="active">
+                <a href="#dashboard">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="#appointments">
+                    <i class="fas fa-calendar-check"></i> Appointments
+                    <span class="badge" id="pendingCount">5</span>
+                </a>
+            </li>
+            <li>
+                <a href="#customers">
+                    <i class="fas fa-users"></i> Customers
+                </a>
+            </li>
+            <li>
+                <a href="#barbers">
+                    <i class="fas fa-user-tie"></i> Barbers
+                </a>
+            </li>
+            <li>
+                <a href="#services">
+                    <i class="fas fa-scissors"></i> Services
+                </a>
+            </li>
+            <li>
+                <a href="#payments">
+                    <i class="fas fa-credit-card"></i> Payments
+                </a>
+            </li>
+            <!-- Only show settings for superadmin -->
+            <li id="settingsMenuItem" style="display: none;">
+                <a href="#settings">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+            </li>
+            <li>
+                <a href="index.html" class="back-to-site">
+                    <i class="fas fa-external-link-alt"></i> Back to Site
+                </a>
+            </li>
+        </ul>
+        
+        <div class="sidebar-footer">
+            <div class="system-status">
+                <h4>System Status</h4>
+                <div class="status-item">
+                    <span>Bookings Today</span>
+                    <span class="status-value">12</span>
+                </div>
+                <div class="status-item">
+                    <span>Revenue Today</span>
+                    <span class="status-value">KES 8,400</span>
+                </div>
+                <div class="status-item">
+                    <span>Active Barbers</span>
+                    <span class="status-value">3</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Admin Content -->
+    <main class="admin-main">
+        <div class="admin-container">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="admin-section active">
+                <div class="section-header">
+                    <h2>Dashboard Overview</h2>
+                    <div class="welcome-message">
+                        Welcome back, <span id="welcomeUserName">Admin</span>!
+                    </div>
+                </div>
+                
+                <!-- Rest of admin dashboard content remains the same -->
+                <!-- ... -->
+            </section>
+        </div>
+    </main>
+
+    <!-- JavaScript Files -->
+    <script src="js/main.js"></script>
+    <script src="js/admin.js"></script>
+    
+    <script>
+        // Set user info on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const userName = localStorage.getItem('adminUser') || 'Admin';
+            const userRole = localStorage.getItem('adminRole') || 'User';
+            
+            // Set user info in elements
+            document.getElementById('currentUserName').textContent = userName;
+            document.getElementById('currentUserRole').textContent = userRole;
+            document.getElementById('sidebarRole').textContent = `Role: ${userRole}`;
+            document.getElementById('welcomeUserName').textContent = userName;
+            
+            // Show/hide menu items based on role
+            if (userRole === 'superadmin') {
+                document.getElementById('settingsMenuItem').style.display = 'block';
+            }
+        });
+        
+        function logoutAdmin() {
+            // Clear admin session
+            localStorage.removeItem('adminLoggedIn');
+            localStorage.removeItem('adminUser');
+            localStorage.removeItem('adminRole');
+            
+            // Redirect to login page
+            window.location.href = 'admin-login.html';
+        }
+    </script>
+</body>
+</html>
