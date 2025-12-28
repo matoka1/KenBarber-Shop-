@@ -1,3 +1,9 @@
+// Global variables
+let selectedServicePrice = 0;
+let selectedServiceName = '';
+let selectedServiceId = '';
+let availableTimeSlots = [];
+
 function initializeBooking() {
     console.log('Setting up booking system...');
     
@@ -557,7 +563,6 @@ function setupEventListeners() {
             });
         }
     });
-    // =============== END OF STK PUSH CODE ===============
     
     // Copy phone to M-Pesa button
     const copyPhoneBtn = document.getElementById('copyPhoneToMpesa');
@@ -778,6 +783,262 @@ function highlightField(element, isError) {
     }
 }
 
+// ============ STK PUSH PAYMENT FUNCTIONS ============
+async function initiateSTKPushPayment(bookingData) {
+    try {
+        console.log('Initiating STK Push payment...');
+        
+        // Get the phone number (remove spaces and ensure format)
+        let phoneNumber = bookingData.customer_phone.replace(/\s/g, '');
+        
+        // Convert to 254 format if needed
+        if (phoneNumber.startsWith('0')) {
+            phoneNumber = '254' + phoneNumber.substring(1);
+        }
+        
+        // Prepare STK Push request
+        const stkRequest = {
+            phoneNumber: phoneNumber,
+            amount: bookingData.service_price,
+            accountReference: bookingData.booking_reference,
+            transactionDesc: `Payment for ${bookingData.service_name}`,
+            customerName: bookingData.customer_name,
+            bookingId: bookingData.booking_reference
+        };
+        
+        console.log('STK Push request:', stkRequest);
+        
+        // Call your backend endpoint (you need to create this endpoint)
+        const response = await fetch('/api/mpesa/stk-push', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(stkRequest)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to initiate STK Push');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            return {
+                success: true,
+                transaction_id: result.CheckoutRequestID || result.TransactionID,
+                message: 'STK Push sent to your phone. Please enter your M-Pesa PIN.',
+                rawResponse: result
+            };
+        } else {
+            throw new Error(result.message || 'STK Push failed');
+        }
+        
+    } catch (error) {
+        console.error('STK Push initiation error:', error);
+        return {
+            success: false,
+            message: error.message || 'Failed to initiate payment',
+            error: error
+        };
+    }
+}
+
+function showPaymentPendingModal(bookingData, paymentResult) {
+    const modal = document.createElement('div');
+    modal.id = 'paymentPendingModal';
+    modal.className = 'modal';
+    modal.style.cssText = `
+        display: block;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.7);
+    `;
+    
+    modal.innerHTML = `
+        <div class="modal-content" style="
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        ">
+            <div class="payment-icon" style="font-size: 60px; color: #007bff; margin-bottom: 20px;">
+                <i class="fas fa-mobile-alt"></i>
+            </div>
+            
+            <h2 style="color: #333; margin-bottom: 15px;">Complete Payment</h2>
+            
+            <div class="payment-instructions" style="
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 8px;
+                margin: 20px 0;
+                text-align: left;
+            ">
+                <p><strong>Follow these steps:</strong></p>
+                <ol style="margin-left: 20px;">
+                    <li>Check your phone for an <strong>M-Pesa prompt</strong></li>
+                    <li>Enter your <strong>M-Pesa PIN</strong> to authorize payment</li>
+                    <li>Wait for payment confirmation</li>
+                </ol>
+                
+                <div class="payment-details" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                    <p><strong>Amount:</strong> KES ${bookingData.service_price}</p>
+                    <p><strong>Phone:</strong> ${formatPhone(bookingData.customer_phone)}</p>
+                    <p><strong>Reference:</strong> ${bookingData.booking_reference}</p>
+                </div>
+            </div>
+            
+            <div class="payment-status" id="paymentStatus" style="
+                margin: 20px 0;
+                padding: 15px;
+                background: #fff3cd;
+                border-left: 4px solid #ffc107;
+            ">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Waiting for payment confirmation...</span>
+            </div>
+            
+            <div class="modal-buttons" style="margin-top: 25px;">
+                <button id="cancelPayment" class="btn-secondary" style="
+                    padding: 10px 20px;
+                    margin-right: 10px;
+                    border: 1px solid #dc3545;
+                    background: white;
+                    color: #dc3545;
+                    border-radius: 5px;
+                    cursor: pointer;
+                ">
+                    Cancel
+                </button>
+                <button id="paymentCompleted" class="btn-primary" style="
+                    padding: 10px 20px;
+                    background: #28a745;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                ">
+                    I've Completed Payment
+                </button>
+            </div>
+            
+            <p style="margin-top: 20px; font-size: 14px; color: #666;">
+                <i class="fas fa-info-circle"></i>
+                If you don't receive the prompt within 30 seconds, please check your phone's network connection.
+            </p>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            document.body.removeChild(modal);
+        }
+    });
+    
+    // Cancel button
+    document.getElementById('cancelPayment').addEventListener('click', function() {
+        document.body.removeChild(modal);
+        showBookingError('Payment cancelled. Booking saved with pending payment status.', 'warning');
+    });
+    
+    // Payment completed button
+    document.getElementById('paymentCompleted').addEventListener('click', function() {
+        document.body.removeChild(modal);
+        showBookingError('Thank you! We\'ll verify your payment and confirm your booking.', 'success');
+    });
+    
+    return modal;
+}
+
+async function pollForPaymentConfirmation(bookingReference, transactionId) {
+    console.log('Polling for payment confirmation for transaction:', transactionId);
+    
+    // Poll for payment status (you need to implement this on your backend)
+    const pollInterval = setInterval(async () => {
+        try {
+            console.log('Checking payment status...');
+            
+            // Call your backend endpoint to check payment status
+            const response = await fetch(`/api/mpesa/payment-status/${transactionId}`);
+            
+            if (!response.ok) {
+                console.warn('Payment status check failed');
+                return;
+            }
+            
+            const result = await response.json();
+            console.log('Payment status result:', result);
+            
+            if (result.paymentStatus === 'completed' || result.paymentStatus === 'success') {
+                clearInterval(pollInterval);
+                
+                // Update booking status in Supabase
+                await updateBookingPaymentStatus(bookingReference, 'paid', transactionId);
+                
+                // Show success message
+                showBookingError('✅ Payment confirmed! Your booking is now fully confirmed.', 'success');
+                
+                // Close any open payment modal
+                const paymentModal = document.getElementById('paymentPendingModal');
+                if (paymentModal) {
+                    document.body.removeChild(paymentModal);
+                }
+                
+                // Reset form
+                resetBookingForm();
+                
+            } else if (result.paymentStatus === 'failed' || result.paymentStatus === 'cancelled') {
+                clearInterval(pollInterval);
+                showBookingError('Payment failed. Please try again or use another payment method.', 'error');
+            }
+        } catch (error) {
+            console.error('Payment polling error:', error);
+        }
+    }, 5000); // Poll every 5 seconds
+    
+    // Stop polling after 5 minutes
+    setTimeout(() => {
+        clearInterval(pollInterval);
+        console.log('Payment polling stopped after 5 minutes');
+    }, 300000);
+}
+
+async function updateBookingPaymentStatus(bookingReference, status, transactionId) {
+    try {
+        const { error } = await window.supabase
+            .from('appointments')
+            .update({
+                payment_status: status,
+                mpesa_transaction_id: transactionId,
+                status: 'confirmed'
+            })
+            .eq('booking_reference', bookingReference);
+        
+        if (error) {
+            console.error('Failed to update booking payment status:', error);
+            throw error;
+        } else {
+            console.log('Booking payment status updated successfully');
+            return true;
+        }
+    } catch (error) {
+        console.error('Error updating payment status:', error);
+        throw error;
+    }
+}
+
 async function processBooking() {
     // Show loading spinner
     const loadingSpinner = document.getElementById('loadingSpinner');
@@ -798,17 +1059,63 @@ async function processBooking() {
         
         console.log('Processing booking with data:', bookingData);
         
-        // Save to Supabase
-        const bookingResult = await saveBookingToSupabase(bookingData);
+        // Get payment method
+        const paymentMethod = bookingData.payment_method;
         
-        // Save locally as backup
-        saveBookingLocally(bookingData);
-        
-        // Show success modal
-        showSuccessModal(bookingData, bookingResult);
-        
-        // Reset form
-        resetBookingForm();
+        if (paymentMethod === 'mpesa_stk') {
+            // ============ STK PUSH PAYMENT FLOW ============
+            console.log('Starting STK Push payment flow...');
+            
+            // 1. First, save booking with pending payment status
+            bookingData.payment_status = 'pending';
+            const bookingResult = await saveBookingToSupabase(bookingData);
+            
+            // 2. Save locally as backup
+            saveBookingLocally(bookingData);
+            
+            // 3. Initiate STK Push payment
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending Payment Request...';
+            
+            const paymentResult = await initiateSTKPushPayment(bookingData);
+            
+            if (paymentResult.success) {
+                // 4. Show payment pending modal
+                showPaymentPendingModal(bookingData, paymentResult);
+                
+                // 5. Start polling for payment confirmation
+                pollForPaymentConfirmation(bookingData.booking_reference, paymentResult.transaction_id);
+                
+                // 6. Update booking with transaction ID
+                await updateBookingPaymentStatus(bookingData.booking_reference, 'pending', paymentResult.transaction_id);
+                
+                // 7. Update submit button text
+                submitBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Awaiting Payment...';
+                
+            } else {
+                // STK Push failed
+                throw new Error(`STK Push failed: ${paymentResult.message}`);
+            }
+            
+        } else {
+            // ============ REGULAR BOOKING FLOW ============
+            // (Cash, Manual M-Pesa, Card)
+            const bookingResult = await saveBookingToSupabase(bookingData);
+            
+            // Save locally as backup
+            saveBookingLocally(bookingData);
+            
+            // Show success modal
+            showSuccessModal(bookingData, bookingResult);
+            
+            // Reset form
+            resetBookingForm();
+            
+            // Re-enable submit button
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Booking';
+            }
+        }
         
     } catch (error) {
         console.error('Booking processing error:', error);
@@ -818,7 +1125,6 @@ async function processBooking() {
             const bookingData = collectFormData();
             saveBookingLocally(bookingData);
             
-            // Show mixed success/warning
             showBookingError(
                 '⚠️ Booking saved locally. Could not connect to server, but your appointment is saved in your browser.',
                 'warning'
@@ -837,16 +1143,16 @@ async function processBooking() {
             showBookingError('❌ Booking failed. Please try again or contact us directly.', 'error');
         }
         
+        // Re-enable submit button on error
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Booking';
+        }
+        
     } finally {
         // Hide loading spinner
         if (loadingSpinner) {
             loadingSpinner.style.display = 'none';
-        }
-        
-        // Re-enable submit button
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Booking';
         }
     }
 }
@@ -998,15 +1304,15 @@ async function saveBookingToSupabase(bookingData) {
             
             // Optional fields (check if your table has these)
             mpesa_number: bookingData.mpesa_number || null,
-            mpesa_transaction_id: bookingData.mpesa_number ? `MPESA-${Date.now()}` : null
+            mpesa_transaction_id: null // Will be updated when payment is confirmed
         };
         
         console.log('Prepared data for Supabase:', supabaseData);
         
-        // Save to Supabase - SIMPLIFIED without .select() to avoid issues
+        // Save to Supabase
         let { data, error } = await window.supabase
-    .from('appointments')
-    .insert([supabaseData]);
+            .from('appointments')
+            .insert([supabaseData]);
         
         if (error) {
             console.error('Supabase insert error details:', error);
@@ -1062,7 +1368,7 @@ async function saveBookingToSupabase(bookingData) {
                 .upsert({
                     phone: bookingData.customer_phone,
                     email: bookingData.customer_email,
-                    full_name: bookingData.customer_name, // Changed from 'name' to 'full_name'
+                    full_name: bookingData.customer_name,
                     last_visit: bookingData.appointment_date
                 }, {
                     onConflict: 'phone'
@@ -1073,7 +1379,7 @@ async function saveBookingToSupabase(bookingData) {
                 // Non-critical error, continue
             }
         } catch (customerErr) {
-            console.warn('Customers table might not exist:', customerErr);
+            console.warn('Customers table update error:', customerErr);
             // Ignore this error - customers table is optional
         }
         
@@ -1147,7 +1453,7 @@ async function syncLocalBookings() {
         
         for (const booking of unsyncedBookings) {
             try {
-                // Check if booking already exists - FIXED: Use proper error handling
+                // Check if booking already exists - Use proper error handling
                 const { data: existing, error: selectError } = await window.supabase
                     .from('appointments')
                     .select('id')
@@ -1160,7 +1466,7 @@ async function syncLocalBookings() {
                 }
                 
                 if (!existing) {
-                    // Insert to Supabase - remove mpesa_number if not in schema
+                    // Insert to Supabase
                     const bookingDataToInsert = {
                         customer_name: booking.customer_name,
                         customer_phone: booking.customer_phone,
@@ -1176,9 +1482,6 @@ async function syncLocalBookings() {
                         booking_reference: booking.booking_reference,
                         status: 'confirmed'
                     };
-                    
-                    // Only add mpesa_number if column exists
-                    // You might want to check schema first or handle errors
                     
                     const { error: insertError } = await window.supabase
                         .from('appointments')
@@ -1379,6 +1682,7 @@ function resetBookingForm() {
         console.log('Form reset complete');
     }
 }
+
 function formatDate(dateString) {
     try {
         const date = new Date(dateString);
@@ -1717,6 +2021,28 @@ style.textContent = `
     
     .booking-notification {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    }
+    
+    /* Payment pending modal styles */
+    .modal {
+        display: block !important;
+        position: fixed !important;
+        z-index: 1000 !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background-color: rgba(0,0,0,0.7) !important;
+    }
+    
+    .modal-content {
+        background-color: white !important;
+        margin: 10% auto !important;
+        padding: 30px !important;
+        border-radius: 10px !important;
+        width: 90% !important;
+        max-width: 500px !important;
+        text-align: center !important;
     }
 `;
 document.head.appendChild(style);
