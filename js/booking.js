@@ -3,37 +3,30 @@ let selectedServicePrice = 0;
 let selectedServiceName = '';
 let selectedServiceId = '';
 let availableTimeSlots = [];
-let isProcessingBooking = false; // Add flag to prevent multiple submissions
+let isProcessingBooking = false;
+let currentPaymentPollInterval = null;
 
 function initializeBooking() {
     console.log('Setting up booking system...');
     
-    // Wait for main.js to create form elements and load services
     const checkFormReady = () => {
         const serviceSelect = document.getElementById('serviceType');
         const dateInput = document.getElementById('appointmentDate');
         const timeSelect = document.getElementById('appointmentTime');
         const submitBtn = document.getElementById('submitBtn');
         
-        // Check if elements exist AND services are loaded (more than 1 option)
         if (serviceSelect && dateInput && timeSelect && submitBtn && serviceSelect.options.length > 1) {
             console.log('✅ Form elements ready, initializing booking system...');
             
-            // Initialize form elements
             initializeFormElements();
-            
-            // Set up event listeners
             setupEventListeners();
             
-            // Initialize date picker with delay
             setTimeout(() => {
                 initializeDatePicker();
             }, 100);
             
-            // Setup payment options
             setupPaymentOptions();
             
-            // Enable submit button
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Booking';
             
@@ -46,22 +39,17 @@ function initializeBooking() {
         }
     };
     
-    // Start checking for form readiness
     checkFormReady();
 }
 
 function initializeFormElements() {
-    // Service dropdown change handler
     const serviceSelect = document.getElementById('serviceType');
     if (serviceSelect) {
-        // Set initial values if service is pre-selected
         const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
         if (selectedOption.value) {
             selectedServicePrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
             selectedServiceName = selectedOption.getAttribute('data-name') || '';
             selectedServiceId = selectedOption.value;
-            
-            // Update price display
             updatePriceDisplay();
         }
         
@@ -71,46 +59,29 @@ function initializeFormElements() {
                 selectedServicePrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
                 selectedServiceName = selectedOption.getAttribute('data-name') || '';
                 selectedServiceId = selectedOption.value;
-                
-                // Update price display
                 updatePriceDisplay();
             } else {
-                // Hide price if no service selected
                 const priceDisplay = document.getElementById('priceDisplay');
-                if (priceDisplay) {
-                    priceDisplay.style.display = 'none';
-                }
+                if (priceDisplay) priceDisplay.style.display = 'none';
             }
         });
     }
     
-    // Date picker initialization
     const dateInput = document.getElementById('appointmentDate');
     if (dateInput) {
-        // Set minimum date to tomorrow
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
-        
-        // Format date as YYYY-MM-DD
-        const formatDate = (date) => {
-            return date.toISOString().split('T')[0];
-        };
+        const formatDate = (date) => date.toISOString().split('T')[0];
         
         dateInput.min = formatDate(tomorrow);
-        
-        // Set max date to 3 months from now
         const maxDate = new Date();
         maxDate.setMonth(maxDate.getMonth() + 3);
         dateInput.max = formatDate(maxDate);
-        
-        // Set initial date to tomorrow
         dateInput.value = formatDate(tomorrow);
         
-        // Disable weekends (Saturday = 6, Sunday = 0)
         dateInput.addEventListener('input', function() {
             const selectedDate = new Date(this.value);
             const dayOfWeek = selectedDate.getDay();
-            
             if (dayOfWeek === 0 || dayOfWeek === 6) {
                 this.value = '';
                 showBookingError('We are closed on weekends. Please select a weekday (Monday-Friday).', 'warning');
@@ -137,7 +108,6 @@ function initializeDatePicker() {
         return;
     }
     
-    // Clear any existing time slots
     timeSelect.innerHTML = '<option value="">Select a date first</option>';
     timeSelect.disabled = true;
     
@@ -149,7 +119,6 @@ function initializeDatePicker() {
             return;
         }
         
-        // Check if it's a weekend
         const dateObj = new Date(selectedDate);
         const dayOfWeek = dateObj.getDay();
         if (dayOfWeek === 0 || dayOfWeek === 6) {
@@ -158,17 +127,12 @@ function initializeDatePicker() {
             return;
         }
         
-        // Disable time select while loading
         timeSelect.disabled = true;
         timeSelect.innerHTML = '<option value="">Loading available slots...</option>';
         
         try {
-            // Load available time slots for selected date
             await loadAvailableTimeSlots(selectedDate);
-            
-            // Populate time slots
             populateTimeSlots();
-            
         } catch (error) {
             console.error('Error loading time slots:', error);
             timeSelect.innerHTML = '<option value="">Error loading slots. Please try again.</option>';
@@ -178,13 +142,11 @@ function initializeDatePicker() {
 }
 
 async function loadAvailableTimeSlots(date) {
-    // ADD THIS PROTECTION:
     if (!date || date.trim() === '') {
         console.warn('loadAvailableTimeSlots called with empty date');
         return;
     }
     
-    // ADD THIS TO PREVENT MULTIPLE CALLS:
     if (window.loadingTimeSlots) {
         console.log('Time slots already loading, skipping...');
         return;
@@ -193,24 +155,15 @@ async function loadAvailableTimeSlots(date) {
     window.loadingTimeSlots = true;
     try {
         console.log('Loading time slots for:', date);
-        
-        // Business hours (Monday-Friday)
-        const businessHours = {
-            start: 8,  // 8 AM
-            end: 19    // 7 PM
-        };
-        
-        // Check if it's Sunday (though weekends should be blocked)
+        const businessHours = { start: 8, end: 19 };
         const dateObj = new Date(date);
         const isSunday = dateObj.getDay() === 0;
         
-        // Adjust hours for Sunday if somehow selected
         if (isSunday) {
-            businessHours.start = 10;  // 10 AM
-            businessHours.end = 16;    // 4 PM
+            businessHours.start = 10;
+            businessHours.end = 16;
         }
         
-        // Get existing appointments for this date from Supabase
         let existingAppointments = [];
         
         try {
@@ -220,17 +173,10 @@ async function loadAvailableTimeSlots(date) {
                 .eq('appointment_date', date)
                 .eq('status', 'confirmed');
             
-            if (error) {
-                console.warn('Could not load appointments from Supabase:', error);
-                // Continue with empty appointments array
-            } else if (data) {
-                // Extract just the time part and normalize format
+            if (!error && data) {
                 existingAppointments = data.map(apt => {
                     if (apt.appointment_time) {
-                        // Handle different time formats
                         let timeStr = apt.appointment_time.toString();
-                        
-                        // Remove seconds if present
                         if (timeStr.includes(':')) {
                             const parts = timeStr.split(':');
                             if (parts.length >= 2) {
@@ -242,36 +188,25 @@ async function loadAvailableTimeSlots(date) {
                     return '';
                 }).filter(t => t && t.length > 0);
             }
-            
-            console.log('Existing appointments:', existingAppointments);
-            
         } catch (dbError) {
             console.warn('Database error loading appointments:', dbError);
         }
         
-        // Generate time slots
         availableTimeSlots = [];
         
         for (let hour = businessHours.start; hour < businessHours.end; hour++) {
-            // Create slots every 30 minutes
             for (let minute of [0, 30]) {
-                // Skip if minute would go past closing time
-                if (hour === businessHours.end - 1 && minute === 30) {
-                    continue;
-                }
+                if (hour === businessHours.end - 1 && minute === 30) continue;
                 
                 const hour24 = hour;
                 const hour12 = hour % 12 || 12;
                 const ampm = hour >= 12 ? 'PM' : 'AM';
                 
-                // Create time strings
                 const time24 = `${hour24.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
                 const timeDisplay = `${hour12}:${minute.toString().padStart(2, '0')} ${ampm}`;
                 const timeDB = `${hour24.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`;
                 
-                // Check if this slot is booked
                 const isBooked = existingAppointments.some(aptTime => {
-                    // Normalize comparison - remove seconds if present
                     const aptTimeSimple = aptTime.split(':').slice(0, 2).join(':');
                     return aptTimeSimple === time24;
                 });
@@ -301,7 +236,6 @@ function populateTimeSlots() {
     const timeSelect = document.getElementById('appointmentTime');
     if (!timeSelect) return;
     
-    // Clear existing options
     timeSelect.innerHTML = '';
     timeSelect.disabled = false;
     
@@ -314,11 +248,9 @@ function populateTimeSlots() {
         return;
     }
     
-    // Filter for available slots
     const availableSlots = availableTimeSlots.filter(slot => slot.available);
     const bookedSlots = availableTimeSlots.filter(slot => !slot.available);
     
-    // Add default option
     const defaultOption = document.createElement('option');
     defaultOption.value = '';
     defaultOption.textContent = availableSlots.length > 0 ? 'Select a time slot' : 'All slots booked';
@@ -327,7 +259,6 @@ function populateTimeSlots() {
     if (availableSlots.length === 0) {
         timeSelect.disabled = true;
         
-        // Show booked slots for reference
         if (bookedSlots.length > 0) {
             const separator = document.createElement('option');
             separator.disabled = true;
@@ -344,15 +275,12 @@ function populateTimeSlots() {
                 timeSelect.appendChild(option);
             });
         }
-        
         return;
     }
     
-    // Group slots by AM/PM
     const morningSlots = availableSlots.filter(slot => slot.hour < 12);
     const afternoonSlots = availableSlots.filter(slot => slot.hour >= 12);
     
-    // Add morning slots
     if (morningSlots.length > 0) {
         const morningLabel = document.createElement('option');
         morningLabel.disabled = true;
@@ -367,7 +295,6 @@ function populateTimeSlots() {
         });
     }
     
-    // Add afternoon slots
     if (afternoonSlots.length > 0) {
         const afternoonLabel = document.createElement('option');
         afternoonLabel.disabled = true;
@@ -390,19 +317,15 @@ function setupEventListeners() {
         return;
     }
     
-    // PREVENT DEFAULT FORM SUBMISSION - Fix for the "Processing your booking..." issue
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-        // The actual submission is handled in the async function below
     });
     
-    // Add click handler to submit button instead
     const submitBtn = document.getElementById('submitBtn');
     if (submitBtn) {
         submitBtn.addEventListener('click', async function(e) {
             e.preventDefault();
             
-            // Prevent multiple clicks
             if (isProcessingBooking) {
                 console.log('Booking already in progress, ignoring click');
                 return;
@@ -410,30 +333,23 @@ function setupEventListeners() {
             
             isProcessingBooking = true;
             
-            // Validate form
             if (!validateBookingForm()) {
                 isProcessingBooking = false;
                 return;
             }
             
-            // Process booking
             await processBooking();
             isProcessingBooking = false;
         });
     }
     
-    // Phone number validation and formatting
     const phoneInput = document.getElementById('phoneNumber');
     if (phoneInput) {
         phoneInput.addEventListener('input', function(e) {
-            // Get cursor position
             const cursorPos = this.selectionStart;
             const originalLength = this.value.length;
             
-            // Remove all non-digits
             let value = this.value.replace(/\D/g, '');
-            
-            // Format based on starting digits
             let formatted = '';
             
             if (value.startsWith('254') && value.length <= 12) {
@@ -454,7 +370,6 @@ function setupEventListeners() {
             
             this.value = formatted;
             
-            // Restore cursor position
             const newLength = this.value.length;
             const cursorOffset = newLength - originalLength;
             this.setSelectionRange(cursorPos + cursorOffset, cursorPos + cursorOffset);
@@ -470,7 +385,6 @@ function setupEventListeners() {
         });
     }
     
-    // Email validation
     const emailInput = document.getElementById('email');
     if (emailInput) {
         emailInput.addEventListener('blur', function() {
@@ -480,37 +394,19 @@ function setupEventListeners() {
         });
     }
     
-    // Handle STK Push vs Manual M-Pesa selection
     const mpesaStkRadio = document.getElementById('mpesaStkRadio');
     const mpesaManualRadio = document.getElementById('mpesaManualRadio');
     const stkPaymentInfo = document.getElementById('stkPaymentInfo');
     const manualMpesaPayment = document.getElementById('manualMpesaPayment');
     
     function updateMpesaDisplay() {
-        console.log('Updating M-Pesa display...');
-        
         if (mpesaStkRadio && mpesaStkRadio.checked) {
-            console.log('STK Push selected');
-            if (stkPaymentInfo) {
-                stkPaymentInfo.style.display = 'block';
-                stkPaymentInfo.style.cssText = 'display: block !important;';
-            }
-            if (manualMpesaPayment) {
-                manualMpesaPayment.style.display = 'none';
-                manualMpesaPayment.style.cssText = 'display: none !important;';
-            }
+            if (stkPaymentInfo) stkPaymentInfo.style.display = 'block';
+            if (manualMpesaPayment) manualMpesaPayment.style.display = 'none';
         } else if (mpesaManualRadio && mpesaManualRadio.checked) {
-            console.log('Manual M-Pesa selected');
-            if (manualMpesaPayment) {
-                manualMpesaPayment.style.display = 'block';
-                manualMpesaPayment.style.cssText = 'display: block !important;';
-            }
-            if (stkPaymentInfo) {
-                stkPaymentInfo.style.display = 'none';
-                stkPaymentInfo.style.cssText = 'display: none !important;';
-            }
+            if (manualMpesaPayment) manualMpesaPayment.style.display = 'block';
+            if (stkPaymentInfo) stkPaymentInfo.style.display = 'none';
             
-            // Copy phone number to M-Pesa field if empty
             const phoneInput = document.getElementById('phoneNumber');
             const mpesaInput = document.getElementById('mpesaNumber');
             
@@ -518,39 +414,23 @@ function setupEventListeners() {
                 mpesaInput.value = phoneInput.value;
             }
         } else {
-            console.log('Other payment method selected');
-            if (stkPaymentInfo) {
-                stkPaymentInfo.style.display = 'none';
-                stkPaymentInfo.style.cssText = 'display: none !important;';
-            }
-            if (manualMpesaPayment) {
-                manualMpesaPayment.style.display = 'none';
-                manualMpesaPayment.style.cssText = 'display: none !important;';
-            }
+            if (stkPaymentInfo) stkPaymentInfo.style.display = 'none';
+            if (manualMpesaPayment) manualMpesaPayment.style.display = 'none';
         }
     }
     
     if (mpesaStkRadio && stkPaymentInfo) {
         mpesaStkRadio.addEventListener('change', updateMpesaDisplay);
-        mpesaStkRadio.addEventListener('click', updateMpesaDisplay);
     }
     
     if (mpesaManualRadio && manualMpesaPayment) {
         mpesaManualRadio.addEventListener('change', updateMpesaDisplay);
-        mpesaManualRadio.addEventListener('click', updateMpesaDisplay);
     }
     
     document.querySelectorAll('input[name="payment"]').forEach(radio => {
-        if (radio.value !== 'mpesa_stk' && radio.value !== 'mpesa_manual') {
-            radio.addEventListener('change', function() {
-                if (this.checked) {
-                    updateMpesaDisplay();
-                }
-            });
-        }
+        radio.addEventListener('change', updateMpesaDisplay);
     });
     
-    // Copy phone to M-Pesa button
     const copyPhoneBtn = document.getElementById('copyPhoneToMpesa');
     if (copyPhoneBtn) {
         copyPhoneBtn.addEventListener('click', function() {
@@ -564,14 +444,10 @@ function setupEventListeners() {
         });
     }
     
-    // Initial update of M-Pesa display
     setTimeout(updateMpesaDisplay, 100);
 }
 
 function setupPaymentOptions() {
-    console.log('Payment options setup complete');
-    
-    // Initialize STK Push as default if it exists
     const mpesaStkRadio = document.getElementById('mpesaStkRadio');
     const stkPaymentInfo = document.getElementById('stkPaymentInfo');
     const manualMpesaPayment = document.getElementById('manualMpesaPayment');
@@ -591,7 +467,6 @@ function setupPaymentOptions() {
 }
 
 function validateBookingForm() {
-    // Get form elements
     const fullName = document.getElementById('fullName');
     const phoneNumber = document.getElementById('phoneNumber');
     const email = document.getElementById('email');
@@ -606,7 +481,6 @@ function validateBookingForm() {
         return false;
     }
     
-    // Get values
     const fullNameValue = fullName.value.trim();
     const phoneNumberValue = phoneNumber.value.trim();
     const emailValue = email.value.trim();
@@ -616,123 +490,48 @@ function validateBookingForm() {
     const termsAgreeValue = termsAgree ? termsAgree.checked : false;
     const cancellationPolicyValue = cancellationPolicy ? cancellationPolicy.checked : false;
     
-    // Validate required fields
     const errors = [];
     
-    if (!fullNameValue) {
-        errors.push('Please enter your full name');
-        highlightField(fullName, true);
-    } else {
-        highlightField(fullName, false);
-    }
-    
-    if (!phoneNumberValue) {
-        errors.push('Please enter your phone number');
-        highlightField(phoneNumber, true);
-    } else {
+    if (!fullNameValue) errors.push('Please enter your full name');
+    if (!phoneNumberValue) errors.push('Please enter your phone number');
+    else {
         const phoneDigits = phoneNumberValue.replace(/\s/g, '');
         const phoneRegex = /^(0[17]\d{8}|011\d{7}|254[17]\d{8})$/;
-        
-        if (!phoneRegex.test(phoneDigits)) {
-            errors.push('Please enter a valid Kenyan phone number (e.g., 0712 345 678)');
-            highlightField(phoneNumber, true);
-        } else {
-            highlightField(phoneNumber, false);
-        }
+        if (!phoneRegex.test(phoneDigits)) errors.push('Please enter a valid Kenyan phone number (e.g., 0712 345 678)');
     }
     
-    if (!emailValue) {
-        errors.push('Please enter your email address');
-        highlightField(email, true);
-    } else if (!validateEmail(emailValue)) {
-        errors.push('Please enter a valid email address');
-        highlightField(email, true);
-    } else {
-        highlightField(email, false);
-    }
+    if (!emailValue) errors.push('Please enter your email address');
+    else if (!validateEmail(emailValue)) errors.push('Please enter a valid email address');
     
-    if (!serviceTypeValue) {
-        errors.push('Please select a service');
-        highlightField(serviceType, true);
-    } else {
-        highlightField(serviceType, false);
-    }
-    
-    if (!appointmentDateValue) {
-        errors.push('Please select a date');
-        highlightField(appointmentDate, true);
-    } else {
-        highlightField(appointmentDate, false);
-    }
-    
-    if (!appointmentTimeValue) {
-        errors.push('Please select a time slot');
-        highlightField(appointmentTime, true);
-    } else {
-        // Check if selected time slot is still available
+    if (!serviceTypeValue) errors.push('Please select a service');
+    if (!appointmentDateValue) errors.push('Please select a date');
+    if (!appointmentTimeValue) errors.push('Please select a time slot');
+    else {
         const selectedSlot = availableTimeSlots.find(slot => slot.time === appointmentTimeValue);
-        if (!selectedSlot) {
-            errors.push('Invalid time slot selected');
-            highlightField(appointmentTime, true);
-        } else if (!selectedSlot.available) {
-            errors.push('The selected time slot is no longer available. Please choose another time.');
-            highlightField(appointmentTime, true);
-        } else {
-            highlightField(appointmentTime, false);
-        }
+        if (!selectedSlot) errors.push('Invalid time slot selected');
+        else if (!selectedSlot.available) errors.push('The selected time slot is no longer available. Please choose another time.');
     }
     
-    if (termsAgree && !termsAgreeValue) {
-        errors.push('Please agree to receive notifications');
-        highlightField(termsAgree.parentElement, true);
-    } else if (termsAgree) {
-        highlightField(termsAgree.parentElement, false);
-    }
+    if (termsAgree && !termsAgreeValue) errors.push('Please agree to receive notifications');
+    if (cancellationPolicy && !cancellationPolicyValue) errors.push('Please agree to the cancellation policy');
     
-    if (cancellationPolicy && !cancellationPolicyValue) {
-        errors.push('Please agree to the cancellation policy');
-        highlightField(cancellationPolicy.parentElement, true);
-    } else if (cancellationPolicy) {
-        highlightField(cancellationPolicy.parentElement, false);
-    }
-    
-    // Validate payment method
     const paymentMethod = document.querySelector('input[name="payment"]:checked');
-    if (!paymentMethod) {
-        errors.push('Please select a payment method');
-    } else if (paymentMethod.value === 'mpesa_stk' || paymentMethod.value === 'mpesa_manual') {
-        if (paymentMethod.value === 'mpesa_manual') {
-            const mpesaNumber = document.getElementById('mpesaNumber');
-            if (mpesaNumber) {
-                const mpesaNumberValue = mpesaNumber.value.trim();
-                if (!mpesaNumberValue) {
-                    errors.push('Please enter your M-Pesa number for manual payment');
-                    highlightField(mpesaNumber, true);
-                } else {
-                    const mpesaDigits = mpesaNumberValue.replace(/\s/g, '');
-                    const phoneRegex = /^(0[17]\d{8}|011\d{7}|254[17]\d{8})$/;
-                    
-                    if (!phoneRegex.test(mpesaDigits)) {
-                        errors.push('Please enter a valid M-Pesa number');
-                        highlightField(mpesaNumber, true);
-                    } else {
-                        highlightField(mpesaNumber, false);
-                    }
-                }
+    if (!paymentMethod) errors.push('Please select a payment method');
+    else if (paymentMethod.value === 'mpesa_manual') {
+        const mpesaNumber = document.getElementById('mpesaNumber');
+        if (mpesaNumber) {
+            const mpesaNumberValue = mpesaNumber.value.trim();
+            if (!mpesaNumberValue) errors.push('Please enter your M-Pesa number for manual payment');
+            else {
+                const mpesaDigits = mpesaNumberValue.replace(/\s/g, '');
+                const phoneRegex = /^(0[17]\d{8}|011\d{7}|254[17]\d{8})$/;
+                if (!phoneRegex.test(mpesaDigits)) errors.push('Please enter a valid M-Pesa number');
             }
         }
     }
     
-    // Show errors if any
     if (errors.length > 0) {
         showBookingError(errors[0], 'error');
-        
-        // Scroll to first error field
-        const firstErrorField = document.querySelector('.error-highlight');
-        if (firstErrorField) {
-            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        
         return false;
     }
     
@@ -741,41 +540,22 @@ function validateBookingForm() {
 
 function highlightField(element, isError) {
     if (!element) return;
-    
     element.classList.remove('error-highlight', 'success-highlight');
-    
-    if (isError) {
-        element.classList.add('error-highlight');
-    } else {
+    if (isError) element.classList.add('error-highlight');
+    else {
         element.classList.add('success-highlight');
-        
-        // Remove success highlight after 2 seconds
-        setTimeout(() => {
-            element.classList.remove('success-highlight');
-        }, 2000);
+        setTimeout(() => element.classList.remove('success-highlight'), 2000);
     }
 }
 
-// STK PUSH PAYMENT FUNCTIONS
 async function initiateSTKPushPayment(bookingData) {
     try {
-        console.log('Initiating STK Push payment via Supabase Edge Function...');
+        console.log('Initiating REAL STK Push payment...');
         
-        // Format phone number for Lipana
         let phoneNumber = bookingData.customer_phone.replace(/\s/g, '');
+        if (phoneNumber.startsWith('0')) phoneNumber = '+254' + phoneNumber.substring(1);
+        else if (phoneNumber.startsWith('254')) phoneNumber = '+' + phoneNumber;
         
-        // Convert to required format (+254XXXXXXXXX)
-        if (phoneNumber.startsWith('0')) {
-            phoneNumber = '+254' + phoneNumber.substring(1);
-        } else if (phoneNumber.startsWith('254')) {
-            phoneNumber = '+' + phoneNumber;
-        } else if (!phoneNumber.startsWith('+254')) {
-            phoneNumber = '+254' + phoneNumber;
-        }
-        
-        console.log('Formatted phone number:', phoneNumber);
-        
-        // Prepare request for your Edge Function
         const stkRequest = {
             phoneNumber: phoneNumber,
             amount: bookingData.service_price,
@@ -785,45 +565,32 @@ async function initiateSTKPushPayment(bookingData) {
             bookingId: bookingData.booking_reference
         };
         
-        console.log('Request to Edge Function:', stkRequest);
+        console.log('Calling REAL Lipana API:', stkRequest);
         
-        // Use YOUR Supabase Edge Function URL
+        // ✅ REAL Lipana API call (not test mode)
         const supabaseFunctionUrl = 'https://eqjdkpanqwjhuyavvdaf.supabase.co/functions/v1/process-mpesa-payment';
         
         const response = await fetch(supabaseFunctionUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(stkRequest)
         });
         
-        console.log('Edge Function response status:', response.status);
+        const result = await response.json();
         
-        // Try to parse response text first for debugging
-        const responseText = await response.text();
-        console.log('Edge Function raw response:', responseText);
-        
-        if (!response.ok) {
-            console.error('Edge Function error response:', responseText);
-            throw new Error(`Edge Function failed with status: ${response.status}`);
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Failed to initiate STK Push');
         }
         
-        // Parse JSON response
-        const result = JSON.parse(responseText);
-        console.log('Parsed Edge Function result:', result);
+        console.log('✅ REAL STK Push initiated:', result);
         
-        if (result.success) {
-            return {
-                success: true,
-                transaction_id: result.transactionId || result.checkoutRequestID || result.data?.transactionId,
-                checkout_request_id: result.checkoutRequestID || result.data?.checkoutRequestID,
-                message: result.message || 'STK Push sent to your phone. Please enter your M-Pesa PIN.',
-                rawResponse: result
-            };
-        } else {
-            throw new Error(result.message || result.error || 'STK Push failed');
-        }
+        return {
+            success: true,
+            transaction_id: result.transactionId,
+            checkout_request_id: result.checkoutRequestID,
+            message: result.message || 'STK Push sent to your phone. Please enter your M-Pesa PIN.',
+            rawResponse: result
+        };
         
     } catch (error) {
         console.error('STK Push initiation error:', error);
@@ -834,144 +601,243 @@ async function initiateSTKPushPayment(bookingData) {
         };
     }
 }
-async function startPaymentPolling(bookingReference, checkoutRequestId, transactionId) {
-    console.log('Starting payment polling for:', bookingReference);
+
+async function pollForPaymentConfirmation(bookingReference, checkoutRequestId) {
+    console.log('Starting REAL payment polling for:', bookingReference);
+    
+    if (currentPaymentPollInterval) {
+        clearInterval(currentPaymentPollInterval);
+    }
     
     let pollCount = 0;
     const maxPolls = 60; // 5 minutes (poll every 5 seconds)
     
-    const pollInterval = setInterval(async () => {
+    currentPaymentPollInterval = setInterval(async () => {
         pollCount++;
+        console.log(`Payment polling attempt ${pollCount} for ${checkoutRequestId}`);
         
         try {
-            console.log(`Polling attempt ${pollCount} for ${checkoutRequestId}`);
-            
-            // Call your backend to check payment status
+            // ✅ REAL payment status check
             const response = await fetch(`https://eqjdkpanqwjhuyavvdaf.supabase.co/functions/v1/check-payment?checkoutId=${checkoutRequestId}`);
             
             if (response.ok) {
                 const result = await response.json();
+                console.log('Payment check result:', result);
                 
-                if (result.status === 'success') {
-                    // ✅ PAYMENT CONFIRMED!
-                    clearInterval(pollInterval);
+                if (result.status === 'success' || result.status === 'completed') {
+                    // ✅ PAYMENT CONFIRMED AUTOMATICALLY!
+                    clearInterval(currentPaymentPollInterval);
+                    currentPaymentPollInterval = null;
                     
-                    // Update booking to confirmed
+                    // Update booking to confirmed and paid
                     await updateBookingPaymentStatus(
                         bookingReference,
                         'paid',
-                        transactionId,
+                        result.transactionId,
                         result.mpesa_receipt
                     );
                     
-                    // Show success modal
-                    showPaymentSuccessModal(bookingReference, result);
+                    // Show success message
+                    showPaymentSuccessNotification(bookingReference, result);
                     
                     // Reset form
                     resetBookingForm();
                     
-                } else if (result.status === 'failed') {
+                    console.log('✅ Payment automatically confirmed!');
+                    
+                } else if (result.status === 'failed' || result.status === 'cancelled') {
                     // ❌ PAYMENT FAILED
-                    clearInterval(pollInterval);
+                    clearInterval(currentPaymentPollInterval);
+                    currentPaymentPollInterval = null;
+                    
                     await updateBookingStatus(bookingReference, 'payment_failed');
                     showBookingError('Payment failed. Please try again.', 'error');
                 }
                 // If still pending, continue polling
             }
         } catch (error) {
-            console.error('Polling error:', error);
+            console.error('Payment polling error:', error);
         }
         
-        // Stop after max polls
+        // Stop after max polls (5 minutes)
         if (pollCount >= maxPolls) {
-            clearInterval(pollInterval);
-            console.log('Polling timeout for:', bookingReference);
-            showBookingError('Payment timeout. Please check your phone.', 'warning');
+            clearInterval(currentPaymentPollInterval);
+            currentPaymentPollInterval = null;
+            console.log('Payment polling timeout for:', bookingReference);
+            showBookingError('Payment timeout. Please check your phone and try again.', 'warning');
         }
     }, 5000); // Poll every 5 seconds
 }
+
+async function updateBookingPaymentStatus(bookingReference, paymentStatus, transactionId, receiptNumber = null) {
+    try {
+        const updateData = {
+            payment_status: paymentStatus,
+            mpesa_transaction_id: transactionId,
+            status: paymentStatus === 'paid' ? 'confirmed' : 'pending',
+            updated_at: new Date().toISOString()
+        };
+        
+        if (receiptNumber) updateData.mpesa_receipt = receiptNumber;
+        
+        const { error } = await window.supabase
+            .from('appointments')
+            .update(updateData)
+            .eq('booking_reference', bookingReference);
+        
+        if (error) throw error;
+        console.log(`✅ Booking ${bookingReference} updated to: ${paymentStatus}`);
+        
+        // Also update locally saved booking
+        updateLocalBookingStatus(bookingReference, paymentStatus);
+        
+    } catch (error) {
+        console.error('Failed to update booking payment status:', error);
+        throw error;
+    }
+}
+
+async function updateBookingStatus(bookingReference, status) {
+    try {
+        const { error } = await window.supabase
+            .from('appointments')
+            .update({ 
+                status: status,
+                updated_at: new Date().toISOString()
+            })
+            .eq('booking_reference', bookingReference);
+        
+        if (error) throw error;
+        console.log(`Booking ${bookingReference} updated to status: ${status}`);
+    } catch (error) {
+        console.error('Failed to update booking status:', error);
+    }
+}
+
+function updateLocalBookingStatus(bookingReference, paymentStatus) {
+    try {
+        let localBookings = JSON.parse(localStorage.getItem('kenbarber_local_bookings') || '[]');
+        const bookingIndex = localBookings.findIndex(b => b.booking_reference === bookingReference);
+        
+        if (bookingIndex !== -1) {
+            localBookings[bookingIndex].payment_status = paymentStatus;
+            localBookings[bookingIndex].status = paymentStatus === 'paid' ? 'confirmed' : 'pending';
+            localStorage.setItem('kenbarber_local_bookings', JSON.stringify(localBookings));
+            console.log('Local booking status updated:', bookingReference);
+        }
+    } catch (error) {
+        console.error('Error updating local booking:', error);
+    }
+}
+
 function showPaymentPendingModal(bookingData, paymentResult) {
-    console.log('Showing payment pending modal for booking:', bookingData.booking_reference);
+    console.log('Showing REAL payment pending modal for:', bookingData.booking_reference);
     
-    // Create a simple modal or notification
     const modalHtml = `
         <div id="paymentModal" style="
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
-            z-index: 10000;
-            max-width: 400px;
-            text-align: center;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); display: flex; align-items: center;
+            justify-content: center; z-index: 9999;
         ">
-            <h3>Complete Payment</h3>
-            <p>💰 Amount: <strong>KES ${bookingData.service_price}</strong></p>
-            <p>📱 Phone: <strong>${formatPhone(bookingData.customer_phone)}</strong></p>
-            <p>📋 Reference: <strong>${bookingData.booking_reference}</strong></p>
-            
-            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 5px;">
-                <p><strong>Next Steps:</strong></p>
-                <ol style="text-align: left; margin-left: 20px;">
-                    <li>Check your phone for M-Pesa prompt</li>
-                    <li>Enter your M-Pesa PIN</li>
-                    <li>Wait for confirmation</li>
-                </ol>
-            </div>
-            
-            <button onclick="closePaymentModal()" style="
-                padding: 10px 25px;
-                background: #007bff;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 16px;
+            <div style="
+                background: white; padding: 30px; border-radius: 10px;
+                max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;
             ">
-                I've Completed Payment
-            </button>
-            
-            <p style="margin-top: 15px; font-size: 14px; color: #666;">
-                <i>Payment status: ${paymentResult.test ? 'TEST MODE' : 'Pending'}</i>
-            </p>
+                <h3 style="margin-top: 0; color: #333;">Complete Payment</h3>
+                
+                <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                    <p><strong>💰 Amount:</strong> KES ${bookingData.service_price}</p>
+                    <p><strong>📱 Phone:</strong> ${formatPhone(bookingData.customer_phone)}</p>
+                    <p><strong>📋 Reference:</strong> ${bookingData.booking_reference}</p>
+                </div>
+                
+                <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0;">
+                    <p style="margin: 0; font-weight: bold;">📱 M-Pesa prompt sent to your phone!</p>
+                    <p style="margin: 5px 0 0 0; font-size: 14px;">Enter your PIN to complete payment</p>
+                </div>
+                
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+                    <p style="margin: 0; font-size: 14px;">
+                        <strong>⏰ Auto-confirmation:</strong> We'll automatically detect your payment 
+                        and confirm your booking within 2 minutes.
+                    </p>
+                </div>
+                
+                <button onclick="closePaymentModal()" style="
+                    padding: 12px 25px; background: #28a745; color: white;
+                    border: none; border-radius: 5px; cursor: pointer;
+                    font-size: 16px; width: 100%;
+                ">
+                    I've Entered My PIN
+                </button>
+                
+                <p style="margin-top: 15px; font-size: 14px; color: #666; text-align: center;">
+                    Didn't receive the prompt?<br>
+                    Check your phone's network connection.
+                </p>
+            </div>
         </div>
-        <div id="modalOverlay" style="
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 9999;
-        "></div>
     `;
     
-    // Add to page
     const modalContainer = document.createElement('div');
     modalContainer.innerHTML = modalHtml;
     document.body.appendChild(modalContainer);
     
-    // Add close function to window
     window.closePaymentModal = function() {
-        document.body.removeChild(modalContainer);
-        showBookingError('Thank you! We\'ll verify your payment and confirm your booking.', 'success');
+        if (modalContainer.parentNode) {
+            document.body.removeChild(modalContainer);
+        }
+        showBookingError('Thank you! We\'ll verify your payment automatically.', 'info');
     };
     
-    // Close on overlay click
-    document.getElementById('modalOverlay').addEventListener('click', window.closePaymentModal);
-    
-    // Auto-close after 30 seconds
+    // Auto-close modal after 2 minutes
     setTimeout(() => {
-        if (document.body.contains(modalContainer)) {
-            window.closePaymentModal();
+        if (modalContainer.parentNode) {
+            document.body.removeChild(modalContainer);
         }
-    }, 30000);
+    }, 120000);
 }
+
+function showPaymentSuccessNotification(bookingReference, paymentResult) {
+    const notificationHtml = `
+        <div style="
+            position: fixed; top: 20px; right: 20px; background: #d4edda;
+            border-left: 4px solid #28a745; padding: 20px; border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000;
+            max-width: 400px; animation: slideIn 0.3s ease-out;
+        ">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="font-size: 24px; color: #28a745;">✅</div>
+                <div>
+                    <h4 style="margin: 0 0 5px 0; color: #155724;">Payment Confirmed!</h4>
+                    <p style="margin: 0 0 10px 0; color: #155724;">
+                        Booking <strong>${bookingReference}</strong> is now confirmed.
+                    </p>
+                    <p style="margin: 0; font-size: 14px; color: #0c4128;">
+                        M-Pesa Receipt: <strong>${paymentResult.mpesa_receipt || 'N/A'}</strong>
+                    </p>
+                </div>
+            </div>
+            <button onclick="this.parentElement.remove()" style="
+                position: absolute; top: 10px; right: 10px; background: none;
+                border: none; font-size: 20px; cursor: pointer; color: #155724;
+            ">×</button>
+        </div>
+    `;
+    
+    const notification = document.createElement('div');
+    notification.innerHTML = notificationHtml;
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 10000);
+}
+
 async function processBooking() {
-    // Show loading spinner
     const loadingSpinner = document.getElementById('loadingSpinner');
     const submitBtn = document.getElementById('submitBtn');
     
@@ -982,55 +848,53 @@ async function processBooking() {
     }
     
     try {
-        // Collect form data
         const bookingData = collectFormData();
-        
-        // Get payment method
         const paymentMethod = bookingData.payment_method;
         
         if (paymentMethod === 'mpesa_stk') {
-            // ============ REAL STK PUSH FLOW ============
-            console.log('Starting REAL STK Push payment flow...');
+            console.log('🚀 Starting REAL STK Push with auto-validation...');
             
-            // 1. Save booking as "pending_payment" (NOT confirmed)
-            bookingData.payment_status = 'pending_payment';
-            bookingData.status = 'pending_payment'; // Not confirmed yet
+            // Save booking as pending
+            bookingData.status = 'pending';
+            bookingData.payment_status = 'pending';
             
-            // Save to database with pending status
             const bookingResult = await saveBookingToSupabase(bookingData);
+            saveBookingLocally(bookingData);
             
-            // 2. Initiate REAL STK Push
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending M-Pesa Request...';
             
             const paymentResult = await initiateSTKPushPayment(bookingData);
             
             if (paymentResult.success) {
-                // 3. Show payment modal with countdown
+                // Show payment modal
                 showPaymentPendingModal(bookingData, paymentResult);
                 
-                // 4. Start REAL payment polling
-                startPaymentPolling(
+                // Start REAL auto-validation polling
+                await pollForPaymentConfirmation(
                     bookingData.booking_reference,
-                    paymentResult.checkout_request_id,
+                    paymentResult.checkout_request_id
+                );
+                
+                // Update booking with transaction ID
+                await updateBookingPaymentStatus(
+                    bookingData.booking_reference,
+                    'pending',
                     paymentResult.transaction_id
                 );
                 
-                // 5. Update submit button
                 submitBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Awaiting Payment...';
                 
-                // 6. DON'T show success modal yet - wait for payment confirmation
-                // 7. DON'T reset form - keep data in case payment fails
+                // ✅ DO NOT show success modal yet - wait for auto-validation
+                // ✅ DO NOT reset form yet
                 
             } else {
-                // STK Push failed - update booking status
                 await updateBookingStatus(bookingData.booking_reference, 'payment_failed');
                 throw new Error(`STK Push failed: ${paymentResult.message}`);
             }
             
         } else {
-            // ============ OTHER PAYMENT METHODS ============
-            // (Cash, Manual M-Pesa) - confirm immediately
-            bookingData.payment_status = 'pending';
+            // Other payment methods (Cash, Manual M-Pesa)
+            bookingData.payment_status = paymentMethod === 'cash' ? 'pending' : 'paid';
             bookingData.status = 'confirmed';
             
             const bookingResult = await saveBookingToSupabase(bookingData);
@@ -1048,7 +912,6 @@ async function processBooking() {
         console.error('Booking processing error:', error);
         showBookingError(`Booking failed: ${error.message}`, 'error');
         
-        // Re-enable submit button
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Booking';
@@ -1063,34 +926,30 @@ function collectFormData() {
     const form = document.getElementById('appointmentForm');
     const formData = new FormData(form);
     
-    // Get form values
     const fullName = document.getElementById('fullName').value.trim();
     const phoneNumber = document.getElementById('phoneNumber').value.trim();
     const email = document.getElementById('email').value.trim();
     const appointmentDate = document.getElementById('appointmentDate').value;
     const appointmentTime = document.getElementById('appointmentTime').value;
     
-    // Validate required fields are not empty
     if (!fullName || !phoneNumber || !email || !appointmentDate || !appointmentTime) {
         throw new Error('Please fill in all required fields');
     }
     
-    // Get service details
     const serviceSelect = document.getElementById('serviceType');
     const selectedService = serviceSelect.options[serviceSelect.selectedIndex];
     
-    // Get barber details
     const barberSelect = document.getElementById('barberSelect');
     const selectedBarber = barberSelect ? barberSelect.options[barberSelect.selectedIndex] : null;
     
-    // Get payment method
     const paymentMethodRadio = document.querySelector('input[name="payment"]:checked');
     const paymentMethod = paymentMethodRadio ? paymentMethodRadio.value : 'cash';
     
-    // Generate booking reference
     const bookingRef = 'KB-' + Date.now().toString().slice(-8) + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
     
-    // Prepare booking data
+    // ✅ Determine status based on payment method
+    const status = paymentMethod === 'mpesa_stk' ? 'pending' : 'confirmed';
+    
     const bookingData = {
         customer_name: fullName,
         customer_phone: phoneNumber.replace(/\s/g, ''),
@@ -1104,20 +963,17 @@ function collectFormData() {
         appointment_time: appointmentTime,
         special_requests: formData.get('specialRequests') || '',
         payment_method: paymentMethod,
-        payment_status: paymentMethod === 'mpesa_stk' || paymentMethod === 'mpesa_manual' ? 'pending' : 'paid',
+        payment_status: paymentMethod === 'mpesa_stk' ? 'pending' : (paymentMethod === 'cash' ? 'pending' : 'paid'),
         booking_reference: bookingRef,
-        status: 'confirmed',
+        status: status,
         created_at: new Date().toISOString()
     };
     
-    // Add M-Pesa details based on payment method
     if (paymentMethod === 'mpesa_stk') {
         bookingData.mpesa_number = phoneNumber.replace(/\s/g, '');
-        bookingData.payment_method = 'mpesa_stk';
     } else if (paymentMethod === 'mpesa_manual') {
         const mpesaNumber = document.getElementById('mpesaNumber');
         bookingData.mpesa_number = mpesaNumber ? mpesaNumber.value.replace(/\s/g, '') : '';
-        bookingData.payment_method = 'mpesa_manual';
     }
     
     return bookingData;
@@ -1131,15 +987,9 @@ async function saveBookingToSupabase(bookingData) {
     }
     
     try {
-        // Validate required fields
         const requiredFields = [
-            'customer_name', 
-            'customer_phone', 
-            'customer_email',
-            'appointment_date', 
-            'appointment_time', 
-            'service_name',
-            'booking_reference'
+            'customer_name', 'customer_phone', 'customer_email',
+            'appointment_date', 'appointment_time', 'service_name', 'booking_reference'
         ];
         
         const missingFields = [];
@@ -1153,7 +1003,12 @@ async function saveBookingToSupabase(bookingData) {
             throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
         }
         
-        // Prepare data for Supabase
+        const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'no-show'];
+        const validPaymentStatuses = ['pending', 'paid', 'failed', 'refunded'];
+        
+        const status = validStatuses.includes(bookingData.status) ? bookingData.status : 'pending';
+        const paymentStatus = validPaymentStatuses.includes(bookingData.payment_status) ? bookingData.payment_status : 'pending';
+        
         const supabaseData = {
             customer_name: bookingData.customer_name || '',
             customer_phone: bookingData.customer_phone || '',
@@ -1162,18 +1017,18 @@ async function saveBookingToSupabase(bookingData) {
             barber_name: bookingData.barber_name || 'Any Available Barber',
             special_requests: bookingData.special_requests || '',
             payment_method: bookingData.payment_method || 'cash',
-            payment_status: bookingData.payment_status || 'pending',
+            payment_status: paymentStatus,
             booking_reference: bookingData.booking_reference || '',
-            status: 'confirmed',
+            status: status,
             service_price: parseFloat(bookingData.service_price) || 0,
             appointment_date: bookingData.appointment_date || '',
             appointment_time: bookingData.appointment_time || '',
-            mpesa_number: bookingData.mpesa_number || null
+            mpesa_number: bookingData.mpesa_number || null,
+            created_at: new Date().toISOString()
         };
         
-        console.log('Prepared data for Supabase:', supabaseData);
+        console.log('Validated data for Supabase:', supabaseData);
         
-        // Save to Supabase
         const { data, error } = await window.supabase
             .from('appointments')
             .insert([supabaseData]);
@@ -1183,12 +1038,13 @@ async function saveBookingToSupabase(bookingData) {
             throw new Error(`Booking failed: ${error.message}`);
         }
         
-        console.log('Booking saved to Supabase successfully');
+        console.log('✅ Booking saved to Supabase successfully');
         
         return {
             success: true,
             booking_ref: bookingData.booking_reference,
-            message: 'Booking confirmed successfully!'
+            message: 'Booking saved successfully!',
+            status: status
         };
         
     } catch (error) {
@@ -1230,7 +1086,6 @@ function showSuccessModal(bookingData, bookingResult) {
         return;
     }
     
-    // Update modal content
     const modalService = document.getElementById('modalService');
     const modalDate = document.getElementById('modalDate');
     const modalTime = document.getElementById('modalTime');
@@ -1249,17 +1104,14 @@ function showSuccessModal(bookingData, bookingResult) {
     if (modalPhone) modalPhone.textContent = formatPhone(bookingData.customer_phone);
     if (modalEmail) modalEmail.textContent = bookingData.customer_email;
     
-    // Show offline warning if applicable
     const offlineWarning = document.getElementById('offlineWarning');
     if (offlineWarning) {
         offlineWarning.style.display = bookingResult.offline ? 'block' : 'none';
     }
     
-    // Show modal
     modal.style.display = 'block';
     document.body.style.overflow = 'hidden';
     
-    // Setup close buttons
     setupModalCloseButtons();
 }
 
@@ -1267,7 +1119,6 @@ function setupModalCloseButtons() {
     const modal = document.getElementById('successModal');
     if (!modal) return;
     
-    // Close button (X)
     const closeBtn = modal.querySelector('.modal-close');
     if (closeBtn) {
         closeBtn.onclick = function() {
@@ -1276,7 +1127,6 @@ function setupModalCloseButtons() {
         };
     }
     
-    // Done button
     const doneBtn = document.getElementById('closeSuccessModal');
     if (doneBtn) {
         doneBtn.onclick = function() {
@@ -1285,7 +1135,6 @@ function setupModalCloseButtons() {
         };
     }
     
-    // Close when clicking outside modal
     window.addEventListener('click', function(event) {
         if (event.target === modal) {
             modal.style.display = 'none';
@@ -1293,7 +1142,6 @@ function setupModalCloseButtons() {
         }
     });
     
-    // Close with Escape key
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape' && modal.style.display === 'block') {
             modal.style.display = 'none';
@@ -1305,30 +1153,24 @@ function setupModalCloseButtons() {
 function resetBookingForm() {
     const form = document.getElementById('appointmentForm');
     if (form) {
-        // Store some values before reset
         const serviceSelect = document.getElementById('serviceType');
         const selectedService = serviceSelect.options[serviceSelect.selectedIndex];
         
-        // Get current payment state
         const stkRadio = document.getElementById('mpesaStkRadio');
         const manualRadio = document.getElementById('mpesaManualRadio');
         const stkInfo = document.getElementById('stkPaymentInfo');
         const manualInfo = document.getElementById('manualMpesaPayment');
         
-        // Store current payment selection
         const currentPayment = document.querySelector('input[name="payment"]:checked');
         const currentPaymentValue = currentPayment ? currentPayment.value : 'cash';
         
-        // Reset form
         form.reset();
         
-        // Restore service selection
         if (selectedService && selectedService.value) {
             serviceSelect.value = selectedService.value;
             serviceSelect.dispatchEvent(new Event('change'));
         }
         
-        // Restore payment selection
         if (currentPaymentValue === 'mpesa_stk' && stkRadio) {
             stkRadio.checked = true;
             if (stkInfo) stkInfo.style.display = 'block';
@@ -1342,14 +1184,12 @@ function resetBookingForm() {
             if (manualInfo) manualInfo.style.display = 'none';
         }
         
-        // Reset date to tomorrow
         const dateInput = document.getElementById('appointmentDate');
         if (dateInput) {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             dateInput.value = tomorrow.toISOString().split('T')[0];
             
-            // Reset time slot
             const timeSelect = document.getElementById('appointmentTime');
             if (timeSelect) {
                 timeSelect.innerHTML = '<option value="">Select a date first</option>';
@@ -1361,17 +1201,13 @@ function resetBookingForm() {
     }
 }
 
-// Utility functions
 function formatDate(dateString) {
     try {
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return dateString;
         
         return date.toLocaleDateString('en-KE', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
         });
     } catch (error) {
         return dateString;
@@ -1381,7 +1217,6 @@ function formatDate(dateString) {
 function formatTime(timeString) {
     try {
         if (!timeString) return 'N/A';
-        
         const parts = timeString.split(':');
         if (parts.length < 2) return timeString;
         
@@ -1398,7 +1233,6 @@ function formatTime(timeString) {
 
 function formatPhone(phoneNumber) {
     if (!phoneNumber) return '';
-    
     const digits = phoneNumber.replace(/\D/g, '');
     
     if (digits.startsWith('254') && digits.length === 12) {
@@ -1411,73 +1245,36 @@ function formatPhone(phoneNumber) {
 }
 
 function showBookingError(message, type = 'error') {
-    // Use the global showNotification function if available
     if (window.showNotification) {
         window.showNotification(message, type);
         return;
     }
     
-    // Fallback notification
     const notification = document.createElement('div');
     notification.className = `booking-notification ${type}`;
-    notification.innerHTML = `
-        <span>${message}</span>
-        <button onclick="this.parentElement.remove()">×</button>
-    `;
+    notification.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()">×</button>`;
     
+    const bgColor = type === 'error' ? '#ff4444' : type === 'warning' ? '#ff9900' : '#00C851';
     notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        background: ${type === 'error' ? '#ff4444' : type === 'warning' ? '#ff9900' : '#00C851'};
-        color: white;
-        border-radius: 5px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        max-width: 400px;
+        position: fixed; top: 20px; right: 20px; padding: 15px 20px;
+        background: ${bgColor}; color: white; border-radius: 5px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000;
+        display: flex; align-items: center; gap: 15px; max-width: 400px;
         animation: slideIn 0.3s ease-out;
     `;
-    
-    notification.querySelector('button').style.cssText = `
-        background: none;
-        border: none;
-        color: white;
-        font-size: 24px;
-        cursor: pointer;
-        padding: 0;
-        margin: 0;
-        line-height: 1;
-    `;
-    
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-    `;
-    document.head.appendChild(style);
     
     document.body.appendChild(notification);
     
     setTimeout(() => {
-        if (notification.parentElement) {
-            notification.remove();
-        }
+        if (notification.parentElement) notification.remove();
     }, 5000);
 }
 
-// Export functions for global use
 window.validateEmail = function(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
 };
 
-// Add CSS for error/success highlighting
 const style = document.createElement('style');
 style.textContent = `
     .error-highlight {
@@ -1491,15 +1288,9 @@ style.textContent = `
         box-shadow: 0 0 0 2px rgba(0, 200, 81, 0.2) !important;
     }
     
-    .error-highlight-label {
-        color: #ff4444 !important;
-        font-weight: bold !important;
-    }
-    
-    select.error-highlight,
-    input.error-highlight,
-    textarea.error-highlight {
-        animation: shake 0.5s ease-in-out;
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
     
     @keyframes shake {
@@ -1507,14 +1298,18 @@ style.textContent = `
         25% { transform: translateX(-5px); }
         75% { transform: translateX(5px); }
     }
+    
+    select.error-highlight,
+    input.error-highlight,
+    textarea.error-highlight {
+        animation: shake 0.5s ease-in-out;
+    }
 `;
 document.head.appendChild(style);
 
-console.log('Booking system loaded and ready!');
+console.log('✅ REAL STK Push with auto-validation system loaded!');
 
-// Initialize the booking system when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-    // Wait a bit to ensure all elements are loaded
     setTimeout(() => {
         initializeBooking();
     }, 500);
