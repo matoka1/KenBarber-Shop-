@@ -834,6 +834,62 @@ async function initiateSTKPushPayment(bookingData) {
         };
     }
 }
+async function startPaymentPolling(bookingReference, checkoutRequestId, transactionId) {
+    console.log('Starting payment polling for:', bookingReference);
+    
+    let pollCount = 0;
+    const maxPolls = 60; // 5 minutes (poll every 5 seconds)
+    
+    const pollInterval = setInterval(async () => {
+        pollCount++;
+        
+        try {
+            console.log(`Polling attempt ${pollCount} for ${checkoutRequestId}`);
+            
+            // Call your backend to check payment status
+            const response = await fetch(`https://eqjdkpanqwjhuyavvdaf.supabase.co/functions/v1/check-payment?checkoutId=${checkoutRequestId}`);
+            
+            if (response.ok) {
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    // ✅ PAYMENT CONFIRMED!
+                    clearInterval(pollInterval);
+                    
+                    // Update booking to confirmed
+                    await updateBookingPaymentStatus(
+                        bookingReference,
+                        'paid',
+                        transactionId,
+                        result.mpesa_receipt
+                    );
+                    
+                    // Show success modal
+                    showPaymentSuccessModal(bookingReference, result);
+                    
+                    // Reset form
+                    resetBookingForm();
+                    
+                } else if (result.status === 'failed') {
+                    // ❌ PAYMENT FAILED
+                    clearInterval(pollInterval);
+                    await updateBookingStatus(bookingReference, 'payment_failed');
+                    showBookingError('Payment failed. Please try again.', 'error');
+                }
+                // If still pending, continue polling
+            }
+        } catch (error) {
+            console.error('Polling error:', error);
+        }
+        
+        // Stop after max polls
+        if (pollCount >= maxPolls) {
+            clearInterval(pollInterval);
+            console.log('Polling timeout for:', bookingReference);
+            showBookingError('Payment timeout. Please check your phone.', 'warning');
+        }
+    }, 5000); // Poll every 5 seconds
+}
 function showPaymentPendingModal(bookingData, paymentResult) {
     console.log('Showing payment pending modal for booking:', bookingData.booking_reference);
     
@@ -915,16 +971,11 @@ function showPaymentPendingModal(bookingData, paymentResult) {
     }, 30000);
 }
 async function processBooking() {
-    console.log('processBooking called');
-    
     // Show loading spinner
     const loadingSpinner = document.getElementById('loadingSpinner');
-    if (loadingSpinner) {
-        loadingSpinner.style.display = 'block';
-    }
-    
-    // Disable submit button
     const submitBtn = document.getElementById('submitBtn');
+    
+    if (loadingSpinner) loadingSpinner.style.display = 'block';
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
@@ -934,59 +985,59 @@ async function processBooking() {
         // Collect form data
         const bookingData = collectFormData();
         
-        console.log('Processing booking with data:', bookingData);
-        
         // Get payment method
         const paymentMethod = bookingData.payment_method;
         
         if (paymentMethod === 'mpesa_stk') {
-            // STK PUSH PAYMENT FLOW
-            console.log('Starting STK Push payment flow...');
+            // ============ REAL STK PUSH FLOW ============
+            console.log('Starting REAL STK Push payment flow...');
             
-            // 1. First, save booking with pending payment status
-            bookingData.payment_status = 'pending';
+            // 1. Save booking as "pending_payment" (NOT confirmed)
+            bookingData.payment_status = 'pending_payment';
+            bookingData.status = 'pending_payment'; // Not confirmed yet
+            
+            // Save to database with pending status
             const bookingResult = await saveBookingToSupabase(bookingData);
             
-            // 2. Save locally as backup
-            saveBookingLocally(bookingData);
-            
-            // 3. Initiate STK Push payment
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending Payment Request...';
+            // 2. Initiate REAL STK Push
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending M-Pesa Request...';
             
             const paymentResult = await initiateSTKPushPayment(bookingData);
             
             if (paymentResult.success) {
-                // 4. Show payment pending modal
+                // 3. Show payment modal with countdown
                 showPaymentPendingModal(bookingData, paymentResult);
                 
-                // 5. Start polling for payment confirmation
-                pollForPaymentConfirmation(bookingData.booking_reference, paymentResult.transaction_id);
+                // 4. Start REAL payment polling
+                startPaymentPolling(
+                    bookingData.booking_reference,
+                    paymentResult.checkout_request_id,
+                    paymentResult.transaction_id
+                );
                 
-                // 6. Update booking with transaction ID
-                await updateBookingPaymentStatus(bookingData.booking_reference, 'pending', paymentResult.transaction_id);
-                
-                // 7. Update submit button text
+                // 5. Update submit button
                 submitBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Awaiting Payment...';
                 
+                // 6. DON'T show success modal yet - wait for payment confirmation
+                // 7. DON'T reset form - keep data in case payment fails
+                
             } else {
-                // STK Push failed
+                // STK Push failed - update booking status
+                await updateBookingStatus(bookingData.booking_reference, 'payment_failed');
                 throw new Error(`STK Push failed: ${paymentResult.message}`);
             }
             
         } else {
-            // REGULAR BOOKING FLOW
+            // ============ OTHER PAYMENT METHODS ============
+            // (Cash, Manual M-Pesa) - confirm immediately
+            bookingData.payment_status = 'pending';
+            bookingData.status = 'confirmed';
+            
             const bookingResult = await saveBookingToSupabase(bookingData);
-            
-            // Save locally as backup
             saveBookingLocally(bookingData);
-            
-            // Show success modal
             showSuccessModal(bookingData, bookingResult);
-            
-            // Reset form
             resetBookingForm();
             
-            // Re-enable submit button
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Booking';
@@ -995,41 +1046,16 @@ async function processBooking() {
         
     } catch (error) {
         console.error('Booking processing error:', error);
+        showBookingError(`Booking failed: ${error.message}`, 'error');
         
-        // Try to save locally as fallback
-        try {
-            const bookingData = collectFormData();
-            saveBookingLocally(bookingData);
-            
-            showBookingError(
-                '⚠️ Booking saved locally. Could not connect to server, but your appointment is saved in your browser.',
-                'warning'
-            );
-            
-            // Still show success modal with offline warning
-            showSuccessModal(bookingData, {
-                success: true,
-                offline: true,
-                message: 'Saved locally (offline mode)',
-                booking_ref: bookingData.booking_reference
-            });
-            
-        } catch (fallbackError) {
-            console.error('Fallback save failed:', fallbackError);
-            showBookingError('❌ Booking failed. Please try again or contact us directly.', 'error');
-        }
-        
-        // Re-enable submit button on error
+        // Re-enable submit button
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Booking';
         }
         
     } finally {
-        // Hide loading spinner
-        if (loadingSpinner) {
-            loadingSpinner.style.display = 'none';
-        }
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
     }
 }
 
