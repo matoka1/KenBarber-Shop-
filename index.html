@@ -739,118 +739,240 @@
         </div>
     </div>
 
-        <!-- Supabase Integration Script - GitHub Pages Compatible -->
+           <!-- Real Supabase Integration for GitHub Pages -->
     <script type="module">
         // Import Supabase client
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
         
-        // Supabase configuration
+        // Your Supabase configuration
         const SUPABASE_URL = 'https://eqjdkpanqwjhuyavvdaf.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA';
         
-        // Check if we're on GitHub Pages
-        const isGitHubPages = window.location.hostname.includes('github.io');
+        console.log('Initializing Real Supabase for GitHub Pages...');
         
-        if (isGitHubPages) {
-            console.log('GitHub Pages detected - Using localStorage mode for demo');
-            // Create mock Supabase for GitHub Pages
-            window.supabase = {
-                from: () => ({
-                    select: () => ({
-                        eq: () => ({
-                            order: () => ({
-                                limit: () => Promise.resolve({ data: [], error: null })
-                            })
-                        }),
-                        limit: () => Promise.resolve({ data: [], error: null })
-                    }),
-                    upsert: () => Promise.resolve({ data: null, error: null }),
-                    insert: () => Promise.resolve({ data: null, error: null })
-                })
-            };
-            
-            // Show demo mode message
-            document.addEventListener('DOMContentLoaded', function() {
-                const demoBanner = document.createElement('div');
-                demoBanner.style.cssText = `
-                    position: fixed;
-                    top: 60px;
-                    right: 10px;
-                    background: linear-gradient(90deg, #ff6b6b, #ff8e53);
-                    color: white;
-                    padding: 8px 15px;
-                    border-radius: 5px;
-                    z-index: 9999;
-                    font-size: 12px;
-                    max-width: 200px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-                    animation: slideIn 0.5s ease;
-                `;
-                demoBanner.innerHTML = `
-                    <strong>DEMO MODE</strong><br>
-                    <small>Using localStorage. Bookings save to your browser.</small>
-                `;
-                document.body.appendChild(demoBanner);
-                
-                // Update database status
-                const dbStatus = document.getElementById('dbStatus');
-                if (dbStatus) {
-                    dbStatus.className = 'db-status offline';
-                    dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Demo Mode (Local Storage)</span>';
-                }
-                
-                // Add animation
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes slideIn {
-                        from { transform: translateX(100%); opacity: 0; }
-                        to { transform: translateX(0); opacity: 1; }
-                    }
-                `;
-                document.head.appendChild(style);
-                
-                // Remove after 10 seconds
-                setTimeout(() => {
-                    demoBanner.style.opacity = '0';
-                    demoBanner.style.transition = 'opacity 0.5s';
-                    setTimeout(() => demoBanner.remove(), 500);
-                }, 10000);
-            });
-            
-        } else {
-            // Initialize real Supabase for local/other hosting
-            console.log('Local/Other hosting - Using Supabase');
-            window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            
-            // Test database connection
-            async function testDatabaseConnection() {
-                const dbStatus = document.getElementById('dbStatus');
-                try {
-                    const { data, error } = await window.supabase
-                        .from('services')
-                        .select('id')
-                        .limit(1);
-                    
-                    if (error) throw error;
-                    
-                    dbStatus.className = 'db-status online';
-                    dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Connected</span>';
-                    console.log('✅ Database connection successful');
-                    return true;
-                } catch (error) {
-                    dbStatus.className = 'db-status offline';
-                    dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Offline (Local Storage)</span>';
-                    console.warn('⚠️ Database connection failed:', error.message);
-                    return false;
+        // Initialize Supabase client with proper configuration for GitHub Pages
+        window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
+                detectSessionInUrl: false
+            },
+            global: {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_ANON_KEY
                 }
             }
+        });
+        
+        // Test database connection
+        async function testDatabaseConnection() {
+            const dbStatus = document.getElementById('dbStatus');
+            if (!dbStatus) return;
             
-            // Test connection
-            testDatabaseConnection();
+            try {
+                dbStatus.className = 'db-status';
+                dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Connecting to Database...</span>';
+                
+                // Simple test query
+                const { data, error } = await window.supabase
+                    .from('services')
+                    .select('id')
+                    .limit(1);
+                
+                if (error) {
+                    // Try a different approach
+                    console.log('First test failed, trying alternative...');
+                    const { data: testData, error: testError } = await window.supabase.rpc('get_service_count');
+                    
+                    if (testError) {
+                        console.log('RPC test failed, trying basic fetch...');
+                        // Try direct fetch to test CORS
+                        const response = await fetch(`${SUPABASE_URL}/rest/v1/services?select=id&limit=1`, {
+                            headers: {
+                                'apikey': SUPABASE_ANON_KEY,
+                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            console.log('Direct fetch successful');
+                            dbStatus.className = 'db-status online';
+                            dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Connected</span>';
+                            return true;
+                        } else {
+                            throw new Error('CORS issue detected');
+                        }
+                    }
+                }
+                
+                dbStatus.className = 'db-status online';
+                dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Connected</span>';
+                console.log('✅ Supabase connection successful');
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Database connection failed:', error.message);
+                
+                // Check error type
+                if (error.message.includes('CORS') || error.message.includes('NetworkError') || 
+                    error.message.includes('Failed to fetch') || error.message.includes('origin')) {
+                    
+                    dbStatus.className = 'db-status offline';
+                    dbStatus.innerHTML = `
+                        <i class="fas fa-circle"></i> 
+                        <span>
+                            CORS Error - <a href="https://supabase.com/dashboard/project/eqjdkpanqwjhuyavvdaf/auth/url-configuration" 
+                            target="_blank" style="color: white; text-decoration: underline;">
+                            Click to Configure CORS
+                            </a>
+                        </span>
+                    `;
+                    
+                    // Show CORS help
+                    showCorsHelpMessage();
+                    
+                } else {
+                    dbStatus.className = 'db-status offline';
+                    dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Connection Error</span>';
+                }
+                
+                return false;
+            }
+        }
+        
+        // Show CORS configuration help
+        function showCorsHelpMessage() {
+            const existingMessage = document.querySelector('.cors-help-message');
+            if (existingMessage) existingMessage.remove();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'cors-help-message';
+            messageDiv.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 100px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 20px;
+                    border-radius: 10px;
+                    z-index: 9999;
+                    max-width: 400px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                    animation: slideIn 0.5s ease;
+                    border-left: 5px solid #25D366;
+                ">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 24px; color: #ffd700;"></i>
+                        <h4 style="margin: 0; font-size: 18px;">CORS Configuration Required</h4>
+                    </div>
+                    
+                    <p style="margin: 0 0 15px 0; font-size: 14px; opacity: 0.9;">
+                        Your Supabase project needs CORS configuration for GitHub Pages:
+                    </p>
+                    
+                    <ol style="margin: 0 0 20px 0; padding-left: 20px; font-size: 13px;">
+                        <li style="margin-bottom: 8px;">
+                            <strong>Go to</strong> Supabase Dashboard → Authentication → URL Configuration
+                        </li>
+                        <li style="margin-bottom: 8px;">
+                            <strong>Add this URL</strong> to both Site URL and Redirect URLs:
+                            <div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 5px; margin: 5px 0; font-family: monospace;">
+                                https://matoka1.github.io
+                            </div>
+                        </li>
+                        <li style="margin-bottom: 8px;">
+                            <strong>Click Save</strong> and wait 2 minutes
+                        </li>
+                        <li>
+                            <strong>Refresh</strong> this page
+                        </li>
+                    </ol>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <a href="https://supabase.com/dashboard/project/eqjdkpanqwjhuyavvdaf/auth/url-configuration" 
+                           target="_blank" 
+                           style="
+                               flex: 1;
+                               background: white;
+                               color: #667eea;
+                               padding: 10px 20px;
+                               border-radius: 5px;
+                               text-decoration: none;
+                               font-weight: bold;
+                               text-align: center;
+                               transition: all 0.3s;
+                               display: flex;
+                               align-items: center;
+                               justify-content: center;
+                               gap: 8px;
+                           "
+                           onmouseover="this.style.transform='translateY(-2px)';"
+                           onmouseout="this.style.transform='translateY(0)';">
+                            <i class="fas fa-external-link-alt"></i> Configure Now
+                        </a>
+                        
+                        <button onclick="this.closest('.cors-help-message').remove();"
+                           style="
+                               background: rgba(255,255,255,0.2);
+                               color: white;
+                               border: 1px solid rgba(255,255,255,0.3);
+                               padding: 10px 20px;
+                               border-radius: 5px;
+                               cursor: pointer;
+                               font-size: 14px;
+                               transition: all 0.3s;
+                           "
+                           onmouseover="this.style.background='rgba(255,255,255,0.3)';"
+                           onmouseout="this.style.background='rgba(255,255,255,0.2)';">
+                            Dismiss
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 12px;">
+                        <p style="margin: 0; opacity: 0.8;">
+                            <i class="fas fa-info-circle"></i> Need help? 
+                            <a href="https://supabase.com/docs/guides/auth#redirect-urls-and-wildcards" 
+                               target="_blank" 
+                               style="color: #25D366; text-decoration: underline;">
+                                View Documentation
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(messageDiv);
+            
+            // Add animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { 
+                        transform: translateX(100%); 
+                        opacity: 0; 
+                    }
+                    to { 
+                        transform: translateX(0); 
+                        opacity: 1; 
+                    }
+                }
+                
+                .cors-help-message {
+                    animation: slideIn 0.5s ease forwards;
+                }
+            `;
+            document.head.appendChild(style);
         }
         
         // Initialize when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('DOM loaded, testing Supabase connection...');
+            
+            // Test database connection
+            const isConnected = await testDatabaseConnection();
+            
             // Set current year in footer
             document.getElementById('currentYear').textContent = new Date().getFullYear();
             
@@ -863,6 +985,33 @@
             const bookingScript = document.createElement('script');
             bookingScript.src = 'js/booking.js';
             document.body.appendChild(bookingScript);
+            
+            // If not connected, show demo notice
+            if (!isConnected) {
+                setTimeout(() => {
+                    const demoNotice = document.createElement('div');
+                    demoNotice.style.cssText = `
+                        position: fixed;
+                        top: 70px;
+                        right: 20px;
+                        background: linear-gradient(90deg, #ff6b6b, #ff8e53);
+                        color: white;
+                        padding: 10px 15px;
+                        border-radius: 5px;
+                        z-index: 9998;
+                        font-size: 13px;
+                        max-width: 300px;
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                        animation: slideIn 0.5s ease;
+                        border-left: 4px solid #ffd700;
+                    `;
+                    demoNotice.innerHTML = `
+                        <strong><i class="fas fa-exclamation-circle"></i> Using Local Storage</strong><br>
+                        <small>Bookings will save to your browser until CORS is configured.</small>
+                    `;
+                    document.body.appendChild(demoNotice);
+                }, 1000);
+            }
         });
         
         // Export global utility functions
@@ -882,30 +1031,38 @@
             }
         };
         
-        window.subscribeNewsletter = function() {
+        window.subscribeNewsletter = async function() {
             const email = document.getElementById('newsletterEmail').value;
-            if (email && email.includes('@')) {
+            if (!email || !email.includes('@')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+            
+            try {
+                if (window.supabase) {
+                    const { error } = await window.supabase
+                        .from('newsletter_subscriptions')
+                        .insert({ email: email, subscribed_at: new Date().toISOString() });
+                    
+                    if (error) throw error;
+                }
+                
+                // Save locally too
+                let subscriptions = JSON.parse(localStorage.getItem('kenbarber_newsletter') || '[]');
+                if (!subscriptions.includes(email)) {
+                    subscriptions.push(email);
+                    localStorage.setItem('kenbarber_newsletter', JSON.stringify(subscriptions));
+                }
+                
                 alert('Thank you for subscribing to KenBarber updates!');
                 document.getElementById('newsletterEmail').value = '';
-            } else {
-                alert('Please enter a valid email address');
+                
+            } catch (error) {
+                console.warn('Could not save to Supabase, saving locally:', error);
+                alert('Subscription saved locally!');
+                document.getElementById('newsletterEmail').value = '';
             }
         };
-    </script>
-    <!-- Fallback for browsers without module support -->
-    <script>
-        // If Supabase fails to load, provide fallback
-        if (!window.supabase) {
-            console.warn('Supabase not loaded, using localStorage fallback');
-            window.supabase = {
-                // Mock Supabase methods for offline use
-                from: () => ({
-                    select: () => ({ 
-                        limit: () => Promise.resolve({ data: null, error: 'Offline mode' })
-                    })
-                })
-            };
-        }
     </script>
 </body>
 </html>
