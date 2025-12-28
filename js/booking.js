@@ -483,94 +483,81 @@ function setupEventListeners() {
         });
     }
     
-    // =============== ADDED STK PUSH EVENT LISTENERS ===============
+    // =============== STK PUSH EVENT LISTENERS ===============
     // Handle STK Push vs Manual M-Pesa selection
     const mpesaStkRadio = document.getElementById('mpesaStkRadio');
     const mpesaManualRadio = document.getElementById('mpesaManualRadio');
     const stkPaymentInfo = document.getElementById('stkPaymentInfo');
     const manualMpesaPayment = document.getElementById('manualMpesaPayment');
     
+    // Function to update M-Pesa display
+    function updateMpesaDisplay() {
+        console.log('Updating M-Pesa display...');
+        
+        if (mpesaStkRadio && mpesaStkRadio.checked) {
+            console.log('STK Push selected');
+            if (stkPaymentInfo) {
+                stkPaymentInfo.style.display = 'block';
+                stkPaymentInfo.style.cssText = 'display: block !important;';
+            }
+            if (manualMpesaPayment) {
+                manualMpesaPayment.style.display = 'none';
+                manualMpesaPayment.style.cssText = 'display: none !important;';
+            }
+        } else if (mpesaManualRadio && mpesaManualRadio.checked) {
+            console.log('Manual M-Pesa selected');
+            if (manualMpesaPayment) {
+                manualMpesaPayment.style.display = 'block';
+                manualMpesaPayment.style.cssText = 'display: block !important;';
+            }
+            if (stkPaymentInfo) {
+                stkPaymentInfo.style.display = 'none';
+                stkPaymentInfo.style.cssText = 'display: none !important;';
+            }
+            
+            // Copy phone number to M-Pesa field if empty
+            const phoneInput = document.getElementById('phoneNumber');
+            const mpesaInput = document.getElementById('mpesaNumber');
+            
+            if (phoneInput && mpesaInput && !mpesaInput.value && phoneInput.value) {
+                mpesaInput.value = phoneInput.value;
+            }
+        } else {
+            console.log('Other payment method selected');
+            if (stkPaymentInfo) {
+                stkPaymentInfo.style.display = 'none';
+                stkPaymentInfo.style.cssText = 'display: none !important;';
+            }
+            if (manualMpesaPayment) {
+                manualMpesaPayment.style.display = 'none';
+                manualMpesaPayment.style.cssText = 'display: none !important;';
+            }
+        }
+    }
+    
     // STK Push radio button handler
     if (mpesaStkRadio && stkPaymentInfo) {
-        mpesaStkRadio.addEventListener('change', function() {
-            if (this.checked) {
-                stkPaymentInfo.style.display = 'block';
-                if (manualMpesaPayment) {
-                    manualMpesaPayment.style.display = 'none';
-                }
-                
-                // Auto-fill phone number from main phone field
-                const phoneInput = document.getElementById('phoneNumber');
-                if (phoneInput && phoneInput.value) {
-                    // Phone will be used for STK Push automatically
-                }
-            }
-        });
+        mpesaStkRadio.addEventListener('change', updateMpesaDisplay);
+        mpesaStkRadio.addEventListener('click', updateMpesaDisplay);
     }
     
     // Manual M-Pesa radio button handler
     if (mpesaManualRadio && manualMpesaPayment) {
-        mpesaManualRadio.addEventListener('change', function() {
-            if (this.checked) {
-                manualMpesaPayment.style.display = 'block';
-                if (stkPaymentInfo) {
-                    stkPaymentInfo.style.display = 'none';
-                }
-                
-                // Copy phone number to M-Pesa field if empty
-                const phoneInput = document.getElementById('phoneNumber');
-                const mpesaInput = document.getElementById('mpesaNumber');
-                
-                if (phoneInput && mpesaInput && !mpesaInput.value && phoneInput.value) {
-                    mpesaInput.value = phoneInput.value;
-                }
-            }
-        });
+        mpesaManualRadio.addEventListener('change', updateMpesaDisplay);
+        mpesaManualRadio.addEventListener('click', updateMpesaDisplay);
     }
     
-    // Hide both M-Pesa sections when other payment methods are selected
+    // Handle other payment methods
     document.querySelectorAll('input[name="payment"]').forEach(radio => {
         if (radio.value !== 'mpesa_stk' && radio.value !== 'mpesa_manual') {
             radio.addEventListener('change', function() {
                 if (this.checked) {
-                    if (stkPaymentInfo) stkPaymentInfo.style.display = 'none';
-                    if (manualMpesaPayment) manualMpesaPayment.style.display = 'none';
+                    updateMpesaDisplay();
                 }
             });
         }
     });
-    // =============== END OF ADDED CODE ===============
-    
-    // M-Pesa radio button handler (for compatibility - you might want to remove this if you're replacing with mpesa_stk/mpesa_manual)
-    const mpesaRadio = document.getElementById('mpesaRadio');
-    const mpesaPaymentDiv = document.getElementById('mpesaPayment');
-    
-    if (mpesaRadio && mpesaPaymentDiv) {
-        mpesaRadio.addEventListener('change', function() {
-            if (this.checked) {
-                mpesaPaymentDiv.style.display = 'block';
-                
-                // Copy phone number to M-Pesa number if empty
-                const phoneInput = document.getElementById('phoneNumber');
-                const mpesaInput = document.getElementById('mpesaNumber');
-                
-                if (phoneInput && mpesaInput && !mpesaInput.value && phoneInput.value) {
-                    mpesaInput.value = phoneInput.value;
-                }
-            }
-        });
-    }
-    
-    // Other payment methods hide M-Pesa details (for compatibility)
-    document.querySelectorAll('input[name="payment"]').forEach(radio => {
-        if (radio.value !== 'mpesa') {
-            radio.addEventListener('change', function() {
-                if (this.checked && mpesaPaymentDiv) {
-                    mpesaPaymentDiv.style.display = 'none';
-                }
-            });
-        }
-    });
+    // =============== END OF STK PUSH CODE ===============
     
     // Copy phone to M-Pesa button
     const copyPhoneBtn = document.getElementById('copyPhoneToMpesa');
@@ -585,6 +572,15 @@ function setupEventListeners() {
             }
         });
     }
+    
+    // Handle form reset to maintain M-Pesa display
+    form.addEventListener('reset', function() {
+        console.log('Form reset - updating M-Pesa display');
+        setTimeout(updateMpesaDisplay, 50);
+    });
+    
+    // Initial update of M-Pesa display
+    setTimeout(updateMpesaDisplay, 100);
 }
 
 function setupPaymentOptions() {
@@ -1066,7 +1062,7 @@ async function saveBookingToSupabase(bookingData) {
                 .upsert({
                     phone: bookingData.customer_phone,
                     email: bookingData.customer_email,
-                    name: bookingData.customer_name,
+                    full_name: bookingData.customer_name, // Changed from 'name' to 'full_name'
                     last_visit: bookingData.appointment_date
                 }, {
                     onConflict: 'phone'
@@ -1320,6 +1316,16 @@ function resetBookingForm() {
         const serviceSelect = document.getElementById('serviceType');
         const selectedService = serviceSelect.options[serviceSelect.selectedIndex];
         
+        // Get current payment state
+        const stkRadio = document.getElementById('mpesaStkRadio');
+        const manualRadio = document.getElementById('mpesaManualRadio');
+        const stkInfo = document.getElementById('stkPaymentInfo');
+        const manualInfo = document.getElementById('manualMpesaPayment');
+        
+        // Store current payment selection
+        const currentPayment = document.querySelector('input[name="payment"]:checked');
+        const currentPaymentValue = currentPayment ? currentPayment.value : 'cash';
+        
         // Reset form
         form.reset();
         
@@ -1328,6 +1334,21 @@ function resetBookingForm() {
             serviceSelect.value = selectedService.value;
             // Trigger change event to update price
             serviceSelect.dispatchEvent(new Event('change'));
+        }
+        
+        // Restore payment selection
+        if (currentPaymentValue === 'mpesa_stk' && stkRadio) {
+            stkRadio.checked = true;
+            if (stkInfo) stkInfo.style.display = 'block';
+            if (manualInfo) manualInfo.style.display = 'none';
+        } else if (currentPaymentValue === 'mpesa_manual' && manualRadio) {
+            manualRadio.checked = true;
+            if (manualInfo) manualInfo.style.display = 'block';
+            if (stkInfo) stkInfo.style.display = 'none';
+        } else {
+            // Default to cash and hide M-Pesa sections
+            if (stkInfo) stkInfo.style.display = 'none';
+            if (manualInfo) manualInfo.style.display = 'none';
         }
         
         // Reset date to tomorrow
@@ -1354,9 +1375,10 @@ function resetBookingForm() {
         document.querySelectorAll('.error-highlight, .success-highlight').forEach(el => {
             el.classList.remove('error-highlight', 'success-highlight');
         });
+        
+        console.log('Form reset complete');
     }
 }
-
 function formatDate(dateString) {
     try {
         const date = new Date(dateString);
