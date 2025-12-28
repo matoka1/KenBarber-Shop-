@@ -108,9 +108,44 @@
             margin: 0 auto 1rem;
             font-weight: bold;
         }
+        
+        /* Database status indicator */
+        .db-status {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: var(--secondary);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .db-status.online {
+            background: #28a745;
+        }
+        
+        .db-status.offline {
+            background: #dc3545;
+        }
+        
+        .db-status i {
+            font-size: 0.7rem;
+        }
     </style>
 </head>
 <body>
+    <!-- Database Status Indicator -->
+    <div class="db-status" id="dbStatus">
+        <i class="fas fa-circle"></i>
+        <span>Checking Database...</span>
+    </div>
+
     <!-- Special Offer Banner -->
     <div class="special-offer-banner" id="specialOfferBanner">
         🎉 Grand Opening Special: 20% OFF for First-Time Customers! Book Now 🎉
@@ -134,6 +169,9 @@
                 <li><a href="#booking">Book Now</a></li>
                 <li><a href="#testimonials">Reviews</a></li>
                 <li><a href="#contact">Contact</a></li>
+                <li><a href="admin-login.html" style="color: var(--primary); font-weight: 600;">
+                    <i class="fas fa-user-shield"></i> Admin
+                </a></li>
             </ul>
         </div>
     </header>
@@ -196,82 +234,22 @@
                 <p>Premium grooming services at affordable prices</p>
             </div>
             
-            <div class="services-grid">
-                <div class="service-card">
-                    <div class="service-img img-haircut"></div>
-                    <div class="service-content">
-                        <h3>Classic Haircut</h3>
-                        <p>Precision cut with clippers and scissors, finished with straight razor detailing and hot towel treatment.</p>
-                        <div class="service-footer">
-                            <span class="price">KES 500</span>
-                            <span class="duration"><i class="far fa-clock"></i> 30 min</span>
-                        </div>
-                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="bookService('Classic Haircut', 500)">Book Now</button>
+            <div class="services-grid" id="servicesGrid">
+                <!-- Services will be loaded dynamically from Supabase -->
+                <div class="loading-service">
+                    <div class="service-img" style="background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
                     </div>
-                </div>
-                
-                <div class="service-card">
-                    <div class="service-img img-beard"></div>
                     <div class="service-content">
-                        <h3>Beard Trim & Shape</h3>
-                        <p>Expert beard grooming including trimming, shaping, conditioning with premium beard oils.</p>
+                        <h3>Loading Services...</h3>
+                        <p>Please wait while we load our service menu</p>
                         <div class="service-footer">
-                            <span class="price">KES 300</span>
-                            <span class="duration"><i class="far fa-clock"></i> 20 min</span>
+                            <span class="price">KES 0</span>
+                            <span class="duration"><i class="far fa-clock"></i> 0 min</span>
                         </div>
-                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="bookService('Beard Trim & Shape', 300)">Book Now</button>
-                    </div>
-                </div>
-                
-                <div class="service-card">
-                    <div class="service-img img-shave"></div>
-                    <div class="service-content">
-                        <h3>Hot Towel Shave</h3>
-                        <p>Traditional straight razor shave with hot towels, pre-shave oil, and post-shave balm.</p>
-                        <div class="service-footer">
-                            <span class="price">KES 700</span>
-                            <span class="duration"><i class="far fa-clock"></i> 45 min</span>
-                        </div>
-                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="bookService('Hot Towel Shave', 700)">Book Now</button>
-                    </div>
-                </div>
-                
-                <div class="service-card">
-                    <div class="service-img img-combo"></div>
-                    <div class="service-content">
-                        <h3>Haircut + Beard Combo</h3>
-                        <p>Complete grooming package with haircut and beard service. Best value package.</p>
-                        <div class="service-footer">
-                            <span class="price">KES 800</span>
-                            <span class="duration"><i class="far fa-clock"></i> 60 min</span>
-                        </div>
-                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="bookService('Haircut + Beard Combo', 800)">Book Now</button>
-                    </div>
-                </div>
-                
-                <div class="service-card">
-                    <div class="service-img" style="background-image: url('https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');"></div>
-                    <div class="service-content">
-                        <h3>Kids Haircut</h3>
-                        <p>Special haircut for children in a friendly, comfortable environment.</p>
-                        <div class="service-footer">
-                            <span class="price">KES 400</span>
-                            <span class="duration"><i class="far fa-clock"></i> 25 min</span>
-                        </div>
-                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="bookService('Kids Haircut', 400)">Book Now</button>
-                    </div>
-                </div>
-                
-                <div class="service-card">
-                    <div class="service-img" style="background-image: url('https://images.unsplash.com/photo-1600334129128-685c5582fd35?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');"></div>
-                    <div class="service-content">
-                        <h3>Head Massage</h3>
-                        <p>Relaxing head and shoulder massage with essential oils for ultimate relaxation.</p>
-                        <div class="service-footer">
-                            <span class="price">KES 600</span>
-                            <span class="duration"><i class="far fa-clock"></i> 30 min</span>
-                        </div>
-                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="bookService('Head Massage', 600)">Book Now</button>
+                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;" disabled>
+                            <i class="fas fa-spinner fa-spin"></i> Loading...
+                        </button>
                     </div>
                 </div>
             </div>
@@ -286,60 +264,20 @@
                 <p>Skilled professionals with years of experience</p>
             </div>
             
-            <div class="barbers-grid">
-                <div class="barber-card">
-                    <div class="barber-img barber-1"></div>
+            <div class="barbers-grid" id="barbersGrid">
+                <!-- Barbers will be loaded dynamically from Supabase -->
+                <div class="loading-barber">
+                    <div class="barber-img" style="background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
+                    </div>
                     <div class="barber-info">
-                        <h3>James Kariuki</h3>
-                        <p class="barber-title">Master Barber | 15 Years Experience</p>
-                        <p>Specializes in classic cuts, fades, and traditional barbering. Trained in Nairobi and London.</p>
-                        <div class="barber-expertise">
-                            <span class="expertise-tag">Classic Cuts</span>
-                            <span class="expertise-tag">Fades</span>
-                            <span class="expertise-tag">Traditional</span>
-                        </div>
+                        <h3>Loading Barbers...</h3>
+                        <p class="barber-title">Please wait</p>
+                        <p>Our barber information is loading</p>
                         <div class="barber-social">
                             <a href="#"><i class="fab fa-instagram"></i></a>
                             <a href="#"><i class="fab fa-facebook"></i></a>
                             <a href="tel:+254712345678"><i class="fas fa-phone"></i></a>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="barber-card">
-                    <div class="barber-img barber-2"></div>
-                    <div class="barber-info">
-                        <h3>David Omondi</h3>
-                        <p class="barber-title">Beard Specialist | 8 Years Experience</p>
-                        <p>Beard grooming expert with precision and attention to detail. Award-winning beard stylist.</p>
-                        <div class="barber-expertise">
-                            <span class="expertise-tag">Beard Styling</span>
-                            <span class="expertise-tag">Grooming</span>
-                            <span class="expertise-tag">Detailing</span>
-                        </div>
-                        <div class="barber-social">
-                            <a href="#"><i class="fab fa-instagram"></i></a>
-                            <a href="#"><i class="fab fa-facebook"></i></a>
-                            <a href="tel:+254712345679"><i class="fas fa-phone"></i></a>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="barber-card">
-                    <div class="barber-img barber-3"></div>
-                    <div class="barber-info">
-                        <h3>Michael Njoroge</h3>
-                        <p class="barber-title">Style Expert | 10 Years Experience</p>
-                        <p>Specializes in modern styles and contemporary barbering. Fashion-forward cuts and styles.</p>
-                        <div class="barber-expertise">
-                            <span class="expertise-tag">Modern Styles</span>
-                            <span class="expertise-tag">Trending</span>
-                            <span class="expertise-tag">Creative</span>
-                        </div>
-                        <div class="barber-social">
-                            <a href="#"><i class="fab fa-instagram"></i></a>
-                            <a href="#"><i class="fab fa-facebook"></i></a>
-                            <a href="tel:+254712345680"><i class="fas fa-phone"></i></a>
                         </div>
                     </div>
                 </div>
@@ -426,24 +364,15 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="serviceType">Service *</label>
-                                <select id="serviceType" class="form-control" required onchange="updateServicePrice()">
-                                    <option value="">Select Service</option>
-                                    <option value="haircut" data-price="500">Classic Haircut - KES 500</option>
-                                    <option value="beard" data-price="300">Beard Trim - KES 300</option>
-                                    <option value="shave" data-price="700">Hot Towel Shave - KES 700</option>
-                                    <option value="combo" data-price="800">Haircut + Beard - KES 800</option>
-                                    <option value="kids" data-price="400">Kids Haircut - KES 400</option>
-                                    <option value="massage" data-price="600">Head Massage - KES 600</option>
+                                <select id="serviceType" class="form-control" required>
+                                    <option value="">Loading Services...</option>
                                 </select>
                             </div>
                             
                             <div class="form-group">
                                 <label for="barberSelect">Preferred Barber</label>
                                 <select id="barberSelect" class="form-control">
-                                    <option value="">Any Available Barber</option>
-                                    <option value="james">James Kariuki (Master Barber)</option>
-                                    <option value="david">David Omondi (Beard Specialist)</option>
-                                    <option value="michael">Michael Njoroge (Style Expert)</option>
+                                    <option value="">Loading Barbers...</option>
                                 </select>
                             </div>
                         </div>
@@ -456,9 +385,8 @@
                             
                             <div class="form-group">
                                 <label for="appointmentTime">Time Slot *</label>
-                                <select id="appointmentTime" class="form-control" required>
-                                    <option value="">Select Time</option>
-                                    <!-- Times will be populated dynamically -->
+                                <select id="appointmentTime" class="form-control" required disabled>
+                                    <option value="">Select Date First</option>
                                 </select>
                                 <small>30-minute slots. Real-time availability.</small>
                             </div>
@@ -523,8 +451,8 @@
                             </label>
                         </div>
                         
-                        <button type="submit" class="btn-primary btn-block" id="submitBtn">
-                            <i class="fas fa-calendar-check"></i> Confirm Booking
+                        <button type="submit" class="btn-primary btn-block" id="submitBtn" disabled>
+                            <i class="fas fa-calendar-check"></i> Loading Booking System...
                         </button>
                         
                         <div class="form-footer">
@@ -544,49 +472,20 @@
                 <p style="color: #aaa;">What our customers say about KenBarber</p>
             </div>
             
-            <div class="testimonials-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+            <div class="testimonials-grid" id="testimonialsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                <!-- Testimonials will be loaded dynamically from Supabase -->
                 <div class="testimonial-card">
                     <div class="rating">
-                        <i class="fas fa-star" style="color: gold;"></i>
-                        <i class="fas fa-star" style="color: gold;"></i>
-                        <i class="fas fa-star" style="color: gold;"></i>
-                        <i class="fas fa-star" style="color: gold;"></i>
-                        <i class="fas fa-star" style="color: gold;"></i>
+                        <i class="fas fa-spinner fa-spin" style="color: gold;"></i>
+                        <i class="fas fa-spinner fa-spin" style="color: gold;"></i>
+                        <i class="fas fa-spinner fa-spin" style="color: gold;"></i>
+                        <i class="fas fa-spinner fa-spin" style="color: gold;"></i>
+                        <i class="fas fa-spinner fa-spin" style="color: gold;"></i>
                     </div>
-                    <p>"Best barber shop in Nakuru! James gave me the perfect fade. The M-Pesa payment was so convenient!"</p>
+                    <p>Loading customer reviews from our database...</p>
                     <div class="customer-info">
-                        <strong>John Kamau</strong>
-                        <span>Nakuru Town</span>
-                    </div>
-                </div>
-                
-                <div class="testimonial-card">
-                    <div class="rating">
-                        <i class="fas fa-star" style="color: gold;"></i>
-                        <i class="fas fa-star" style="color: gold;"></i>
-                        <i class="fas fa-star" style="color: gold;"></i>
-                        <i class="fas fa-star" style="color: gold;"></i>
-                        <i class="fas fa-star" style="color: gold;"></i>
-                    </div>
-                    <p>"David is a beard wizard! My beard has never looked better. The SMS reminders are very helpful."</p>
-                    <div class="customer-info">
-                        <strong>David Ochieng</strong>
-                        <span>London Ward</span>
-                    </div>
-                </div>
-                
-                <div class="testimonial-card">
-                    <div class="rating">
-                        <i class="fas fa-star" style="color: gold;"></i>
-                        <i class="fas fa-star" style="color: gold;"></i>
-                        <i class="fas fa-star" style="color: gold;"></i>
-                        <i class="fas fa-star" style="color: gold;"></i>
-                        <i class="fas fa-star-half-alt" style="color: gold;"></i>
-                    </div>
-                    <p>"Professional service, clean environment, and easy online booking. Will definitely be back!"</p>
-                    <div class="customer-info">
-                        <strong>Peter Mwangi</strong>
-                        <span>Kiamunyi</span>
+                        <strong>Loading...</strong>
+                        <span>Please wait</span>
                     </div>
                 </div>
             </div>
@@ -729,13 +628,9 @@
                 
                 <div class="footer-services">
                     <h4>Popular Services</h4>
-                    <ul>
-                        <li><a href="#booking">Classic Haircut - KES 500</a></li>
-                        <li><a href="#booking">Beard Trim - KES 300</a></li>
-                        <li><a href="#booking">Hot Towel Shave - KES 700</a></li>
-                        <li><a href="#booking">Haircut + Beard - KES 800</a></li>
-                        <li><a href="#booking">Kids Haircut - KES 400</a></li>
-                        <li><a href="#booking">Head Massage - KES 600</a></li>
+                    <ul id="popularServicesList">
+                        <!-- Will be populated dynamically -->
+                        <li><a href="#booking">Loading services...</a></li>
                     </ul>
                 </div>
                 
@@ -770,7 +665,7 @@
             
             <div class="footer-bottom">
                 <div class="copyright">
-                    <p>&copy; 2023 KenBarber Shop. All rights reserved.</p>
+                    <p>&copy; <span id="currentYear">2023</span> KenBarber Shop. All rights reserved.</p>
                     <p><small>London Ward, Nakuru | Business License: NKU-2023-5876</small></p>
                 </div>
                 <div class="developer-credit">
@@ -845,116 +740,80 @@
         </div>
     </div>
 
-    <!-- JavaScript Files -->
-    <script src="js/main.js"></script>
-    <script src="js/booking.js"></script>
-    
-    <script>
-        // Additional inline JavaScript for main page
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set minimum date to today
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('appointmentDate').min = today;
-            
-            // Initialize time slots
-            updateTimeSlots();
-            
-            // M-Pesa payment toggle
-            document.querySelectorAll('input[name="payment"]').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    const mpesaDiv = document.getElementById('mpesaPayment');
-                    mpesaDiv.style.display = this.value === 'mpesa' ? 'block' : 'none';
-                });
-            });
-            
-            // Update time slots when date changes
-            document.getElementById('appointmentDate').addEventListener('change', updateTimeSlots);
-            
-            // Load saved special offer
-            const savedOffer = localStorage.getItem('kenbarber_special_offer');
-            if (savedOffer) {
-                document.getElementById('specialOfferBanner').textContent = savedOffer;
+    <!-- Supabase Integration Script -->
+    <script type="module">
+        // Import Supabase client
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        
+        // Supabase configuration - REPLACE WITH YOUR CREDENTIALS
+        const SUPABASE_URL = 'https://eqjdkpanqwjhuyavvdaf.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA';
+        
+        // Initialize Supabase client
+        window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        console.log('Supabase client initialized');
+        
+        // Test database connection
+        async function testDatabaseConnection() {
+            const dbStatus = document.getElementById('dbStatus');
+            try {
+                const { data, error } = await window.supabase
+                    .from('services')
+                    .select('id')
+                    .limit(1);
+                
+                if (error) throw error;
+                
+                dbStatus.className = 'db-status online';
+                dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Connected</span>';
+                console.log('✅ Database connection successful');
+                return true;
+            } catch (error) {
+                dbStatus.className = 'db-status offline';
+                dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Offline (Using Local Storage)</span>';
+                console.warn('⚠️ Database connection failed, using localStorage:', error.message);
+                return false;
             }
+        }
+        
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Test database connection
+            const dbConnected = await testDatabaseConnection();
+            
+            // Set current year in footer
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+            
+            // Load main script after Supabase is ready
+            const mainScript = document.createElement('script');
+            mainScript.src = 'js/main.js';
+            document.body.appendChild(mainScript);
+            
+            // Load booking script
+            const bookingScript = document.createElement('script');
+            bookingScript.src = 'js/booking.js';
+            document.body.appendChild(bookingScript);
         });
         
-        function updateServicePrice() {
-            const serviceSelect = document.getElementById('serviceType');
-            const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-            const price = selectedOption.getAttribute('data-price') || '0';
-            
-            const priceDisplay = document.getElementById('priceDisplay');
-            const totalPrice = document.getElementById('totalPrice');
-            
-            if (price !== '0') {
-                totalPrice.textContent = `KES ${price}`;
-                priceDisplay.style.display = 'block';
-            } else {
-                priceDisplay.style.display = 'none';
-            }
-        }
-        
-        function updateTimeSlots() {
-            const timeSelect = document.getElementById('appointmentTime');
-            const date = document.getElementById('appointmentDate').value;
-            
-            // Clear existing options
-            timeSelect.innerHTML = '<option value="">Select Time</option>';
-            
-            if (!date) return;
-            
-            // Generate time slots (9 AM to 6 PM, 30-minute intervals)
-            const startHour = 9;
-            const endHour = 18;
-            
-            for (let hour = startHour; hour < endHour; hour++) {
-                for (let minute = 0; minute < 60; minute += 30) {
-                    const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-                    const option = document.createElement('option');
-                    option.value = timeString;
-                    option.textContent = timeString;
-                    
-                    // Mark some times as booked (demo - in real app, check from database)
-                    if (Math.random() > 0.7) {
-                        option.textContent += ' (Booked)';
-                        option.disabled = true;
-                    }
-                    
-                    timeSelect.appendChild(option);
-                }
-            }
-        }
-        
-        function bookService(serviceName, price) {
-            const serviceSelect = document.getElementById('serviceType');
-            for (let option of serviceSelect.options) {
-                if (option.text.includes(serviceName)) {
-                    serviceSelect.value = option.value;
-                    break;
-                }
-            }
-            
-            // Update price display
-            const priceDisplay = document.getElementById('priceDisplay');
-            const totalPrice = document.getElementById('totalPrice');
-            totalPrice.textContent = `KES ${price}`;
-            priceDisplay.style.display = 'block';
-            
-            // Scroll to booking form
-            document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
-            
-            // Trigger service change
-            updateServicePrice();
-        }
-        
-        function openGoogleMaps() {
+        // Export global utility functions
+        window.openGoogleMaps = function() {
             window.open('https://maps.google.com/?q=-0.3031,36.0800', '_blank');
-        }
+        };
         
-        function scrollToBooking() {
-            document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
-        }
+        window.scrollToBooking = function() {
+            const bookingSection = document.getElementById('booking');
+            if (bookingSection) {
+                const headerHeight = document.querySelector('header').offsetHeight;
+                const targetPosition = bookingSection.offsetTop - headerHeight;
+                window.scrollTo({
+                    top: targetPosition,
+                    behavior: 'smooth'
+                });
+            }
+        };
         
-        function subscribeNewsletter() {
+        window.subscribeNewsletter = function() {
             const email = document.getElementById('newsletterEmail').value;
             if (email && email.includes('@')) {
                 alert('Thank you for subscribing to KenBarber updates!');
@@ -962,135 +821,23 @@
             } else {
                 alert('Please enter a valid email address');
             }
+        };
+    </script>
+    
+    <!-- Fallback for browsers without module support -->
+    <script>
+        // If Supabase fails to load, provide fallback
+        if (!window.supabase) {
+            console.warn('Supabase not loaded, using localStorage fallback');
+            window.supabase = {
+                // Mock Supabase methods for offline use
+                from: () => ({
+                    select: () => ({ 
+                        limit: () => Promise.resolve({ data: null, error: 'Offline mode' })
+                    })
+                })
+            };
         }
-        
-        // Generate booking reference
-        function generateBookingRef() {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let ref = 'KB';
-            for (let i = 0; i < 6; i++) {
-                ref += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return ref;
-        }
-        
-        // Handle booking form submission
-        document.getElementById('appointmentForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Show loading spinner
-            document.getElementById('loadingSpinner').style.display = 'flex';
-            
-            // Simulate API call delay
-            setTimeout(function() {
-                // Get form values
-                const name = document.getElementById('fullName').value;
-                const phone = document.getElementById('phoneNumber').value;
-                const email = document.getElementById('email').value;
-                const service = document.getElementById('serviceType').options[document.getElementById('serviceType').selectedIndex].text;
-                const barber = document.getElementById('barberSelect').value || 'Any Available Barber';
-                const date = document.getElementById('appointmentDate').value;
-                const time = document.getElementById('appointmentTime').value;
-                const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
-                
-                // Format date
-                const formattedDate = new Date(date).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                
-                // Get service price
-                const serviceOption = document.getElementById('serviceType').options[document.getElementById('serviceType').selectedIndex];
-                const price = serviceOption.getAttribute('data-price') || '0';
-                
-                // Generate booking reference
-                const bookingRef = generateBookingRef();
-                
-                // Set modal content
-                document.getElementById('modalService').textContent = service;
-                document.getElementById('modalDate').textContent = formattedDate;
-                document.getElementById('modalTime').textContent = time;
-                document.getElementById('modalBarber').textContent = barber;
-                document.getElementById('modalPrice').textContent = `KES ${price}`;
-                document.getElementById('modalRef').textContent = bookingRef;
-                document.getElementById('modalPhone').textContent = phone;
-                document.getElementById('modalEmail').textContent = email;
-                
-                // Save booking to localStorage (simulating database)
-                const booking = {
-                    id: Date.now(),
-                    ref: bookingRef,
-                    name: name,
-                    phone: phone,
-                    email: email,
-                    service: service,
-                    barber: barber,
-                    date: date,
-                    time: time,
-                    price: price,
-                    paymentMethod: paymentMethod,
-                    status: 'confirmed',
-                    timestamp: new Date().toISOString()
-                };
-                
-                // Save to localStorage
-                let bookings = JSON.parse(localStorage.getItem('kenbarber_bookings') || '[]');
-                bookings.push(booking);
-                localStorage.setItem('kenbarber_bookings', JSON.stringify(bookings));
-                
-                // Hide loading spinner
-                document.getElementById('loadingSpinner').style.display = 'none';
-                
-                // Show success modal
-                document.getElementById('successModal').style.display = 'flex';
-                
-                // Reset form
-                document.getElementById('appointmentForm').reset();
-                document.getElementById('priceDisplay').style.display = 'none';
-                
-            }, 1500); // 1.5 second delay to simulate API call
-        });
-        
-        // Modal close handlers
-        document.getElementById('closeSuccessModal').addEventListener('click', function() {
-            document.getElementById('successModal').style.display = 'none';
-        });
-        
-        document.querySelector('.modal-close').addEventListener('click', function() {
-            document.getElementById('successModal').style.display = 'none';
-        });
-        
-        document.getElementById('printBooking').addEventListener('click', function() {
-            window.print();
-        });
-        
-        document.getElementById('shareBooking').addEventListener('click', function() {
-            const service = document.getElementById('modalService').textContent;
-            const date = document.getElementById('modalDate').textContent;
-            const time = document.getElementById('modalTime').textContent;
-            
-            const text = `I've booked an appointment at KenBarber! ${service} on ${date} at ${time}.`;
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: 'KenBarber Appointment',
-                    text: text,
-                    url: window.location.href
-                });
-            } else {
-                // Fallback for browsers without Web Share API
-                prompt('Copy this link to share:', text);
-            }
-        });
-        
-        // Close modal when clicking outside
-        window.addEventListener('click', function(e) {
-            if (e.target.classList.contains('modal')) {
-                e.target.style.display = 'none';
-            }
-        });
     </script>
 </body>
 </html>
