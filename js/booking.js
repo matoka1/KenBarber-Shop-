@@ -483,7 +483,65 @@ function setupEventListeners() {
         });
     }
     
-    // M-Pesa radio button handler
+    // =============== ADDED STK PUSH EVENT LISTENERS ===============
+    // Handle STK Push vs Manual M-Pesa selection
+    const mpesaStkRadio = document.getElementById('mpesaStkRadio');
+    const mpesaManualRadio = document.getElementById('mpesaManualRadio');
+    const stkPaymentInfo = document.getElementById('stkPaymentInfo');
+    const manualMpesaPayment = document.getElementById('manualMpesaPayment');
+    
+    // STK Push radio button handler
+    if (mpesaStkRadio && stkPaymentInfo) {
+        mpesaStkRadio.addEventListener('change', function() {
+            if (this.checked) {
+                stkPaymentInfo.style.display = 'block';
+                if (manualMpesaPayment) {
+                    manualMpesaPayment.style.display = 'none';
+                }
+                
+                // Auto-fill phone number from main phone field
+                const phoneInput = document.getElementById('phoneNumber');
+                if (phoneInput && phoneInput.value) {
+                    // Phone will be used for STK Push automatically
+                }
+            }
+        });
+    }
+    
+    // Manual M-Pesa radio button handler
+    if (mpesaManualRadio && manualMpesaPayment) {
+        mpesaManualRadio.addEventListener('change', function() {
+            if (this.checked) {
+                manualMpesaPayment.style.display = 'block';
+                if (stkPaymentInfo) {
+                    stkPaymentInfo.style.display = 'none';
+                }
+                
+                // Copy phone number to M-Pesa field if empty
+                const phoneInput = document.getElementById('phoneNumber');
+                const mpesaInput = document.getElementById('mpesaNumber');
+                
+                if (phoneInput && mpesaInput && !mpesaInput.value && phoneInput.value) {
+                    mpesaInput.value = phoneInput.value;
+                }
+            }
+        });
+    }
+    
+    // Hide both M-Pesa sections when other payment methods are selected
+    document.querySelectorAll('input[name="payment"]').forEach(radio => {
+        if (radio.value !== 'mpesa_stk' && radio.value !== 'mpesa_manual') {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    if (stkPaymentInfo) stkPaymentInfo.style.display = 'none';
+                    if (manualMpesaPayment) manualMpesaPayment.style.display = 'none';
+                }
+            });
+        }
+    });
+    // =============== END OF ADDED CODE ===============
+    
+    // M-Pesa radio button handler (for compatibility - you might want to remove this if you're replacing with mpesa_stk/mpesa_manual)
     const mpesaRadio = document.getElementById('mpesaRadio');
     const mpesaPaymentDiv = document.getElementById('mpesaPayment');
     
@@ -503,7 +561,7 @@ function setupEventListeners() {
         });
     }
     
-    // Other payment methods hide M-Pesa details
+    // Other payment methods hide M-Pesa details (for compatibility)
     document.querySelectorAll('input[name="payment"]').forEach(radio => {
         if (radio.value !== 'mpesa') {
             radio.addEventListener('change', function() {
@@ -531,6 +589,26 @@ function setupEventListeners() {
 
 function setupPaymentOptions() {
     console.log('Payment options setup complete');
+    
+    // Initialize STK Push as default if it exists
+    const mpesaStkRadio = document.getElementById('mpesaStkRadio');
+    const stkPaymentInfo = document.getElementById('stkPaymentInfo');
+    const manualMpesaPayment = document.getElementById('manualMpesaPayment');
+    
+    if (mpesaStkRadio && stkPaymentInfo && manualMpesaPayment) {
+        // If STK Push is checked by default, show its info
+        if (mpesaStkRadio.checked) {
+            stkPaymentInfo.style.display = 'block';
+            manualMpesaPayment.style.display = 'none';
+        }
+        
+        // If Manual M-Pesa is checked, show its info
+        const mpesaManualRadio = document.getElementById('mpesaManualRadio');
+        if (mpesaManualRadio && mpesaManualRadio.checked) {
+            stkPaymentInfo.style.display = 'none';
+            manualMpesaPayment.style.display = 'block';
+        }
+    }
 }
 
 function validateBookingForm() {
@@ -639,26 +717,33 @@ function validateBookingForm() {
         highlightField(cancellationPolicy.parentElement, false);
     }
     
-    // Validate M-Pesa number if M-Pesa is selected
+    // Validate payment method - UPDATED FOR STK PUSH
     const paymentMethod = document.querySelector('input[name="payment"]:checked');
     if (!paymentMethod) {
         errors.push('Please select a payment method');
-    } else if (paymentMethod.value === 'mpesa') {
-        const mpesaNumber = document.getElementById('mpesaNumber');
-        if (mpesaNumber) {
-            const mpesaNumberValue = mpesaNumber.value.trim();
-            if (!mpesaNumberValue) {
-                errors.push('Please enter your M-Pesa number');
-                highlightField(mpesaNumber, true);
-            } else {
-                const mpesaDigits = mpesaNumberValue.replace(/\s/g, '');
-                const phoneRegex = /^(0[17]\d{8}|011\d{7}|254[17]\d{8})$/;
-                
-                if (!phoneRegex.test(mpesaDigits)) {
-                    errors.push('Please enter a valid M-Pesa number');
+    } else if (paymentMethod.value === 'mpesa_stk' || paymentMethod.value === 'mpesa_manual') {
+        // For STK Push, use main phone number automatically
+        if (paymentMethod.value === 'mpesa_stk') {
+            // No additional validation needed - uses main phone number
+        } 
+        // For Manual M-Pesa, validate M-Pesa number field
+        else if (paymentMethod.value === 'mpesa_manual') {
+            const mpesaNumber = document.getElementById('mpesaNumber');
+            if (mpesaNumber) {
+                const mpesaNumberValue = mpesaNumber.value.trim();
+                if (!mpesaNumberValue) {
+                    errors.push('Please enter your M-Pesa number for manual payment');
                     highlightField(mpesaNumber, true);
                 } else {
-                    highlightField(mpesaNumber, false);
+                    const mpesaDigits = mpesaNumberValue.replace(/\s/g, '');
+                    const phoneRegex = /^(0[17]\d{8}|011\d{7}|254[17]\d{8})$/;
+                    
+                    if (!phoneRegex.test(mpesaDigits)) {
+                        errors.push('Please enter a valid M-Pesa number');
+                        highlightField(mpesaNumber, true);
+                    } else {
+                        highlightField(mpesaNumber, false);
+                    }
                 }
             }
         }
@@ -794,7 +879,7 @@ function collectFormData() {
     const barberSelect = document.getElementById('barberSelect');
     const selectedBarber = barberSelect ? barberSelect.options[barberSelect.selectedIndex] : null;
     
-    // Get payment method
+    // Get payment method - UPDATED FOR STK PUSH
     const paymentMethodRadio = document.querySelector('input[name="payment"]:checked');
     const paymentMethod = paymentMethodRadio ? paymentMethodRadio.value : 'cash';
     
@@ -815,16 +900,22 @@ function collectFormData() {
         appointment_time: appointmentTime,
         special_requests: formData.get('specialRequests') || '',  // Use 'special_requests' not 'notes'
         payment_method: paymentMethod,
-        payment_status: paymentMethod === 'mpesa' ? 'pending' : 'paid',
+        payment_status: paymentMethod === 'mpesa_stk' || paymentMethod === 'mpesa_manual' ? 'pending' : 'paid',
         booking_reference: bookingRef,
         status: 'confirmed',
         created_at: new Date().toISOString()
     };
     
-    // Add M-Pesa number if M-Pesa payment
-    if (paymentMethod === 'mpesa') {
+    // Add M-Pesa details based on payment method
+    if (paymentMethod === 'mpesa_stk') {
+        // For STK Push, use the main phone number
+        bookingData.mpesa_number = phoneNumber.replace(/\s/g, '');
+        bookingData.payment_method = 'mpesa_stk'; // Specifically mark as STK Push
+    } else if (paymentMethod === 'mpesa_manual') {
+        // For Manual M-Pesa, get the separate M-Pesa number
         const mpesaNumber = document.getElementById('mpesaNumber');
         bookingData.mpesa_number = mpesaNumber ? mpesaNumber.value.replace(/\s/g, '') : '';
+        bookingData.payment_method = 'mpesa_manual'; // Specifically mark as Manual M-Pesa
     }
     
     return bookingData;
@@ -1011,6 +1102,7 @@ async function saveBookingToSupabase(bookingData) {
         }
     }
 }
+
 function saveBookingLocally(bookingData) {
     try {
         // Get existing bookings from localStorage
@@ -1079,7 +1171,7 @@ async function syncLocalBookings() {
                             appointment_date: booking.appointment_date,
                             appointment_time: booking.appointment_time,
                             barber_name: booking.barber_name,
-                            notes: booking.special_requests,
+                            special_requests: booking.special_requests,
                             payment_method: booking.payment_method,
                             payment_status: booking.payment_status,
                             booking_reference: booking.booking_reference,
@@ -1445,7 +1537,7 @@ function printBookingDetails(bookingData) {
                 </div>
                 <div class="detail-row">
                     <span class="label">Payment Method:</span>
-                    <span class="value">${bookingData.payment_method === 'mpesa' ? 'M-Pesa' : bookingData.payment_method === 'cash' ? 'Cash at Shop' : bookingData.payment_method}</span>
+                    <span class="value">${bookingData.payment_method === 'mpesa_stk' ? 'M-Pesa STK Push' : bookingData.payment_method === 'mpesa_manual' ? 'M-Pesa (Manual)' : bookingData.payment_method === 'cash' ? 'Cash at Shop' : bookingData.payment_method}</span>
                 </div>
                 ${bookingData.special_requests ? `
                 <div class="detail-row">
@@ -1505,6 +1597,7 @@ function shareBookingDetails(bookingData) {
 💈 Service: ${bookingData.service_name}
 ✂️ Barber: ${bookingData.barber_name}
 💰 Amount: KES ${bookingData.service_price}
+💳 Payment: ${bookingData.payment_method === 'mpesa_stk' ? 'M-Pesa STK Push' : bookingData.payment_method === 'mpesa_manual' ? 'M-Pesa (Manual)' : bookingData.payment_method === 'cash' ? 'Cash at Shop' : bookingData.payment_method}
 📱 Ref: ${bookingData.booking_reference}
 
 📍 Location: KenBarber Shop, London Ward, Nakuru
