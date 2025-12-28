@@ -175,17 +175,21 @@ function initializeDatePicker() {
             timeSelect.disabled = true;
         }
     });
-    
-    // Trigger initial load for tomorrow if date is set
-    if (dateInput && dateInput.value) {
-        setTimeout(() => {
-            const event = new Event('change');
-            dateInput.dispatchEvent(event);
-        }, 200);
-    }
-}
 
 async function loadAvailableTimeSlots(date) {
+     // ADD THIS PROTECTION:
+    if (!date || date.trim() === '') {
+        console.warn('loadAvailableTimeSlots called with empty date');
+        return;
+    }
+    
+    // ADD THIS TO PREVENT MULTIPLE CALLS:
+    if (window.loadingTimeSlots) {
+        console.log('Time slots already loading, skipping...');
+        return;
+    }
+    
+    window.loadingTimeSlots = true;
     try {
         console.log('Loading time slots for:', date);
         
