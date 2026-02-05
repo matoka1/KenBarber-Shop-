@@ -1,3 +1,29 @@
+// Add this at the VERY TOP of your main.js
+// ============================================
+// FALLBACK DATA (in case window.FALLBACK_DATA is not defined)
+// ============================================
+if (!window.FALLBACK_DATA) {
+    window.FALLBACK_DATA = {
+        services: [
+            { id: 1, name: "Classic Haircut", description: "Professional haircut with styling", price: 30, duration: 30, is_active: true },
+            { id: 2, name: "Beard Trim", description: "Precision beard trimming", price: 20, duration: 20, is_active: true },
+            { id: 3, name: "Haircut & Beard", description: "Complete grooming package", price: 45, duration: 45, is_active: true },
+            { id: 4, name: "Hot Towel Shave", description: "Traditional hot towel shave", price: 25, duration: 25, is_active: true },
+            { id: 5, name: "Kids Haircut", description: "Special haircut for children", price: 25, duration: 25, is_active: true }
+        ],
+        barbers: [
+            { id: 1, name: "John Maina", specialization: "Traditional Cuts", experience_years: 8, image_url: "", is_active: true },
+            { id: 2, name: "David Omondi", specialization: "Modern Styles", experience_years: 5, image_url: "", is_active: true },
+            { id: 3, name: "Peter Kamau", specialization: "Beard Specialist", experience_years: 10, image_url: "", is_active: true }
+        ],
+        testimonials: [
+            { id: 1, customer_name: "James Mwangi", comment: "Best barbershop in Nakuru!", rating: 5, is_approved: true },
+            { id: 2, customer_name: "Brian Ochieng", comment: "Great service every time!", rating: 5, is_approved: true },
+            { id: 3, customer_name: "Michael Otieno", comment: "Perfect haircut every time.", rating: 5, is_approved: true }
+        ]
+    };
+}
+
 // js/main.js - SIMPLE & WORKING VERSION
 console.log('🏁 KenBarber Main.js Initializing...');
 
