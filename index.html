@@ -762,63 +762,60 @@
         </div>
     </div>
 
-   <!-- SIMPLE SCRIPT SETUP - Replace everything from line 729 onwards -->
+   <!-- SIMPLE & CLEAN SCRIPT LOADING -->
 <script>
-    // Simple Supabase setup
-    const SUPABASE_URL = 'https://eqjdkpanqwjhuyavvdaf.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA';
-
-    // Load Supabase client
-    const supabaseScript = document.createElement('script');
-    supabaseScript.src = 'https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js';
-    supabaseScript.onload = function() {
-        console.log('✅ Supabase client loaded');
-        
-        // Initialize Supabase
-        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: { persistSession: false },
-            global: { headers: { 'Content-Type': 'application/json' } }
+    console.log('🚀 Starting KenBarber Website...');
+    
+    // Load scripts in correct order
+    function loadScripts() {
+        // 1. Load configuration
+        loadScript('js/config.js', function() {
+            console.log('✅ Config loaded');
+            
+            // 2. Load Supabase
+            const supabaseScript = document.createElement('script');
+            supabaseScript.src = 'https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js';
+            supabaseScript.onload = function() {
+                console.log('✅ Supabase client loaded');
+                
+                // Initialize Supabase
+                if (window.SUPABASE_CONFIG) {
+                    window.supabase = supabase.createClient(
+                        window.SUPABASE_CONFIG.url,
+                        window.SUPABASE_CONFIG.key,
+                        {
+                            auth: { persistSession: false },
+                            global: { headers: { 'Content-Type': 'application/json' } }
+                        }
+                    );
+                    console.log('✅ Supabase initialized');
+                }
+                
+                // 3. Load main.js
+                loadScript('js/main.js', function() {
+                    console.log('✅ Main.js loaded');
+                    
+                    // 4. Load booking.js
+                    loadScript('js/booking.js', function() {
+                        console.log('✅ Booking.js loaded');
+                        console.log('🎉 All scripts loaded successfully!');
+                    });
+                });
+            };
+            document.head.appendChild(supabaseScript);
         });
-        
-        // Update database status
-        const dbStatus = document.getElementById('dbStatus');
-        if (dbStatus) {
-            dbStatus.className = 'db-status online';
-            dbStatus.innerHTML = '<i class="fas fa-circle"></i> <span>Database Connected</span>';
-        }
-        
-        // Now load main.js
-        loadMainJS();
-    };
-    document.head.appendChild(supabaseScript);
-    
-    function loadMainJS() {
-        console.log('📦 Loading main.js...');
-        const mainScript = document.createElement('script');
-        mainScript.src = 'js/main.js';
-        mainScript.onload = function() {
-            console.log('✅ main.js loaded');
-            // Load booking.js after main.js
-            loadBookingJS();
-        };
-        mainScript.onerror = function() {
-            console.error('❌ Failed to load main.js');
-        };
-        document.body.appendChild(mainScript);
     }
     
-    function loadBookingJS() {
-        console.log('📦 Loading booking.js...');
-        const bookingScript = document.createElement('script');
-        bookingScript.src = 'js/booking.js';
-        bookingScript.onload = function() {
-            console.log('✅ booking.js loaded');
+    function loadScript(src, callback) {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = callback;
+        script.onerror = function() {
+            console.error('❌ Failed to load:', src);
+            callback(); // Still continue
         };
-        document.body.appendChild(bookingScript);
+        document.body.appendChild(script);
     }
-    
-    // Set current year
-    document.getElementById('currentYear').textContent = new Date().getFullYear();
     
     // Global utility functions
     window.openGoogleMaps = function() {
@@ -838,7 +835,10 @@
     };
     
     window.subscribeNewsletter = async function() {
-        const email = document.getElementById('newsletterEmail').value;
+        const emailInput = document.getElementById('newsletterEmail');
+        if (!emailInput) return;
+        
+        const email = emailInput.value.trim();
         if (!email || !email.includes('@')) {
             alert('Please enter a valid email address');
             return;
@@ -848,25 +848,39 @@
             if (window.supabase) {
                 const { error } = await window.supabase
                     .from('newsletter_subscriptions')
-                    .insert({ email: email, subscribed_at: new Date().toISOString() });
+                    .insert({ 
+                        email: email, 
+                        subscribed_at: new Date().toISOString() 
+                    });
                 
                 if (!error) {
                     alert('Thank you for subscribing!');
                 }
             }
         } catch (error) {
-            console.warn('Could not save to Supabase:', error);
+            console.warn('Could not save to database:', error);
         }
         
         // Save locally
-        let subscriptions = JSON.parse(localStorage.getItem('kenbarber_newsletter') || '[]');
-        if (!subscriptions.includes(email)) {
-            subscriptions.push(email);
-            localStorage.setItem('kenbarber_newsletter', JSON.stringify(subscriptions));
+        try {
+            let subscriptions = JSON.parse(localStorage.getItem('kenbarber_newsletter') || '[]');
+            if (!subscriptions.includes(email)) {
+                subscriptions.push(email);
+                localStorage.setItem('kenbarber_newsletter', JSON.stringify(subscriptions));
+            }
+        } catch (error) {
+            console.warn('Could not save locally:', error);
         }
         
-        document.getElementById('newsletterEmail').value = '';
+        emailInput.value = '';
     };
+    
+    // Start loading scripts
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadScripts);
+    } else {
+        loadScripts();
+    }
 </script>
 </body>
 </html>
