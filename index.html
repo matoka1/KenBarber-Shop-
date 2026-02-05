@@ -762,58 +762,120 @@
         </div>
     </div>
 
-   <!-- SIMPLE & CLEAN SCRIPT LOADING -->
+ <!-- SIMPLE WORKING SCRIPT LOADER -->
 <script>
     console.log('🚀 Starting KenBarber Website...');
     
-    // Load scripts in correct order
-    function loadScripts() {
-        // 1. Load configuration
-        loadScript('js/config.js', function() {
-            console.log('✅ Config loaded');
-            
-            // 2. Load Supabase
-            const supabaseScript = document.createElement('script');
-            supabaseScript.src = 'https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js';
-            supabaseScript.onload = function() {
-                console.log('✅ Supabase client loaded');
-                
-                // Initialize Supabase
-                if (window.SUPABASE_CONFIG) {
-                    window.supabase = supabase.createClient(
-                        window.SUPABASE_CONFIG.url,
-                        window.SUPABASE_CONFIG.key,
-                        {
-                            auth: { persistSession: false },
-                            global: { headers: { 'Content-Type': 'application/json' } }
-                        }
-                    );
-                    console.log('✅ Supabase initialized');
-                }
-                
-                // 3. Load main.js
-                loadScript('js/main.js', function() {
-                    console.log('✅ Main.js loaded');
-                    
-                    // 4. Load booking.js
-                    loadScript('js/booking.js', function() {
-                        console.log('✅ Booking.js loaded');
-                        console.log('🎉 All scripts loaded successfully!');
-                    });
-                });
-            };
-            document.head.appendChild(supabaseScript);
-        });
+    // Update status
+    function updateStatus(message, type = 'info') {
+        const dbStatus = document.getElementById('dbStatus');
+        if (!dbStatus) return;
+        
+        const colors = {
+            info: 'var(--secondary)',
+            success: '#28a745',
+            warning: '#ffc107',
+            error: '#dc3545'
+        };
+        
+        dbStatus.style.backgroundColor = colors[type] || colors.info;
+        dbStatus.innerHTML = `<i class="fas fa-circle"></i> <span>${message}</span>`;
     }
     
-    function loadScript(src, callback) {
+    // Initialize everything
+    function initializeWebsite() {
+        console.log('⚡ Initializing website...');
+        updateStatus('Starting...', 'info');
+        
+        // Set current year
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        
+        // Load Supabase first
+        loadSupabase();
+    }
+    
+    // Load Supabase client
+    function loadSupabase() {
+        console.log('📦 Loading Supabase...');
+        updateStatus('Loading database...', 'info');
+        
         const script = document.createElement('script');
-        script.src = src;
-        script.onload = callback;
-        script.onerror = function() {
-            console.error('❌ Failed to load:', src);
-            callback(); // Still continue
+        script.src = 'https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js';
+        script.onload = function() {
+            console.log('✅ Supabase loaded');
+            
+            // Initialize Supabase
+            try {
+                window.supabase = supabase.createClient(
+                    'https://eqjdkpanqwjhuyavvdaf.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA',
+                    {
+                        auth: { persistSession: false },
+                        global: { headers: { 'Content-Type': 'application/json' } }
+                    }
+                );
+                
+                console.log('✅ Supabase initialized');
+                
+                // Now load main.js
+                loadMainJS();
+                
+            } catch (error) {
+                console.error('❌ Supabase error:', error);
+                updateStatus('Using offline mode', 'warning');
+                loadMainJS(); // Still load main.js with fallback
+            }
         };
+        
+        script.onerror = function() {
+            console.error('❌ Failed to load Supabase');
+            updateStatus('Using offline mode', 'warning');
+            loadMainJS(); // Load main.js anyway
+        };
+        
+        document.head.appendChild(script);
+    }
+    
+    // Load main.js
+    function loadMainJS() {
+        console.log('📦 Loading main.js...');
+        updateStatus('Loading services...', 'info');
+        
+        const script = document.createElement('script');
+        script.src = 'js/main.js';
+        script.onload = function() {
+            console.log('✅ main.js loaded');
+            updateStatus('Ready', 'success');
+            
+            // Load booking.js after a delay
+            setTimeout(loadBookingJS, 1000);
+        };
+        
+        script.onerror = function() {
+            console.error('❌ Failed to load main.js');
+            updateStatus('Error loading', 'error');
+            // Try to load booking.js anyway
+            setTimeout(loadBookingJS, 1000);
+        };
+        
+        document.body.appendChild(script);
+    }
+    
+    // Load booking.js
+    function loadBookingJS() {
+        console.log('📦 Loading booking.js...');
+        
+        const script = document.createElement('script');
+        script.src = 'js/booking.js';
+        script.onload = function() {
+            console.log('✅ booking.js loaded');
+            console.log('🎉 All systems ready!');
+        };
+        
+        script.onerror = function() {
+            console.error('❌ Failed to load booking.js');
+        };
+        
         document.body.appendChild(script);
     }
     
@@ -844,6 +906,13 @@
             return;
         }
         
+        // Show loading
+        const button = emailInput.nextElementSibling;
+        const originalText = button ? button.innerHTML : 'Subscribe';
+        if (button) {
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+        
         try {
             if (window.supabase) {
                 const { error } = await window.supabase
@@ -854,11 +923,12 @@
                     });
                 
                 if (!error) {
-                    alert('Thank you for subscribing!');
+                    alert('Thank you for subscribing to KenBarber updates!');
                 }
             }
         } catch (error) {
-            console.warn('Could not save to database:', error);
+            console.warn('Could not save to Supabase:', error);
+            // Continue with local save
         }
         
         // Save locally
@@ -867,19 +937,24 @@
             if (!subscriptions.includes(email)) {
                 subscriptions.push(email);
                 localStorage.setItem('kenbarber_newsletter', JSON.stringify(subscriptions));
+                alert('Thank you for subscribing!');
             }
         } catch (error) {
             console.warn('Could not save locally:', error);
         }
         
+        // Reset button and input
+        if (button) {
+            button.innerHTML = originalText;
+        }
         emailInput.value = '';
     };
     
-    // Start loading scripts
+    // Start initialization
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadScripts);
+        document.addEventListener('DOMContentLoaded', initializeWebsite);
     } else {
-        loadScripts();
+        initializeWebsite();
     }
 </script>
 </body>
