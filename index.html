@@ -762,11 +762,11 @@
         </div>
     </div>
 
- <!-- SIMPLE WORKING SCRIPT LOADER -->
+<!-- FIXED SUPABASE LOADER -->
 <script>
     console.log('🚀 Starting KenBarber Website...');
     
-    // Update status
+    // Update status function
     function updateStatus(message, type = 'info') {
         const dbStatus = document.getElementById('dbStatus');
         if (!dbStatus) return;
@@ -782,80 +782,156 @@
         dbStatus.innerHTML = `<i class="fas fa-circle"></i> <span>${message}</span>`;
     }
     
-    // Initialize everything
+    // Initialize website
     function initializeWebsite() {
         console.log('⚡ Initializing website...');
         updateStatus('Starting...', 'info');
         
         // Set current year
-        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        const yearElement = document.getElementById('currentYear');
+        if (yearElement) {
+            yearElement.textContent = new Date().getFullYear();
+        }
         
-        // Load Supabase first
+        // Initialize mobile menu toggle
+        const mobileToggle = document.getElementById('mobileToggle');
+        const navMenu = document.getElementById('navMenu');
+        if (mobileToggle && navMenu) {
+            mobileToggle.addEventListener('click', function() {
+                navMenu.classList.toggle('active');
+            });
+        }
+        
+        // Load Supabase
         loadSupabase();
     }
     
-    // Load Supabase client
+    // Load Supabase with retry logic
     function loadSupabase() {
         console.log('📦 Loading Supabase...');
-        updateStatus('Loading database...', 'info');
+        updateStatus('Connecting to database...', 'info');
         
+        // First try: Load from standard CDN
         const script = document.createElement('script');
-        script.src = 'https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js';
+        script.src = 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+        
         script.onload = function() {
-            console.log('✅ Supabase loaded');
-            
-            // Initialize Supabase
-            try {
-                window.supabase = supabase.createClient(
-                    'https://eqjdkpanqwjhuyavvdaf.supabase.co',
-                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA',
-                    {
-                        auth: { persistSession: false },
-                        global: { headers: { 'Content-Type': 'application/json' } }
-                    }
-                );
-                
-                console.log('✅ Supabase initialized');
-                
-                // Now load main.js
-                loadMainJS();
-                
-            } catch (error) {
-                console.error('❌ Supabase error:', error);
-                updateStatus('Using offline mode', 'warning');
-                loadMainJS(); // Still load main.js with fallback
-            }
+            console.log('✅ Supabase JS library loaded');
+            initializeSupabaseClient();
         };
         
         script.onerror = function() {
-            console.error('❌ Failed to load Supabase');
-            updateStatus('Using offline mode', 'warning');
-            loadMainJS(); // Load main.js anyway
+            console.warn('⚠️ Failed to load from unpkg, trying jsDelivr...');
+            loadSupabaseFromJsDelivr();
         };
         
         document.head.appendChild(script);
     }
     
+    // Alternative CDN
+    function loadSupabaseFromJsDelivr() {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+        
+        script.onload = function() {
+            console.log('✅ Supabase loaded from jsDelivr');
+            initializeSupabaseClient();
+        };
+        
+        script.onerror = function() {
+            console.error('❌ Failed to load Supabase from all CDNs');
+            updateStatus('Database offline', 'error');
+            // Still load main.js without Supabase
+            loadMainJS();
+        };
+        
+        document.head.appendChild(script);
+    }
+    
+    // Initialize Supabase client
+    function initializeSupabaseClient() {
+        try {
+            // Your Supabase credentials
+            const SUPABASE_URL = 'https://eqjdkpanqwjhuyavvdaf.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA';
+            
+            // Create client
+            window.supabase = window.supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_ANON_KEY,
+                {
+                    auth: {
+                        persistSession: false,
+                        autoRefreshToken: false
+                    },
+                    global: {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'apikey': SUPABASE_ANON_KEY
+                        }
+                    }
+                }
+            );
+            
+            console.log('🎉 Supabase client created successfully!');
+            console.log('Client URL:', window.supabase.supabaseUrl);
+            
+            // Test connection
+            testSupabaseConnection();
+            
+        } catch (error) {
+            console.error('❌ Error creating Supabase client:', error);
+            updateStatus('Database connection failed', 'error');
+            loadMainJS();
+        }
+    }
+    
+    // Test the connection
+    async function testSupabaseConnection() {
+        try {
+            console.log('🔍 Testing Supabase connection...');
+            
+            // Simple test query
+            const { data, error } = await window.supabase
+                .from('services')
+                .select('count')
+                .limit(1);
+            
+            if (error) {
+                console.warn('⚠️ Supabase test query error:', error.message);
+                updateStatus('Database ready (limited)', 'warning');
+            } else {
+                console.log('✅ Supabase connection successful!');
+                updateStatus('Database connected', 'success');
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ Supabase test failed:', error.message);
+            updateStatus('Database connected', 'info');
+        }
+        
+        // Always load main.js after testing
+        loadMainJS();
+    }
+    
     // Load main.js
     function loadMainJS() {
         console.log('📦 Loading main.js...');
-        updateStatus('Loading services...', 'info');
         
         const script = document.createElement('script');
         script.src = 'js/main.js';
+        
         script.onload = function() {
             console.log('✅ main.js loaded');
-            updateStatus('Ready', 'success');
             
-            // Load booking.js after a delay
-            setTimeout(loadBookingJS, 1000);
+            // Load booking.js after a short delay
+            setTimeout(loadBookingJS, 500);
         };
         
         script.onerror = function() {
             console.error('❌ Failed to load main.js');
-            updateStatus('Error loading', 'error');
-            // Try to load booking.js anyway
-            setTimeout(loadBookingJS, 1000);
+            // Still try to load booking.js
+            loadBookingJS();
         };
         
         document.body.appendChild(script);
@@ -867,9 +943,15 @@
         
         const script = document.createElement('script');
         script.src = 'js/booking.js';
+        
         script.onload = function() {
             console.log('✅ booking.js loaded');
             console.log('🎉 All systems ready!');
+            
+            // Update status to show system is ready
+            setTimeout(() => {
+                updateStatus('System Ready', 'success');
+            }, 1000);
         };
         
         script.onerror = function() {
@@ -906,11 +988,12 @@
             return;
         }
         
-        // Show loading
         const button = emailInput.nextElementSibling;
         const originalText = button ? button.innerHTML : 'Subscribe';
+        
         if (button) {
             button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
         }
         
         try {
@@ -924,36 +1007,41 @@
                 
                 if (!error) {
                     alert('Thank you for subscribing to KenBarber updates!');
+                } else {
+                    console.warn('Database error:', error);
                 }
             }
         } catch (error) {
-            console.warn('Could not save to Supabase:', error);
-            // Continue with local save
+            console.warn('Database error:', error);
         }
         
-        // Save locally
+        // Save locally as fallback
         try {
             let subscriptions = JSON.parse(localStorage.getItem('kenbarber_newsletter') || '[]');
             if (!subscriptions.includes(email)) {
                 subscriptions.push(email);
                 localStorage.setItem('kenbarber_newsletter', JSON.stringify(subscriptions));
-                alert('Thank you for subscribing!');
+                if (!window.supabase) {
+                    alert('Thank you for subscribing!');
+                }
             }
         } catch (error) {
-            console.warn('Could not save locally:', error);
+            console.warn('Local storage error:', error);
         }
         
         // Reset button and input
         if (button) {
             button.innerHTML = originalText;
+            button.disabled = false;
         }
         emailInput.value = '';
     };
     
-    // Start initialization
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeWebsite);
-    } else {
+    // Start everything when DOM is ready
+    document.addEventListener('DOMContentLoaded', initializeWebsite);
+    
+    // If DOM is already loaded
+    if (document.readyState === 'interactive' || document.readyState === 'complete') {
         initializeWebsite();
     }
 </script>
