@@ -1,30 +1,4 @@
-// Add this at the VERY TOP of your main.js
-// ============================================
-// FALLBACK DATA (in case window.FALLBACK_DATA is not defined)
-// ============================================
-if (!window.FALLBACK_DATA) {
-    window.FALLBACK_DATA = {
-        services: [
-            { id: 1, name: "Classic Haircut", description: "Professional haircut with styling", price: 30, duration: 30, is_active: true },
-            { id: 2, name: "Beard Trim", description: "Precision beard trimming", price: 20, duration: 20, is_active: true },
-            { id: 3, name: "Haircut & Beard", description: "Complete grooming package", price: 45, duration: 45, is_active: true },
-            { id: 4, name: "Hot Towel Shave", description: "Traditional hot towel shave", price: 25, duration: 25, is_active: true },
-            { id: 5, name: "Kids Haircut", description: "Special haircut for children", price: 25, duration: 25, is_active: true }
-        ],
-        barbers: [
-            { id: 1, name: "John Maina", specialization: "Traditional Cuts", experience_years: 8, image_url: "", is_active: true },
-            { id: 2, name: "David Omondi", specialization: "Modern Styles", experience_years: 5, image_url: "", is_active: true },
-            { id: 3, name: "Peter Kamau", specialization: "Beard Specialist", experience_years: 10, image_url: "", is_active: true }
-        ],
-        testimonials: [
-            { id: 1, customer_name: "James Mwangi", comment: "Best barbershop in Nakuru!", rating: 5, is_approved: true },
-            { id: 2, customer_name: "Brian Ochieng", comment: "Great service every time!", rating: 5, is_approved: true },
-            { id: 3, customer_name: "Michael Otieno", comment: "Perfect haircut every time.", rating: 5, is_approved: true }
-        ]
-    };
-}
-
-// js/main.js - SIMPLE & WORKING VERSION
+// js/main.js - DATABASE ONLY VERSION
 console.log('🏁 KenBarber Main.js Initializing...');
 
 // Global state
@@ -53,26 +27,33 @@ function updateStatus(message, type = 'info') {
 async function loadAllData() {
     if (isInitialized) return;
     
-    console.log('📡 Starting data load...');
-    updateStatus('Loading data...', 'info');
+    console.log('📡 Starting data load from database...');
+    updateStatus('Loading data from database...', 'info');
     
     try {
         // Check if Supabase is available
         if (!window.supabase) {
-            console.warn('Supabase not available, using fallback');
-            throw new Error('Supabase client not available');
+            console.error('❌ Supabase client not available');
+            updateStatus('Database connection failed', 'error');
+            showEmptyStates();
+            return;
         }
         
         // Load data in parallel
         const [services, barbers, testimonials] = await Promise.all([
-            loadFromDatabase('services'),
-            loadFromDatabase('barbers'),
-            loadFromDatabase('testimonials')
+            loadServicesFromDatabase(),
+            loadBarbersFromDatabase(),
+            loadTestimonialsFromDatabase()
         ]);
         
         allServices = services || [];
         allBarbers = barbers || [];
         allTestimonials = testimonials || [];
+        
+        console.log(`✅ Database data loaded: 
+            ${allServices.length} services, 
+            ${allBarbers.length} barbers, 
+            ${allTestimonials.length} testimonials`);
         
         // Update UI
         updateServicesUI();
@@ -80,84 +61,173 @@ async function loadAllData() {
         updateTestimonialsUI();
         updateBookingForm();
         
-        console.log(`✅ Data loaded: ${allServices.length} services, ${allBarbers.length} barbers`);
-        updateStatus('System Ready', 'success');
+        // Show appropriate status
+        if (allServices.length === 0) {
+            updateStatus('No services found in database', 'warning');
+        } else {
+            updateStatus('System Ready', 'success');
+        }
+        
         isInitialized = true;
         
     } catch (error) {
-        console.error('❌ Error loading data:', error);
-        loadFallbackData();
-        updateStatus('Using Local Data', 'warning');
+        console.error('❌ Error loading data from database:', error);
+        updateStatus('Database error', 'error');
+        showEmptyStates();
     }
 }
 
-// Load from database
-async function loadFromDatabase(tableName) {
+// Load services from database
+async function loadServicesFromDatabase() {
     try {
-        console.log(`  ↳ Loading ${tableName}...`);
+        console.log('  ↳ Loading services from database...');
         
-        let query = window.supabase
-            .from(tableName)
-            .select('*');
+        const { data, error } = await window.supabase
+            .from('services')
+            .select('*')
+            .eq('is_active', true)
+            .order('price', { ascending: true });
         
-        // Add specific filters
-        if (tableName === 'services') {
-            query = query.eq('is_active', true).order('price', { ascending: true });
-        } else if (tableName === 'barbers') {
-            query = query.eq('is_active', true).order('experience_years', { ascending: false });
-        } else if (tableName === 'testimonials') {
-            query = query.eq('is_approved', true).order('created_at', { ascending: false }).limit(6);
+        if (error) {
+            console.error('  ↳ Error loading services:', error);
+            return [];
         }
         
-        const { data, error } = await query;
-        
-        if (error) throw error;
+        console.log(`  ↳ Found ${data?.length || 0} active services`);
         return data || [];
         
     } catch (error) {
-        console.error(`  ↳ Error loading ${tableName}:`, error);
-        return getFallbackData(tableName);
+        console.error('  ↳ Exception loading services:', error);
+        return [];
     }
 }
 
-// Fallback data
-function loadFallbackData() {
-    console.log('🔄 Loading fallback data...');
-    
-    allServices = getFallbackData('services');
-    allBarbers = getFallbackData('barbers');
-    allTestimonials = getFallbackData('testimonials');
-    
-    updateServicesUI();
-    updateBarbersUI();
-    updateTestimonialsUI();
-    updateBookingForm();
+// Load barbers from database
+async function loadBarbersFromDatabase() {
+    try {
+        console.log('  ↳ Loading barbers from database...');
+        
+        const { data, error } = await window.supabase
+            .from('barbers')
+            .select('id, name, specialty, experience_years, bio, image_url, is_active')
+            .eq('is_active', true)
+            .order('experience_years', { ascending: false });
+        
+        if (error) {
+            console.error('  ↳ Error loading barbers:', error);
+            return [];
+        }
+        
+        console.log(`  ↳ Found ${data?.length || 0} active barbers`);
+        return data || [];
+        
+    } catch (error) {
+        console.error('  ↳ Exception loading barbers:', error);
+        return [];
+    }
 }
 
-function getFallbackData(tableName) {
-    if (!window.FALLBACK_DATA) return [];
-    return window.FALLBACK_DATA[tableName] || [];
+// Load testimonials from database
+async function loadTestimonialsFromDatabase() {
+    try {
+        console.log('  ↳ Loading testimonials from database...');
+        
+        const { data, error } = await window.supabase
+            .from('testimonials')
+            .select('*')
+            .eq('is_approved', true)
+            .order('created_at', { ascending: false })
+            .limit(6);
+        
+        if (error) {
+            console.error('  ↳ Error loading testimonials:', error);
+            return [];
+        }
+        
+        console.log(`  ↳ Found ${data?.length || 0} approved testimonials`);
+        return data || [];
+        
+    } catch (error) {
+        console.error('  ↳ Exception loading testimonials:', error);
+        return [];
+    }
+}
+
+// Show empty states when no data
+function showEmptyStates() {
+    const servicesGrid = document.getElementById('servicesGrid');
+    const barbersGrid = document.getElementById('barbersGrid');
+    const testimonialsGrid = document.getElementById('testimonialsGrid');
+    
+    if (servicesGrid) {
+        servicesGrid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>No Services Available</h3>
+                <p>Services will be added soon. Please check back later.</p>
+            </div>
+        `;
+    }
+    
+    if (barbersGrid) {
+        barbersGrid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-user-slash"></i>
+                <h3>No Barbers Available</h3>
+                <p>Barber information will be updated soon.</p>
+            </div>
+        `;
+    }
+    
+    if (testimonialsGrid) {
+        testimonialsGrid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-comment-slash"></i>
+                <h3>No Testimonials Yet</h3>
+                <p>Be the first to leave a review!</p>
+            </div>
+        `;
+    }
 }
 
 // Update UI functions
 function updateServicesUI() {
     const servicesGrid = document.getElementById('servicesGrid');
-    if (!servicesGrid || allServices.length === 0) return;
+    if (!servicesGrid) {
+        console.error('❌ servicesGrid element not found');
+        return;
+    }
     
-    servicesGrid.innerHTML = allServices.map(service => `
+    if (allServices.length === 0) {
+        servicesGrid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-cut"></i>
+                <h3>No Services Available</h3>
+                <p>All services are currently unavailable. Please check back later.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    servicesGrid.innerHTML = allServices.map(service => {
+        const duration = service.duration_minutes || service.duration || 30;
+        
+        return `
         <div class="service-card animate-ready">
             <div class="service-icon">✂️</div>
-            <h3>${service.name}</h3>
+            <h3>${service.name || 'Unnamed Service'}</h3>
             <p>${service.description || 'Professional grooming service'}</p>
             <div class="service-details">
-                <span class="price">KES ${service.price}</span>
-                <span class="duration">${service.duration || 30} min</span>
+                <span class="price">KES ${service.price || '0'}</span>
+                <span class="duration">${duration} min</span>
+                ${service.category ? `<span class="category">${service.category}</span>` : ''}
             </div>
-            <button class="btn-primary" onclick="bookService(${service.id}, ${service.price})">
+            <button class="btn-primary" onclick="bookService('${service.id}', '${service.name}', ${service.price})">
                 Book Now
             </button>
         </div>
-    `).join('');
+        `;
+    }).join('');
     
     // Trigger animations
     setTimeout(() => {
@@ -169,20 +239,39 @@ function updateServicesUI() {
 
 function updateBarbersUI() {
     const barbersGrid = document.getElementById('barbersGrid');
-    if (!barbersGrid || allBarbers.length === 0) return;
+    if (!barbersGrid) {
+        console.error('❌ barbersGrid element not found');
+        return;
+    }
     
-    barbersGrid.innerHTML = allBarbers.map(barber => `
+    if (allBarbers.length === 0) {
+        barbersGrid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-user-tie"></i>
+                <h3>No Barbers Available</h3>
+                <p>All barbers are currently unavailable. Please check back later.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    barbersGrid.innerHTML = allBarbers.map(barber => {
+        const defaultImage = 'https://images.unsplash.com/photo-1567894340315-735d7c361db0?auto=format&fit=crop&w=400';
+        
+        return `
         <div class="barber-card animate-ready">
             <div class="barber-img">
-                <img src="${barber.image_url || 'https://images.unsplash.com/photo-1567894340315-735d7c361db0?auto=format&fit=crop&w=400'}" 
+                <img src="${barber.image_url || defaultImage}" 
                      alt="${barber.name}"
-                     onerror="this.src='https://images.unsplash.com/photo-1567894340315-735d7c361db0?auto=format&fit=crop&w=400'">
+                     onerror="this.src='${defaultImage}'">
             </div>
             <h3>${barber.name}</h3>
-            <p class="specialization">${barber.specialization || 'Professional Barber'}</p>
+            <p class="specialization">${barber.specialty || 'Professional Barber'}</p>
             <p class="experience">${barber.experience_years || 3}+ years experience</p>
+            ${barber.bio ? `<p class="bio">${barber.bio}</p>` : ''}
         </div>
-    `).join('');
+        `;
+    }).join('');
     
     setTimeout(() => {
         document.querySelectorAll('.animate-ready').forEach(card => {
@@ -193,18 +282,35 @@ function updateBarbersUI() {
 
 function updateTestimonialsUI() {
     const testimonialsGrid = document.getElementById('testimonialsGrid');
-    if (!testimonialsGrid || allTestimonials.length === 0) return;
+    if (!testimonialsGrid) {
+        console.error('❌ testimonialsGrid element not found');
+        return;
+    }
     
-    testimonialsGrid.innerHTML = allTestimonials.map(testimonial => `
+    if (allTestimonials.length === 0) {
+        testimonialsGrid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-star"></i>
+                <h3>No Reviews Yet</h3>
+                <p>Be the first to share your experience!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    testimonialsGrid.innerHTML = allTestimonials.map(testimonial => {
+        const rating = testimonial.rating || 5;
+        return `
         <div class="testimonial-card animate-ready">
-            <div class="stars">${'★'.repeat(testimonial.rating || 5)}${'☆'.repeat(5 - (testimonial.rating || 5))}</div>
-            <p class="testimonial-text">"${testimonial.comment}"</p>
+            <div class="stars">${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}</div>
+            <p class="testimonial-text">"${testimonial.comment || 'Great service!'}"</p>
             <div class="customer-info">
-                <strong>${testimonial.customer_name}</strong>
+                <strong>${testimonial.customer_name || 'Happy Customer'}</strong>
                 <span>Verified Customer</span>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
     
     setTimeout(() => {
         document.querySelectorAll('.animate-ready').forEach(card => {
@@ -214,39 +320,59 @@ function updateTestimonialsUI() {
 }
 
 function updateBookingForm() {
-    console.log('🎨 Updating booking form...');
+    console.log('🎨 Updating booking form with database data...');
     
     // Update service dropdown
     const serviceSelect = document.getElementById('serviceType');
-    if (serviceSelect && allServices.length > 0) {
-        serviceSelect.innerHTML = `
-            <option value="">Select a service...</option>
-            ${allServices.map(service => `
-                <option value="${service.id}" data-price="${service.price}" data-name="${service.name}">
-                    ${service.name} - KES ${service.price}
-                </option>
-            `).join('')}
-        `;
+    if (serviceSelect) {
+        if (allServices.length === 0) {
+            serviceSelect.innerHTML = '<option value="">No services available</option>';
+            serviceSelect.disabled = true;
+        } else {
+            serviceSelect.innerHTML = `
+                <option value="">Select a service...</option>
+                ${allServices.map(service => {
+                    const duration = service.duration_minutes || service.duration || 30;
+                    return `
+                    <option value="${service.id}" 
+                            data-price="${service.price}" 
+                            data-duration="${duration}"
+                            data-name="${service.name}">
+                        ${service.name} - KES ${service.price} (${duration} min)
+                    </option>
+                    `;
+                }).join('')}
+            `;
+            serviceSelect.disabled = false;
+        }
     }
     
     // Update barber dropdown
     const barberSelect = document.getElementById('barberSelect');
-    if (barberSelect && allBarbers.length > 0) {
-        barberSelect.innerHTML = `
-            <option value="">Any Available Barber</option>
-            ${allBarbers.map(barber => `
-                <option value="${barber.id}">
-                    ${barber.name} - ${barber.specialization || 'Barber'}
-                </option>
-            `).join('')}
-        `;
+    if (barberSelect) {
+        if (allBarbers.length === 0) {
+            barberSelect.innerHTML = '<option value="">No barbers available</option>';
+            barberSelect.disabled = true;
+        } else {
+            barberSelect.innerHTML = `
+                <option value="">Any Available Barber</option>
+                ${allBarbers.map(barber => `
+                    <option value="${barber.id}">
+                        ${barber.name} - ${barber.specialty || 'Professional Barber'}
+                    </option>
+                `).join('')}
+            `;
+            barberSelect.disabled = false;
+        }
     }
     
     // Update submit button
     const submitBtn = document.getElementById('submitBtn');
     if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Booking';
+        submitBtn.disabled = (allServices.length === 0);
+        submitBtn.innerHTML = submitBtn.disabled 
+            ? '<i class="fas fa-calendar-times"></i> No Services Available'
+            : '<i class="fas fa-calendar-check"></i> Confirm Booking';
     }
     
     // Initialize date picker
@@ -280,14 +406,21 @@ function setupDatePicker() {
 }
 
 // Global booking function
-window.bookService = function(serviceId, price) {
-    console.log(`📝 Booking service ${serviceId} for KES ${price}`);
+window.bookService = function(serviceId, serviceName, price) {
+    console.log(`📝 Booking service: ${serviceName} (KES ${price})`);
     
     const serviceSelect = document.getElementById('serviceType');
     if (serviceSelect) {
         serviceSelect.value = serviceId;
         serviceSelect.dispatchEvent(new Event('change'));
     }
+    
+    // Update summary if it exists
+    const serviceNameElement = document.getElementById('selectedServiceName');
+    const servicePriceElement = document.getElementById('selectedServicePrice');
+    
+    if (serviceNameElement) serviceNameElement.textContent = serviceName;
+    if (servicePriceElement) servicePriceElement.textContent = `KES ${price}`;
     
     // Scroll to booking form
     const bookingSection = document.getElementById('booking');
@@ -315,10 +448,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load data after a short delay to ensure Supabase is ready
     setTimeout(() => {
         loadAllData();
-    }, 500);
+    }, 1000); // Increased delay to ensure Supabase is initialized
 });
 
-// Add CSS for animations
+// Add CSS for animations and empty states
 if (!document.querySelector('#animation-styles')) {
     const style = document.createElement('style');
     style.id = 'animation-styles';
@@ -332,8 +465,42 @@ if (!document.querySelector('#animation-styles')) {
             opacity: 1;
             transform: translateY(0);
         }
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin: 1rem;
+        }
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+        }
+        .empty-state h3 {
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+        }
+        .empty-state p {
+            color: var(--text-muted);
+        }
+        .service-details .category {
+            background: var(--accent);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+        .barber-card .bio {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
     `;
     document.head.appendChild(style);
 }
 
-console.log('✅ main.js loaded successfully');
+console.log('✅ main.js loaded successfully - Database Only Mode');
