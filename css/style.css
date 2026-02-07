@@ -16,6 +16,14 @@
     --warning: #ffc107;
     --info: #17a2b8;
     
+    /* Premium Gold Gradient */
+    --gold-gradient: linear-gradient(135deg, 
+        #d4af37 0%, 
+        #f0d885 25%, 
+        #d4af37 50%, 
+        #f0d885 75%, 
+        #d4af37 100%);
+    
     /* Typography */
     --font-primary: 'Inter', sans-serif;
     --font-heading: 'Outfit', sans-serif;
@@ -42,11 +50,13 @@
     --shadow-md: 0 4px 8px rgba(0,0,0,0.12);
     --shadow-lg: 0 8px 16px rgba(0,0,0,0.15);
     --shadow-xl: 0 12px 24px rgba(0,0,0,0.18);
+    --shadow-xxl: 0 20px 40px rgba(0,0,0,0.25);
     
     /* Transitions */
     --transition-fast: 0.2s ease;
     --transition-normal: 0.3s ease;
     --transition-slow: 0.5s ease;
+    --transition-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 /* Reset & Base Styles */
@@ -190,108 +200,621 @@ img {
 .gap-3 { gap: var(--spacing-md); }
 .gap-4 { gap: var(--spacing-lg); }
 
-/* Button Styles */
+/* ====================== */
+/* ENHANCED BUTTON STYLES */
+/* ====================== */
+
+/* Base Button with Premium Effects */
 .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--radius-md);
-    font-family: var(--font-primary);
-    font-weight: 500;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    font-family: var(--font-accent);
+    font-weight: 600;
     font-size: 1rem;
     border: none;
     cursor: pointer;
-    transition: all var(--transition-normal);
-    gap: 0.5rem;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    gap: 0.75rem;
     text-align: center;
     white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    box-shadow: var(--shadow-md);
+    min-width: 180px;
 }
 
 .btn i {
-    font-size: 1.1em;
+    font-size: 1.2em;
+    transition: transform 0.3s ease;
 }
 
+/* Button Size Variants */
+.btn-sm {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    border-radius: 40px;
+    min-width: 140px;
+}
+
+.btn-lg {
+    padding: 1.25rem 2.5rem;
+    font-size: 1.125rem;
+    border-radius: 60px;
+    min-width: 220px;
+}
+
+.btn-xl {
+    padding: 1.5rem 3rem;
+    font-size: 1.25rem;
+    border-radius: 70px;
+    font-weight: 700;
+    min-width: 260px;
+}
+
+/* Primary Button - Premium Gold Gradient */
 .btn-primary {
-    background-color: var(--primary);
+    background: linear-gradient(135deg, 
+        var(--primary) 0%, 
+        #e6b800 50%, 
+        var(--primary) 100%);
     color: var(--secondary);
-    border: 2px solid var(--primary);
+    border: 3px solid transparent;
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite linear;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.2) 0%, 
+        rgba(255, 255, 255, 0) 50%, 
+        rgba(255, 255, 255, 0.2) 100%);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+    z-index: -1;
+}
+
+.btn-primary::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, 
+        var(--primary) 0%, 
+        #e6b800 50%, 
+        var(--primary) 100%);
+    border-radius: 52px;
+    z-index: -2;
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
 .btn-primary:hover {
-    background-color: var(--primary-dark);
-    border-color: var(--primary-dark);
+    background-position: 100% 0;
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 
+        0 15px 30px rgba(212, 175, 55, 0.3),
+        0 5px 15px rgba(212, 175, 55, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
     color: var(--secondary);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
 }
 
+.btn-primary:hover::before {
+    transform: translateX(100%);
+}
+
+.btn-primary:hover::after {
+    opacity: 1;
+}
+
+.btn-primary:hover i {
+    transform: translateX(4px);
+}
+
+.btn-primary:active {
+    transform: translateY(-1px) scale(0.98);
+    box-shadow: 
+        0 8px 16px rgba(212, 175, 55, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Secondary Button - Gold Outline with Hover Fill */
 .btn-secondary {
-    background-color: transparent;
+    background: transparent;
     color: var(--primary);
-    border: 2px solid var(--primary);
+    border: 3px solid var(--primary);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-secondary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, 
+        var(--primary) 0%, 
+        #e6b800 100%);
+    transform: translateX(-100%);
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
 }
 
 .btn-secondary:hover {
-    background-color: var(--primary);
     color: var(--secondary);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 
+        0 15px 30px rgba(212, 175, 55, 0.25),
+        0 5px 15px rgba(212, 175, 55, 0.15);
+    border-color: transparent;
 }
 
-.btn-block {
-    width: 100%;
-    display: flex;
+.btn-secondary:hover::before {
+    transform: translateX(0);
 }
 
+.btn-secondary:hover i {
+    transform: translateX(4px);
+}
+
+.btn-secondary:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+/* Outline Button - Modern Minimal */
 .btn-outline {
-    background-color: transparent;
+    background: transparent;
     color: var(--dark);
     border: 2px solid var(--gray-light);
+    transition: all 0.3s ease;
 }
 
 .btn-outline:hover {
     border-color: var(--primary);
     color: var(--primary);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
 }
 
+.btn-outline:hover i {
+    color: var(--primary);
+}
+
+/* Success Button - Green Gradient */
 .btn-success {
-    background-color: var(--success);
+    background: linear-gradient(135deg, 
+        var(--success) 0%, 
+        #20c997 100%);
     color: white;
-    border: 2px solid var(--success);
+    border: none;
 }
 
 .btn-success:hover {
-    background-color: #218838;
-    border-color: #218838;
+    background: linear-gradient(135deg, 
+        #20c997 0%, 
+        var(--success) 100%);
+    transform: translateY(-4px);
+    box-shadow: 
+        0 15px 30px rgba(40, 167, 69, 0.3),
+        0 5px 15px rgba(40, 167, 69, 0.2);
 }
 
+/* Danger Button - Red Gradient */
 .btn-danger {
-    background-color: var(--danger);
+    background: linear-gradient(135deg, 
+        var(--danger) 0%, 
+        #e4606d 100%);
     color: white;
-    border: 2px solid var(--danger);
+    border: none;
 }
 
 .btn-danger:hover {
-    background-color: #c82333;
-    border-color: #c82333;
+    background: linear-gradient(135deg, 
+        #e4606d 0%, 
+        var(--danger) 100%);
+    transform: translateY(-4px);
+    box-shadow: 
+        0 15px 30px rgba(220, 53, 69, 0.3),
+        0 5px 15px rgba(220, 53, 69, 0.2);
 }
 
-.btn-sm {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+/* Info Button - Blue Gradient */
+.btn-info {
+    background: linear-gradient(135deg, 
+        var(--info) 0%, 
+        #2dd4bf 100%);
+    color: white;
+    border: none;
 }
 
-.btn-lg {
-    padding: 1rem 2rem;
-    font-size: 1.1rem;
+.btn-info:hover {
+    background: linear-gradient(135deg, 
+        #2dd4bf 0%, 
+        var(--info) 100%);
+    transform: translateY(-4px);
+    box-shadow: 
+        0 15px 30px rgba(23, 162, 184, 0.3),
+        0 5px 15px rgba(23, 162, 184, 0.2);
 }
 
+/* Warning Button - Yellow Gradient */
+.btn-warning {
+    background: linear-gradient(135deg, 
+        var(--warning) 0%, 
+        #ffd54f 100%);
+    color: var(--dark);
+    border: none;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, 
+        #ffd54f 0%, 
+        var(--warning) 100%);
+    transform: translateY(-4px);
+    box-shadow: 
+        0 15px 30px rgba(255, 193, 7, 0.3),
+        0 5px 15px rgba(255, 193, 7, 0.2);
+}
+
+/* Block Button */
+.btn-block {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+/* Disabled State */
 .btn:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
     transform: none !important;
     box-shadow: none !important;
+}
+
+.btn:disabled:hover {
+    background: initial;
+    color: initial;
+    border-color: initial;
+}
+
+.btn:disabled:hover::before,
+.btn:disabled:hover::after {
+    display: none;
+}
+
+/* M-Pesa Special Button */
+.btn-mpesa {
+    background: linear-gradient(135deg, 
+        #00A859 0%, 
+        #006837 50%, 
+        #00A859 100%);
+    color: white;
+    border: none;
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite linear;
+}
+
+.btn-mpesa:hover {
+    background-position: 100% 0;
+    transform: translateY(-4px);
+    box-shadow: 
+        0 15px 30px rgba(0, 168, 89, 0.3),
+        0 5px 15px rgba(0, 168, 89, 0.2);
+}
+
+.btn-mpesa i {
+    color: #FFD700;
+}
+
+/* WhatsApp Special Button */
+.btn-whatsapp {
+    background: linear-gradient(135deg, 
+        #25D366 0%, 
+        #128C7E 50%, 
+        #25D366 100%);
+    color: white;
+    border: none;
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite linear;
+}
+
+.btn-whatsapp:hover {
+    background-position: 100% 0;
+    transform: translateY(-4px);
+    box-shadow: 
+        0 15px 30px rgba(37, 211, 102, 0.3),
+        0 5px 15px rgba(37, 211, 102, 0.2);
+}
+
+/* Button Groups */
+.btn-group {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.btn-group .btn {
+    flex: 1;
+    min-width: 0;
+}
+
+.btn-group-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.btn-group-vertical .btn {
+    width: 100%;
+}
+
+/* Icon-only buttons */
+.btn-icon {
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    border-radius: var(--radius-round);
+    min-width: auto;
+}
+
+.btn-icon i {
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.btn-icon.btn-sm {
+    width: 40px;
+    height: 40px;
+}
+
+.btn-icon.btn-lg {
+    width: 60px;
+    height: 60px;
+}
+
+.btn-icon.btn-xl {
+    width: 70px;
+    height: 70px;
+}
+
+/* Floating Action Button */
+.btn-fab {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-round);
+    box-shadow: 
+        0 6px 20px rgba(0, 0, 0, 0.2),
+        0 2px 8px rgba(212, 175, 55, 0.3);
+    z-index: 1000;
+    animation: float 3s ease-in-out infinite;
+}
+
+.btn-fab:hover {
+    animation: none;
+    transform: scale(1.1) rotate(10deg);
+}
+
+/* Button Animations */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 
+            0 0 0 0 rgba(212, 175, 55, 0.4),
+            var(--shadow-md);
+    }
+    70% {
+        box-shadow: 
+            0 0 0 10px rgba(212, 175, 55, 0),
+            var(--shadow-md);
+    }
+    100% {
+        box-shadow: 
+            0 0 0 0 rgba(212, 175, 55, 0),
+            var(--shadow-md);
+    }
+}
+
+.btn-pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Loading State Button */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.btn-loading.btn-primary::after {
+    border-top-color: var(--secondary);
+}
+
+/* Ripple Effect */
+.btn-ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-ripple::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.3) 10%, transparent 10.01%);
+    background-repeat: no-repeat;
+    background-position: 50%;
+    transform: scale(10, 10);
+    opacity: 0;
+    transition: transform 0.5s, opacity 1s;
+}
+
+.btn-ripple:active::after {
+    transform: scale(0, 0);
+    opacity: 0.3;
+    transition: 0s;
+}
+
+/* Badge Button */
+.btn-badge {
+    position: relative;
+}
+
+.btn-badge::before {
+    content: attr(data-badge);
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--danger);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 0.25rem 0.5rem;
+    border-radius: 20px;
+    min-width: 20px;
+    text-align: center;
+    border: 2px solid white;
+}
+
+/* Social Media Buttons */
+.btn-facebook {
+    background: linear-gradient(135deg, #1877F2 0%, #0D5CB6 100%);
+    color: white;
+}
+
+.btn-instagram {
+    background: linear-gradient(135deg, #E4405F 0%, #833AB4 50%, #405DE6 100%);
+    color: white;
+}
+
+.btn-twitter {
+    background: linear-gradient(135deg, #1DA1F2 0%, #0D8BD9 100%);
+    color: white;
+}
+
+.btn-google {
+    background: linear-gradient(135deg, #4285F4 0%, #DB4437 100%);
+    color: white;
+}
+
+/* Payment Method Buttons */
+.btn-payment {
+    background: white;
+    color: var(--dark);
+    border: 2px solid var(--gray-light);
+    padding: 1rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-payment i {
+    font-size: 2rem;
+    color: var(--primary);
+}
+
+.btn-payment:hover {
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-payment.active {
+    border-color: var(--primary);
+    background: rgba(212, 175, 55, 0.1);
+}
+
+/* Responsive Buttons */
+@media (max-width: 768px) {
+    .btn {
+        padding: 0.875rem 1.5rem;
+        font-size: 0.95rem;
+        min-width: 160px;
+    }
+    
+    .btn-lg {
+        padding: 1rem 2rem;
+        font-size: 1rem;
+        min-width: 200px;
+    }
+    
+    .btn-xl {
+        padding: 1.25rem 2.5rem;
+        font-size: 1.125rem;
+        min-width: 240px;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn {
+        padding: 0.75rem 1.25rem;
+        font-size: 0.9rem;
+        min-width: 140px;
+    }
+    
+    .btn-sm {
+        padding: 0.625rem 1rem;
+        font-size: 0.85rem;
+        min-width: 120px;
+    }
 }
 
 /* Form Styles */
