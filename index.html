@@ -136,6 +136,251 @@
         .db-status i {
             font-size: 0.7rem;
         }
+        
+        /* Gallery Section Styles */
+        .gallery-section {
+            padding: 5rem 0;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            color: white;
+        }
+        
+        .gallery-filter {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 3rem;
+        }
+        
+        .gallery-filter-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .gallery-filter-btn:hover,
+        .gallery-filter-btn.active {
+            background: var(--primary);
+            color: var(--secondary);
+            border-color: var(--primary);
+        }
+        
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 2rem 0;
+        }
+        
+        .gallery-item {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.4s ease;
+            cursor: pointer;
+            height: 300px;
+        }
+        
+        .gallery-item:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(212, 175, 55, 0.3);
+        }
+        
+        .gallery-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        
+        .gallery-item:hover .gallery-img {
+            transform: scale(1.1);
+        }
+        
+        .gallery-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+            padding: 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .gallery-item:hover .gallery-overlay {
+            transform: translateY(0);
+        }
+        
+        .gallery-title {
+            color: white;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .gallery-category {
+            color: var(--primary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        /* Lightbox Modal */
+        .lightbox-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+        
+        .lightbox-img {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .lightbox-caption {
+            color: white;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .lightbox-close {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            background: transparent;
+            color: white;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .lightbox-close:hover {
+            color: var(--primary);
+        }
+        
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.5rem;
+        }
+        
+        .lightbox-nav:hover {
+            background: var(--primary);
+            color: var(--secondary);
+        }
+        
+        .lightbox-prev {
+            left: -70px;
+        }
+        
+        .lightbox-next {
+            right: -70px;
+        }
+        
+        .no-gallery {
+            text-align: center;
+            padding: 4rem;
+            color: #aaa;
+        }
+        
+        .no-gallery i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #555;
+        }
+        
+        /* Instagram Preview */
+        .instagram-preview {
+            text-align: center;
+            margin-top: 4rem;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+        }
+        
+        .instagram-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(45deg, #405DE6, #5851DB, #833AB4, #C13584, #E1306C, #FD1D1D);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 1rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .instagram-link:hover {
+            transform: translateY(-3px);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 15px;
+            }
+            
+            .gallery-item {
+                height: 250px;
+            }
+            
+            .lightbox-nav {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            
+            .lightbox-prev {
+                left: 10px;
+            }
+            
+            .lightbox-next {
+                right: 10px;
+            }
+            
+            .lightbox-close {
+                top: -40px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -165,6 +410,7 @@
                 <li><a href="index.html">Home</a></li>
                 <li><a href="#services">Services</a></li>
                 <li><a href="#barbers">Barbers</a></li>
+                <li><a href="#gallery">Gallery</a></li>
                 <li><a href="#booking">Book Now</a></li>
                 <li><a href="#testimonials">Reviews</a></li>
                 <li><a href="#contact">Contact</a></li>
@@ -286,6 +532,68 @@
             </div>
         </div>
     </section>
+
+    <!-- Gallery Section -->
+    <section class="section gallery-section" id="gallery">
+        <div class="container">
+            <div class="section-title">
+                <h2>Our Gallery</h2>
+                <p>Explore our work and barbershop environment</p>
+            </div>
+            
+            <!-- Gallery Filter Buttons -->
+            <div class="gallery-filter" id="galleryFilter">
+                <button class="gallery-filter-btn active" data-category="all">All Photos</button>
+                <button class="gallery-filter-btn" data-category="haircuts">Haircuts</button>
+                <button class="gallery-filter-btn" data-category="beard">Beard Styling</button>
+                <button class="gallery-filter-btn" data-category="shaves">Shaves</button>
+                <button class="gallery-filter-btn" data-category="salon">Salon</button>
+                <button class="gallery-filter-btn" data-category="barbers">Barbers</button>
+            </div>
+            
+            <!-- Gallery Grid -->
+            <div class="gallery-grid" id="galleryGrid">
+                <!-- Gallery items will be loaded dynamically -->
+                <div class="gallery-item loading-gallery">
+                    <div style="background: rgba(255,255,255,0.1); height: 100%; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- No Gallery Items Message -->
+            <div id="noGalleryItems" class="no-gallery" style="display: none;">
+                <i class="fas fa-images"></i>
+                <h3>No Gallery Photos Yet</h3>
+                <p>We're working on adding photos of our amazing work. Check back soon!</p>
+                <p>Follow us on Instagram to see our latest transformations.</p>
+            </div>
+            
+            <!-- Instagram Preview -->
+            <div class="instagram-preview">
+                <h3>Follow Us on Instagram</h3>
+                <p>See daily updates, special offers, and behind-the-scenes content</p>
+                <a href="https://instagram.com" target="_blank" class="instagram-link">
+                    <i class="fab fa-instagram"></i> @KenBarberNakuru
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Lightbox Modal -->
+    <div class="lightbox-modal" id="lightboxModal">
+        <div class="lightbox-content">
+            <button class="lightbox-close" id="lightboxClose">&times;</button>
+            <button class="lightbox-nav lightbox-prev" id="lightboxPrev">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <img class="lightbox-img" id="lightboxImg" src="" alt="">
+            <button class="lightbox-nav lightbox-next" id="lightboxNext">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            <div class="lightbox-caption" id="lightboxCaption"></div>
+        </div>
+    </div>
 
     <!-- Booking Section -->
     <section class="section booking-section" id="booking">
@@ -643,6 +951,7 @@
                         <li><a href="index.html">Home</a></li>
                         <li><a href="#services">Services & Prices</a></li>
                         <li><a href="#barbers">Our Barbers</a></li>
+                        <li><a href="#gallery">Gallery</a></li>
                         <li><a href="#booking">Book Appointment</a></li>
                         <li><a href="#testimonials">Customer Reviews</a></li>
                         <li><a href="#contact">Contact & Location</a></li>
@@ -1037,12 +1346,296 @@
             emailInput.value = '';
         };
         
+        // Gallery Functions
+        let galleryItems = [];
+        let currentGalleryIndex = 0;
+        
+        // Load gallery from Supabase
+        async function loadGallery() {
+            const galleryGrid = document.getElementById('galleryGrid');
+            const noGallery = document.getElementById('noGalleryItems');
+            
+            if (!galleryGrid) return;
+            
+            try {
+                // Show loading state
+                galleryGrid.innerHTML = '<div class="gallery-item loading-gallery"><div style="background: rgba(255,255,255,0.1); height: 100%; display: flex; align-items: center; justify-content: center;"><i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i></div></div>';
+                
+                // Try to load from Supabase
+                if (window.supabase) {
+                    const { data, error } = await window.supabase
+                        .from('gallery')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+                    
+                    if (!error && data && data.length > 0) {
+                        galleryItems = data;
+                        renderGallery('all');
+                        if (noGallery) noGallery.style.display = 'none';
+                        return;
+                    }
+                }
+                
+                // If no data from Supabase, use mock data
+                loadMockGallery();
+                
+            } catch (error) {
+                console.warn('Error loading gallery:', error);
+                loadMockGallery();
+            }
+        }
+        
+        // Load mock gallery data
+        function loadMockGallery() {
+            galleryItems = [
+                {
+                    id: 1,
+                    title: 'Professional Haircut',
+                    category: 'haircuts',
+                    image_url: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                    description: 'Our barber providing a professional haircut service'
+                },
+                {
+                    id: 2,
+                    title: 'Beard Styling',
+                    category: 'beard',
+                    image_url: 'https://images.unsplash.com/photo-1562788869-4ed32648eb72?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                    description: 'Perfect beard trim and shaping'
+                },
+                {
+                    id: 3,
+                    title: 'Hot Towel Shave',
+                    category: 'shaves',
+                    image_url: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                    description: 'Traditional hot towel shave experience'
+                },
+                {
+                    id: 4,
+                    title: 'Salon Interior',
+                    category: 'salon',
+                    image_url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                    description: 'Our modern and comfortable salon'
+                },
+                {
+                    id: 5,
+                    title: 'Barber Team',
+                    category: 'barbers',
+                    image_url: 'https://images.unsplash.com/photo-1599351431441-4b2565d5c8ce?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                    description: 'Our professional barber team'
+                },
+                {
+                    id: 6,
+                    title: 'Kids Haircut',
+                    category: 'haircuts',
+                    image_url: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                    description: 'Special haircut for children'
+                },
+                {
+                    id: 7,
+                    title: 'Beard Care',
+                    category: 'beard',
+                    image_url: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                    description: 'Professional beard care and maintenance'
+                },
+                {
+                    id: 8,
+                    title: 'Barber Tools',
+                    category: 'salon',
+                    image_url: 'https://images.unsplash.com/photo-1605497788044-5a32c7078486?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+                    description: 'Premium barber tools and equipment'
+                }
+            ];
+            
+            renderGallery('all');
+        }
+        
+        // Render gallery items
+        function renderGallery(category) {
+            const galleryGrid = document.getElementById('galleryGrid');
+            const noGallery = document.getElementById('noGalleryItems');
+            
+            if (!galleryGrid) return;
+            
+            // Filter items by category
+            let filteredItems = galleryItems;
+            if (category !== 'all') {
+                filteredItems = galleryItems.filter(item => item.category === category);
+            }
+            
+            if (filteredItems.length === 0) {
+                if (noGallery) noGallery.style.display = 'block';
+                galleryGrid.innerHTML = '';
+                return;
+            }
+            
+            if (noGallery) noGallery.style.display = 'none';
+            
+            // Render items
+            galleryGrid.innerHTML = '';
+            filteredItems.forEach((item, index) => {
+                const galleryItem = document.createElement('div');
+                galleryItem.className = 'gallery-item';
+                galleryItem.dataset.index = index;
+                galleryItem.dataset.category = item.category;
+                
+                galleryItem.innerHTML = `
+                    <img src="${item.image_url}" alt="${item.title}" class="gallery-img">
+                    <div class="gallery-overlay">
+                        <h4 class="gallery-title">${item.title}</h4>
+                        <p class="gallery-category">${item.category.charAt(0).toUpperCase() + item.category.slice(1)}</p>
+                    </div>
+                `;
+                
+                galleryItem.addEventListener('click', () => openLightbox(index, category));
+                galleryGrid.appendChild(galleryItem);
+            });
+        }
+        
+        // Setup gallery filter buttons
+        function setupGalleryFilters() {
+            const filterButtons = document.querySelectorAll('.gallery-filter-btn');
+            
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Get category
+                    const category = this.dataset.category;
+                    
+                    // Render filtered gallery
+                    renderGallery(category);
+                });
+            });
+        }
+        
+        // Open lightbox
+        function openLightbox(index, category) {
+            currentGalleryIndex = index;
+            const modal = document.getElementById('lightboxModal');
+            const img = document.getElementById('lightboxImg');
+            const caption = document.getElementById('lightboxCaption');
+            
+            if (!modal || !img) return;
+            
+            // Get filtered items based on current category
+            let filteredItems = galleryItems;
+            const activeFilter = document.querySelector('.gallery-filter-btn.active');
+            if (activeFilter && activeFilter.dataset.category !== 'all') {
+                filteredItems = galleryItems.filter(item => item.category === activeFilter.dataset.category);
+                // Find the correct index in filtered array
+                const originalIndex = galleryItems.findIndex(item => item.id === filteredItems[index].id);
+                currentGalleryIndex = originalIndex;
+            }
+            
+            const item = galleryItems[currentGalleryIndex];
+            
+            img.src = item.image_url;
+            img.alt = item.title;
+            caption.textContent = `${item.title} - ${item.description}`;
+            
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Close lightbox
+        function closeLightbox() {
+            const modal = document.getElementById('lightboxModal');
+            if (!modal) return;
+            
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        // Navigate lightbox
+        function navigateLightbox(direction) {
+            const activeFilter = document.querySelector('.gallery-filter-btn.active');
+            let filteredItems = galleryItems;
+            
+            if (activeFilter && activeFilter.dataset.category !== 'all') {
+                filteredItems = galleryItems.filter(item => item.category === activeFilter.dataset.category);
+                // Find current item in filtered array
+                const currentItem = galleryItems[currentGalleryIndex];
+                const filteredIndex = filteredItems.findIndex(item => item.id === currentItem.id);
+                
+                if (direction === 'next') {
+                    const nextIndex = (filteredIndex + 1) % filteredItems.length;
+                    const nextItem = filteredItems[nextIndex];
+                    currentGalleryIndex = galleryItems.findIndex(item => item.id === nextItem.id);
+                } else {
+                    const prevIndex = (filteredIndex - 1 + filteredItems.length) % filteredItems.length;
+                    const prevItem = filteredItems[prevIndex];
+                    currentGalleryIndex = galleryItems.findIndex(item => item.id === prevItem.id);
+                }
+            } else {
+                if (direction === 'next') {
+                    currentGalleryIndex = (currentGalleryIndex + 1) % galleryItems.length;
+                } else {
+                    currentGalleryIndex = (currentGalleryIndex - 1 + galleryItems.length) % galleryItems.length;
+                }
+            }
+            
+            // Update lightbox
+            const img = document.getElementById('lightboxImg');
+            const caption = document.getElementById('lightboxCaption');
+            const item = galleryItems[currentGalleryIndex];
+            
+            if (img) img.src = item.image_url;
+            if (caption) caption.textContent = `${item.title} - ${item.description}`;
+        }
+        
+        // Setup lightbox
+        function setupLightbox() {
+            const closeBtn = document.getElementById('lightboxClose');
+            const prevBtn = document.getElementById('lightboxPrev');
+            const nextBtn = document.getElementById('lightboxNext');
+            const modal = document.getElementById('lightboxModal');
+            
+            if (closeBtn) closeBtn.addEventListener('click', closeLightbox);
+            if (prevBtn) prevBtn.addEventListener('click', () => navigateLightbox('prev'));
+            if (nextBtn) nextBtn.addEventListener('click', () => navigateLightbox('next'));
+            
+            // Close on background click
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeLightbox();
+                    }
+                });
+            }
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                if (modal.style.display === 'flex') {
+                    if (e.key === 'Escape') closeLightbox();
+                    if (e.key === 'ArrowLeft') navigateLightbox('prev');
+                    if (e.key === 'ArrowRight') navigateLightbox('next');
+                }
+            });
+        }
+        
+        // Initialize gallery
+        function initializeGallery() {
+            loadGallery();
+            setupGalleryFilters();
+            setupLightbox();
+        }
+        
         // Start everything when DOM is ready
-        document.addEventListener('DOMContentLoaded', initializeWebsite);
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeWebsite();
+            
+            // Initialize gallery after a short delay
+            setTimeout(initializeGallery, 1000);
+        });
         
         // If DOM is already loaded
         if (document.readyState === 'interactive' || document.readyState === 'complete') {
             initializeWebsite();
+            setTimeout(initializeGallery, 1000);
         }
     </script>
 </body>
