@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+full html from here <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -382,6 +382,7 @@
         .btn-delete { background: rgba(220, 53, 69, 0.1); color: var(--danger); }
         .btn-view { background: rgba(0, 123, 255, 0.1); color: #007bff; }
         .btn-confirm { background: rgba(40, 167, 69, 0.1); color: var(--success); }
+        .btn-image { background: rgba(255, 193, 7, 0.1); color: var(--warning); }
         
         .btn-action:hover {
             transform: translateY(-2px);
@@ -537,7 +538,92 @@
             width: 18px;
             height: 18px;
         }
-        
+
+        /* Image Upload Styles */
+        .image-upload-container {
+            border: 2px dashed #ddd;
+            padding: 2rem;
+            text-align: center;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .image-upload-container:hover {
+            border-color: var(--primary);
+            background: rgba(212, 175, 55, 0.05);
+        }
+
+        .image-upload-container i {
+            font-size: 3rem;
+            color: var(--gray);
+            margin-bottom: 1rem;
+        }
+
+        .current-image {
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .current-image img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--light-gray);
+        }
+
+        .image-preview {
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .image-preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: var(--border-radius);
+            border: 2px solid var(--primary);
+        }
+
+        /* Gallery Grid */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .gallery-item {
+            position: relative;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .gallery-item-info {
+            padding: 1rem;
+            background: white;
+        }
+
+        .gallery-item-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+
         /* Responsive */
         @media (max-width: 992px) {
             .admin-sidebar {
@@ -600,6 +686,10 @@
                 <a href="#barbers" class="nav-item" onclick="switchTab('barbers')">
                     <i class="fas fa-user-tie"></i>
                     <span>Barbers</span>
+                </a>
+                <a href="#gallery" class="nav-item" onclick="switchTab('gallery')">
+                    <i class="fas fa-images"></i>
+                    <span>Gallery</span>
                 </a>
                 <a href="#testimonials" class="nav-item" onclick="switchTab('testimonials')">
                     <i class="fas fa-star"></i>
@@ -858,6 +948,7 @@
                         <table class="data-table">
                             <thead>
                                 <tr>
+                                    <th>Image</th>
                                     <th>Name</th>
                                     <th>Description</th>
                                     <th>Category</th>
@@ -869,7 +960,7 @@
                             </thead>
                             <tbody id="servicesBody">
                                 <tr>
-                                    <td colspan="7" style="text-align: center; padding: 2rem;">
+                                    <td colspan="8" style="text-align: center; padding: 2rem;">
                                         <i class="fas fa-spinner fa-spin"></i> Loading services...
                                     </td>
                                 </tr>
@@ -893,6 +984,7 @@
                         <table class="data-table">
                             <thead>
                                 <tr>
+                                    <th>Image</th>
                                     <th>Name</th>
                                     <th>Title</th>
                                     <th>Experience</th>
@@ -903,12 +995,54 @@
                             </thead>
                             <tbody id="barbersBody">
                                 <tr>
-                                    <td colspan="6" style="text-align: center; padding: 2rem;">
+                                    <td colspan="7" style="text-align: center; padding: 2rem;">
                                         <i class="fas fa-spinner fa-spin"></i> Loading barbers...
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gallery Tab -->
+            <div id="gallery" class="tab-content">
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>Gallery Management</h2>
+                        <button class="btn-primary" onclick="showModal('addGalleryImageModal')">
+                            <i class="fas fa-plus"></i> Add Photo
+                        </button>
+                    </div>
+                    
+                    <div class="filter-controls">
+                        <div class="filter-group">
+                            <div class="filter-label">Filter by Category</div>
+                            <select class="filter-select" id="filterGalleryCategory" onchange="filterGallery()">
+                                <option value="all">All Categories</option>
+                                <option value="haircuts">Haircuts</option>
+                                <option value="beard">Beard Styling</option>
+                                <option value="shaves">Shaves</option>
+                                <option value="salon">Salon</option>
+                                <option value="barbers">Our Barbers</option>
+                                <option value="events">Events</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <div class="filter-label">Search</div>
+                            <input type="text" class="form-control" id="searchGallery" placeholder="Search gallery..." 
+                                   onkeyup="filterGallery()" style="padding: 0.5rem;">
+                        </div>
+                        
+                        <button class="btn-secondary" onclick="resetGalleryFilters()">Reset Filters</button>
+                    </div>
+                    
+                    <div class="gallery-grid" id="galleryGrid">
+                        <div class="gallery-loading" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                            <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
+                            <p>Loading gallery items...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1328,6 +1462,206 @@
         </div>
     </div>
     
+    <!-- Modal for Upload Barber Image -->
+    <div class="modal" id="uploadBarberImageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Upload Barber Image</h3>
+                <button class="modal-close" onclick="hideModal('uploadBarberImageModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="currentBarberInfo" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <strong>Selected Barber:</strong> <span id="currentBarberName">Loading...</span>
+                </div>
+                
+                <div class="form-group">
+                    <label>Current Image</label>
+                    <div id="currentBarberImageContainer" style="text-align: center; margin: 1rem 0;">
+                        <img id="currentBarberImage" src="" alt="Current Image" style="max-width: 200px; max-height: 200px; border-radius: 8px; display: none;">
+                        <div id="noBarberImage" style="color: var(--gray);">No image uploaded</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Upload New Image *</label>
+                    <div class="image-upload-container" onclick="document.getElementById('barberImageInput').click()" id="barberImageDropZone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click to select or drag and drop image</p>
+                        <p style="font-size: 0.9rem; color: var(--gray);">JPG, PNG, or WebP. Max 5MB.</p>
+                    </div>
+                    <input type="file" id="barberImageInput" accept="image/*" style="display: none;" 
+                           onchange="previewBarberImage(event)">
+                </div>
+                
+                <div id="barberImagePreview" style="display: none; text-align: center; margin: 1rem 0;">
+                    <div class="image-preview">
+                        <img id="previewBarberImg" src="" alt="Preview">
+                        <button class="btn-secondary btn-small" onclick="removeBarberImagePreview()" style="display: block; margin: 0.5rem auto;">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Image Alt Text</label>
+                    <input type="text" class="form-control" id="barberImageAlt" placeholder="Description of image for accessibility">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideModal('uploadBarberImageModal')">Cancel</button>
+                <button class="btn-primary" onclick="uploadBarberImageToServer()" id="uploadBarberBtn">
+                    <i class="fas fa-upload"></i> Upload Image
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for Upload Service Image -->
+    <div class="modal" id="uploadServiceImageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Upload Service Image</h3>
+                <button class="modal-close" onclick="hideModal('uploadServiceImageModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="currentServiceInfo" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <strong>Selected Service:</strong> <span id="currentServiceName">Loading...</span>
+                </div>
+                
+                <div class="form-group">
+                    <label>Current Image</label>
+                    <div id="currentServiceImageContainer" style="text-align: center; margin: 1rem 0;">
+                        <img id="currentServiceImage" src="" alt="Current Image" style="max-width: 200px; max-height: 200px; border-radius: 8px; display: none;">
+                        <div id="noServiceImage" style="color: var(--gray);">No image uploaded</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Upload New Image *</label>
+                    <div class="image-upload-container" onclick="document.getElementById('serviceImageInput').click()" id="serviceImageDropZone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click to select or drag and drop image</p>
+                        <p style="font-size: 0.9rem; color: var(--gray);">JPG, PNG, or WebP. Max 5MB.</p>
+                    </div>
+                    <input type="file" id="serviceImageInput" accept="image/*" style="display: none;" 
+                           onchange="previewServiceImage(event)">
+                </div>
+                
+                <div id="serviceImagePreview" style="display: none; text-align: center; margin: 1rem 0;">
+                    <div class="image-preview">
+                        <img id="previewServiceImg" src="" alt="Preview">
+                        <button class="btn-secondary btn-small" onclick="removeServiceImagePreview()" style="display: block; margin: 0.5rem auto;">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Image Alt Text</label>
+                    <input type="text" class="form-control" id="serviceImageAlt" placeholder="Description of image for accessibility">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideModal('uploadServiceImageModal')">Cancel</button>
+                <button class="btn-primary" onclick="uploadServiceImageToServer()" id="uploadServiceBtn">
+                    <i class="fas fa-upload"></i> Upload Image
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for Add Gallery Image -->
+    <div class="modal" id="addGalleryImageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Gallery Image</h3>
+                <button class="modal-close" onclick="hideModal('addGalleryImageModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Image Title *</label>
+                    <input type="text" class="form-control" id="galleryImageTitle" placeholder="e.g., Classic Haircut Result" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="form-control" id="galleryImageDescription" rows="3" placeholder="Describe this image..."></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category *</label>
+                        <select class="form-control" id="galleryImageCategory" required>
+                            <option value="haircuts">Haircuts</option>
+                            <option value="beard">Beard Styling</option>
+                            <option value="shaves">Shaves</option>
+                            <option value="salon">Salon Environment</option>
+                            <option value="barbers">Our Barbers</option>
+                            <option value="events">Events</option>
+                            <option value="before-after">Before & After</option>
+                            <option value="tools">Tools & Equipment</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Featured</label>
+                        <div>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="galleryFeatured">
+                                <span>Show on homepage featured section</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Upload Image *</label>
+                    <div class="image-upload-container" onclick="document.getElementById('galleryImageInput').click()" id="galleryImageDropZone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Click to select or drag and drop image</p>
+                        <p style="font-size: 0.9rem; color: var(--gray);">JPG, PNG, or WebP. Max 5MB.</p>
+                    </div>
+                    <input type="file" id="galleryImageInput" accept="image/*" style="display: none;" 
+                           onchange="previewGalleryImage(event)">
+                </div>
+                
+                <div id="galleryImagePreview" style="display: none; text-align: center; margin: 1rem 0;">
+                    <div class="image-preview">
+                        <img id="previewGalleryImg" src="" alt="Preview">
+                        <button class="btn-secondary btn-small" onclick="removeGalleryImagePreview()" style="display: block; margin: 0.5rem auto;">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideModal('addGalleryImageModal')">Cancel</button>
+                <button class="btn-primary" onclick="uploadGalleryImage()" id="uploadGalleryBtn">
+                    <i class="fas fa-upload"></i> Upload Image
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for Edit Gallery Image -->
+    <div class="modal" id="editGalleryImageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Gallery Image</h3>
+                <button class="modal-close" onclick="hideModal('editGalleryImageModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editGalleryForm">
+                    <!-- Form will be populated dynamically -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideModal('editGalleryImageModal')">Cancel</button>
+                <button class="btn-primary" onclick="updateGalleryImage()">Update Image</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal for Send Notification -->
     <div class="modal" id="sendNotificationModal">
         <div class="modal-content">
@@ -1505,7 +1839,7 @@
         </div>
     </div>
 
-    <script>
+        <script>
         // Global variables
         let supabaseClient = null;
         let currentTab = 'dashboard';
@@ -1516,6 +1850,13 @@
         let bookingTrendChart = null;
         let serviceChart = null;
         let currentEditId = null;
+        let currentBarberId = null;
+        let currentServiceId = null;
+        let currentGalleryId = null;
+        let barberImageFile = null;
+        let serviceImageFile = null;
+        let galleryImageFile = null;
+        let galleryItems = [];
 
         // Initialize Supabase
         async function initSupabase() {
@@ -1661,7 +2002,55 @@
             
             // Load settings
             loadSettings();
+            
+            // Setup drag and drop for image uploads
+            setupImageDragAndDrop();
         });
+
+        // Setup drag and drop for image uploads
+        function setupImageDragAndDrop() {
+            const dropZones = document.querySelectorAll('.image-upload-container');
+            
+            dropZones.forEach(function(dropZone) {
+                dropZone.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = 'var(--primary)';
+                    this.style.background = 'rgba(212, 175, 55, 0.1)';
+                });
+                
+                dropZone.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = '#ddd';
+                    this.style.background = '';
+                });
+                
+                dropZone.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.style.borderColor = '#ddd';
+                    this.style.background = '';
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        const file = files[0];
+                        if (file.type.startsWith('image/')) {
+                            // Determine which drop zone was used
+                            if (this.id === 'barberImageDropZone') {
+                                document.getElementById('barberImageInput').files = files;
+                                previewBarberImage({ target: { files: files } });
+                            } else if (this.id === 'serviceImageDropZone') {
+                                document.getElementById('serviceImageInput').files = files;
+                                previewServiceImage({ target: { files: files } });
+                            } else if (this.id === 'galleryImageDropZone') {
+                                document.getElementById('galleryImageInput').files = files;
+                                previewGalleryImage({ target: { files: files } });
+                            }
+                        } else {
+                            alert('Please upload only image files (JPG, PNG, WebP)');
+                        }
+                    }
+                });
+            });
+        }
 
         // Switch between tabs
         function switchTab(tabName) {
@@ -1689,6 +2078,7 @@
                 bookings: 'Manage Bookings',
                 services: 'Manage Services',
                 barbers: 'Manage Barbers',
+                gallery: 'Gallery Management',
                 testimonials: 'Manage Testimonials',
                 customers: 'Manage Customers',
                 reports: 'Reports & Analytics',
@@ -1700,6 +2090,7 @@
                 bookings: 'View and manage all customer bookings',
                 services: 'Manage services offered at KenBarber',
                 barbers: 'Manage barber profiles and availability',
+                gallery: 'Manage gallery photos and showcase images',
                 testimonials: 'Manage customer testimonials and reviews',
                 customers: 'View customer information and booking history',
                 reports: 'Generate reports and view analytics',
@@ -1728,6 +2119,9 @@
                 case 'barbers':
                     loadBarbers();
                     break;
+                case 'gallery':
+                    loadGallery();
+                    break;
                 case 'testimonials':
                     loadTestimonials();
                     break;
@@ -1752,12 +2146,25 @@
                 await loadDashboardData();
                 await loadServices();
                 await loadBarbers();
+                await loadGallery();
                 await loadTestimonials();
                 await loadCustomers();
             } catch (error) {
                 console.error('Error loading initial data:', error);
                 useMockData();
             }
+        }
+
+        // Use mock data when Supabase fails
+        function useMockData() {
+            console.log('Using mock data for demonstration');
+            useMockDashboardData();
+            loadMockServices();
+            loadMockBarbers();
+            loadMockGallery();
+            loadMockTestimonials();
+            loadMockCustomers();
+            initActivityChart();
         }
 
         // Load dashboard data
@@ -1779,6 +2186,86 @@
                 console.error('Error loading dashboard data:', error);
                 useMockDashboardData();
             }
+        }
+
+        // Mock dashboard data
+        function useMockDashboardData() {
+            // Update stats with mock data
+            document.getElementById('todayBookings').textContent = '8';
+            document.getElementById('bookingCount').textContent = '24';
+            document.getElementById('monthRevenue').textContent = 'KES 42,500';
+            document.getElementById('totalServices').textContent = '12';
+            document.getElementById('totalCustomers').textContent = '156';
+            
+            // Update recent bookings
+            const recentBookingsBody = document.getElementById('recentBookingsBody');
+            recentBookingsBody.innerHTML = `
+                <tr>
+                    <td>KB-2024-001</td>
+                    <td>James Kamau</td>
+                    <td>Classic Haircut</td>
+                    <td>Today, 10:30 AM</td>
+                    <td>Mike</td>
+                    <td>KES 600</td>
+                    <td><span class="status-badge status-confirmed">Confirmed</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-view" onclick="viewBookingDetail('KB-2024-001')"><i class="fas fa-eye"></i></button>
+                        <button class="btn-action btn-edit" onclick="editBookingDetail('KB-2024-001')"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>KB-2024-002</td>
+                    <td>David Ochieng</td>
+                    <td>Beard Trim</td>
+                    <td>Today, 2:00 PM</td>
+                    <td>Any Barber</td>
+                    <td>KES 400</td>
+                    <td><span class="status-badge status-pending">Pending</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-view" onclick="viewBookingDetail('KB-2024-002')"><i class="fas fa-eye"></i></button>
+                        <button class="btn-action btn-edit" onclick="editBookingDetail('KB-2024-002')"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>KB-2024-003</td>
+                    <td>Peter Mwangi</td>
+                    <td>Haircut & Shave</td>
+                    <td>Tomorrow, 11:00 AM</td>
+                    <td>Tony</td>
+                    <td>KES 1,200</td>
+                    <td><span class="status-badge status-confirmed">Confirmed</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-view" onclick="viewBookingDetail('KB-2024-003')"><i class="fas fa-eye"></i></button>
+                        <button class="btn-action btn-edit" onclick="editBookingDetail('KB-2024-003')"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>KB-2024-004</td>
+                    <td>Samuel Kiptoo</td>
+                    <td>Hot Towel Shave</td>
+                    <td>Tomorrow, 4:30 PM</td>
+                    <td>Mike</td>
+                    <td>KES 800</td>
+                    <td><span class="status-badge status-confirmed">Confirmed</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-view" onclick="viewBookingDetail('KB-2024-004')"><i class="fas fa-eye"></i></button>
+                        <button class="btn-action btn-edit" onclick="editBookingDetail('KB-2024-004')"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>KB-2024-005</td>
+                    <td>Brian Otieno</td>
+                    <td>Kids Haircut</td>
+                    <td>Tomorrow, 3:15 PM</td>
+                    <td>Any Barber</td>
+                    <td>KES 450</td>
+                    <td><span class="status-badge status-pending">Pending</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-view" onclick="viewBookingDetail('KB-2024-005')"><i class="fas fa-eye"></i></button>
+                        <button class="btn-action btn-edit" onclick="editBookingDetail('KB-2024-005')"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>
+            `;
         }
 
         // Load dashboard statistics
@@ -1851,7 +2338,7 @@
                 const tableBody = document.getElementById('recentBookingsBody');
                 
                 if (!supabaseClient || !tableBody) {
-                    tableBody.innerHTML = '<tr><td>KB-001</td><td>John Doe</td><td>Classic Haircut</td><td>Today, 2:00 PM</td><td>Any Barber</td><td>KES 500</td><td><span class="status-badge status-confirmed">Confirmed</span></td><td class="action-buttons"><button class="btn-action btn-view" onclick="viewBookingDetail(\'KB-001\')"><i class="fas fa-eye"></i></button><button class="btn-action btn-edit" onclick="editBookingDetail(\'KB-001\')"><i class="fas fa-edit"></i></button></td></tr>';
+                    useMockDashboardData();
                     return;
                 }
                 
@@ -1905,14 +2392,218 @@
             }
         }
 
+        // Initialize activity chart
+        function initActivityChart() {
+            const ctx = document.getElementById('activityChart');
+            if (!ctx) return;
+            
+            if (activityChart) {
+                activityChart.destroy();
+            }
+            
+            activityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Bookings',
+                        data: [8, 12, 10, 15, 18, 22, 14],
+                        borderColor: 'var(--primary)',
+                        backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Bookings'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Day of Week'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Show modal
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+
+        // Hide modal
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // View booking details
+        function viewBookingDetail(bookingRef) {
+            // For now, show a simple modal with booking info
+            showModal('viewBookingModal');
+            const detailsDiv = document.getElementById('bookingDetails');
+            detailsDiv.innerHTML = `
+                <div style="padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+                    <h4>Booking Reference: ${bookingRef}</h4>
+                    <p>Viewing details for booking ${bookingRef}</p>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><strong>Customer Name:</strong></label>
+                        <p>James Kamau</p>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Phone Number:</strong></label>
+                        <p>0712 345 678</p>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><strong>Service:</strong></label>
+                        <p>Classic Haircut</p>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Price:</strong></label>
+                        <p>KES 600</p>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><strong>Date & Time:</strong></label>
+                        <p>Today, 10:30 AM</p>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Barber:</strong></label>
+                        <p>Mike</p>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><strong>Status:</strong></label>
+                        <p><span class="status-badge status-confirmed">Confirmed</span></p>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Payment:</strong></label>
+                        <p><span class="status-badge status-paid">Paid</span></p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><strong>Notes:</strong></label>
+                    <p>Customer prefers side part, left side shorter.</p>
+                </div>
+            `;
+        }
+
+        // Edit booking details
+        function editBookingDetail(bookingRef) {
+            showModal('editBookingModal');
+            const form = document.getElementById('editBookingForm');
+            form.innerHTML = `
+                <div class="form-group">
+                    <label>Booking Reference</label>
+                    <input type="text" class="form-control" value="${bookingRef}" readonly>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control" id="editBookingStatus">
+                            <option value="pending">Pending</option>
+                            <option value="confirmed" selected>Confirmed</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Status</label>
+                        <select class="form-control" id="editPaymentStatus">
+                            <option value="unpaid">Unpaid</option>
+                            <option value="paid" selected>Paid</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" class="form-control" id="editBookingDate" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div class="form-group">
+                        <label>Time</label>
+                        <input type="time" class="form-control" id="editBookingTime" value="10:30">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea class="form-control" id="editBookingNotes" rows="3">Customer prefers side part, left side shorter.</textarea>
+                </div>
+            `;
+        }
+
+        // Update booking
+        function updateBooking() {
+            alert('Booking updated successfully! (This is a demo)');
+            hideModal('editBookingModal');
+        }
+
+        // Print booking details
+        function printBookingDetails() {
+            window.print();
+        }
+
+        // Export bookings
+        function exportBookings() {
+            alert('Bookings exported successfully! (This is a demo)');
+        }
+
+        // Confirm booking
+        function confirmBooking(bookingRef) {
+            if (confirm(`Confirm booking ${bookingRef}?`)) {
+                alert(`Booking ${bookingRef} confirmed!`);
+                // Refresh bookings table
+                if (currentTab === 'bookings') {
+                    loadAllBookings();
+                }
+            }
+        }
+
+        // Delete booking
+        function deleteBooking(bookingRef) {
+            if (confirm(`Are you sure you want to delete booking ${bookingRef}? This action cannot be undone.`)) {
+                alert(`Booking ${bookingRef} deleted! (This is a demo)`);
+                // Refresh bookings table
+                if (currentTab === 'bookings') {
+                    loadAllBookings();
+                }
+            }
+        }
+
         // Load all bookings for bookings tab
         async function loadAllBookings() {
             try {
                 const tableBody = document.getElementById('allBookingsBody');
                 
                 if (!supabaseClient || !tableBody) {
-                    tableBody.innerHTML = '<tr><td>KB-001</td><td>John Doe</td><td>0712 345 678</td><td>Classic Haircut</td><td>Today, 2:00 PM</td><td>Any Barber</td><td>KES 500</td><td><span class="status-badge status-confirmed">Confirmed</span></td><td><span class="status-badge status-paid">Paid</span></td><td class="action-buttons"><button class="btn-action btn-view" onclick="viewBookingDetail(\'KB-001\')"><i class="fas fa-eye"></i></button><button class="btn-action btn-edit" onclick="editBookingDetail(\'KB-001\')"><i class="fas fa-edit"></i></button><button class="btn-action btn-confirm" onclick="confirmBooking(\'KB-001\')"><i class="fas fa-check"></i></button></td></tr>';
-                    updateBookingsPagination();
+                    loadMockBookings();
                     return;
                 }
                 
@@ -1930,7 +2621,141 @@
                 
             } catch (error) {
                 console.error('Error loading all bookings:', error);
+                loadMockBookings();
             }
+        }
+
+        // Load mock bookings
+        function loadMockBookings() {
+            const tableBody = document.getElementById('allBookingsBody');
+            if (!tableBody) return;
+            
+            bookingsData = [
+                {
+                    booking_reference: 'KB-2024-001',
+                    customer_name: 'James Kamau',
+                    customer_phone: '0712 345 678',
+                    service_name: 'Classic Haircut',
+                    appointment_date: new Date().toISOString().split('T')[0],
+                    appointment_time: '10:30',
+                    barber_name: 'Mike',
+                    service_price: 600,
+                    status: 'confirmed',
+                    payment_status: 'paid'
+                },
+                {
+                    booking_reference: 'KB-2024-002',
+                    customer_name: 'David Ochieng',
+                    customer_phone: '0713 456 789',
+                    service_name: 'Beard Trim',
+                    appointment_date: new Date().toISOString().split('T')[0],
+                    appointment_time: '14:00',
+                    barber_name: 'Any Barber',
+                    service_price: 400,
+                    status: 'pending',
+                    payment_status: 'unpaid'
+                },
+                {
+                    booking_reference: 'KB-2024-003',
+                    customer_name: 'Peter Mwangi',
+                    customer_phone: '0724 567 890',
+                    service_name: 'Haircut & Shave',
+                    appointment_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+                    appointment_time: '11:00',
+                    barber_name: 'Tony',
+                    service_price: 1200,
+                    status: 'confirmed',
+                    payment_status: 'paid'
+                },
+                {
+                    booking_reference: 'KB-2024-004',
+                    customer_name: 'Samuel Kiptoo',
+                    customer_phone: '0735 678 901',
+                    service_name: 'Hot Towel Shave',
+                    appointment_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+                    appointment_time: '16:30',
+                    barber_name: 'Mike',
+                    service_price: 800,
+                    status: 'confirmed',
+                    payment_status: 'paid'
+                },
+                {
+                    booking_reference: 'KB-2024-005',
+                    customer_name: 'Brian Otieno',
+                    customer_phone: '0746 789 012',
+                    service_name: 'Kids Haircut',
+                    appointment_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+                    appointment_time: '15:15',
+                    barber_name: 'Any Barber',
+                    service_price: 450,
+                    status: 'pending',
+                    payment_status: 'unpaid'
+                },
+                {
+                    booking_reference: 'KB-2024-006',
+                    customer_name: 'John Maina',
+                    customer_phone: '0757 890 123',
+                    service_name: 'Beard Styling',
+                    appointment_date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
+                    appointment_time: '13:45',
+                    barber_name: 'Tony',
+                    service_price: 550,
+                    status: 'completed',
+                    payment_status: 'paid'
+                },
+                {
+                    booking_reference: 'KB-2024-007',
+                    customer_name: 'Robert Mutua',
+                    customer_phone: '0768 901 234',
+                    service_name: 'Executive Package',
+                    appointment_date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+                    appointment_time: '09:00',
+                    barber_name: 'Mike',
+                    service_price: 1500,
+                    status: 'completed',
+                    payment_status: 'paid'
+                },
+                {
+                    booking_reference: 'KB-2024-008',
+                    customer_name: 'Michael Kimani',
+                    customer_phone: '0779 012 345',
+                    service_name: 'Classic Haircut',
+                    appointment_date: new Date(Date.now() - 172800000).toISOString().split('T')[0],
+                    appointment_time: '17:30',
+                    barber_name: 'Any Barber',
+                    service_price: 600,
+                    status: 'cancelled',
+                    payment_status: 'unpaid'
+                },
+                {
+                    booking_reference: 'KB-2024-009',
+                    customer_name: 'William Odhiambo',
+                    customer_phone: '0780 123 456',
+                    service_name: 'Head Shave',
+                    appointment_date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
+                    appointment_time: '10:00',
+                    barber_name: 'Tony',
+                    service_price: 700,
+                    status: 'confirmed',
+                    payment_status: 'unpaid'
+                },
+                {
+                    booking_reference: 'KB-2024-010',
+                    customer_name: 'Thomas Njoroge',
+                    customer_phone: '0791 234 567',
+                    service_name: 'Haircut & Beard',
+                    appointment_date: new Date(Date.now() + 345600000).toISOString().split('T')[0],
+                    appointment_time: '14:30',
+                    barber_name: 'Mike',
+                    service_price: 1000,
+                    status: 'pending',
+                    payment_status: 'unpaid'
+                }
+            ];
+            
+            currentBookingsPage = 1;
+            updateBookingsTable();
+            updateBookingsPagination();
         }
 
         // Update bookings table with filtered data
@@ -2070,13 +2895,93 @@
             updateBookingsPagination();
         }
 
+        // Save new service
+        function saveService() {
+            const serviceName = document.getElementById('serviceName').value;
+            const servicePrice = document.getElementById('servicePrice').value;
+            const serviceDuration = document.getElementById('serviceDuration').value;
+            
+            if (!serviceName || !servicePrice || !serviceDuration) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            alert(`Service "${serviceName}" saved successfully! (This is a demo)`);
+            hideModal('addServiceModal');
+            loadServices(); // Refresh services list
+        }
+
+        // Edit service
+        function editService(serviceId) {
+            showModal('editServiceModal');
+            currentEditId = serviceId;
+            
+            const form = document.getElementById('editServiceForm');
+            form.innerHTML = `
+                <div class="form-group">
+                    <label for="editServiceName">Service Name *</label>
+                    <input type="text" id="editServiceName" class="form-control" value="Classic Haircut" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editServicePrice">Price (KES) *</label>
+                        <input type="number" id="editServicePrice" class="form-control" value="500" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editServiceDuration">Duration (minutes) *</label>
+                        <input type="number" id="editServiceDuration" class="form-control" value="30" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editServiceDescription">Description</label>
+                    <textarea id="editServiceDescription" class="form-control" rows="3">Traditional haircut with scissors and comb</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editServiceCategory">Category</label>
+                    <select id="editServiceCategory" class="form-control">
+                        <option value="haircut" selected>Haircut</option>
+                        <option value="beard">Beard Grooming</option>
+                        <option value="shave">Shaving</option>
+                        <option value="combo">Combination</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="editServiceActive" checked>
+                        <span>Service is active and available for booking</span>
+                    </label>
+                </div>
+            `;
+        }
+
+        // Update service
+        function updateService() {
+            alert(`Service updated successfully! (This is a demo)`);
+            hideModal('editServiceModal');
+            loadServices(); // Refresh services list
+        }
+
+        // Delete service
+        function deleteService(serviceId) {
+            if (confirm('Are you sure you want to delete this service? This action cannot be undone.')) {
+                alert(`Service deleted! (This is a demo)`);
+                loadServices(); // Refresh services list
+            }
+        }
+
         // Load services
         async function loadServices() {
             try {
                 const tableBody = document.getElementById('servicesBody');
                 
                 if (!supabaseClient || !tableBody) {
-                    tableBody.innerHTML = '<tr><td>Classic Haircut</td><td>Traditional haircut with scissors and comb</td><td>haircut</td><td>KES 500</td><td>30 mins</td><td><span class="status-badge status-confirmed">Active</span></td><td class="action-buttons"><button class="btn-action btn-edit" onclick="editService(1)"><i class="fas fa-edit"></i></button><button class="btn-action btn-delete" onclick="deleteService(1)"><i class="fas fa-trash"></i></button></td></tr>';
+                    loadMockServices();
                     return;
                 }
                 
@@ -2088,29 +2993,253 @@
                 if (error) throw error;
                 
                 if (!services || services.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;"><i class="fas fa-cut"></i> No services found</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;"><i class="fas fa-cut"></i> No services found</td></tr>';
                     return;
                 }
                 
                 tableBody.innerHTML = '';
                 
                 services.forEach(function(service) {
+                    const imageUrl = service.image_url || 'https://via.placeholder.com/50';
+                    
                     const row = document.createElement('tr');
-                    row.innerHTML = '<td>' + service.name + '</td>' +
+                    row.innerHTML = '<td><img src="' + imageUrl + '" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;"></td>' +
+                                   '<td>' + service.name + '</td>' +
                                    '<td>' + (service.description || 'No description') + '</td>' +
                                    '<td>' + (service.category || 'Uncategorized') + '</td>' +
                                    '<td>KES ' + service.price + '</td>' +
                                    '<td>' + service.duration + ' mins</td>' +
                                    '<td><span class="status-badge ' + (service.active ? 'status-confirmed' : 'status-cancelled') + '">' + (service.active ? 'Active' : 'Inactive') + '</span></td>' +
                                    '<td class="action-buttons">' +
-                                   '<button class="btn-action btn-edit" onclick="editService(\'' + service.id + '\')"><i class="fas fa-edit"></i></button>' +
-                                   '<button class="btn-action btn-delete" onclick="deleteService(\'' + service.id + '\')"><i class="fas fa-trash"></i></button>' +
+                                   '<button class="btn-action btn-edit" onclick="editService(\'' + service.id + '\')" title="Edit"><i class="fas fa-edit"></i></button>' +
+                                   '<button class="btn-action btn-image" onclick="uploadServiceImage(\'' + service.id + '\', \'' + service.name + '\')" title="Upload Image"><i class="fas fa-camera"></i></button>' +
+                                   '<button class="btn-action btn-delete" onclick="deleteService(\'' + service.id + '\')" title="Delete"><i class="fas fa-trash"></i></button>' +
                                    '</td>';
                     tableBody.appendChild(row);
                 });
                 
             } catch (error) {
                 console.error('Error loading services:', error);
+                loadMockServices();
+            }
+        }
+
+        // Load mock services
+        function loadMockServices() {
+            const tableBody = document.getElementById('servicesBody');
+            if (!tableBody) return;
+            
+            tableBody.innerHTML = `
+                <tr>
+                    <td><img src="https://images.unsplash.com/photo-1562322140-8baeececf3df?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;"></td>
+                    <td>Classic Haircut</td>
+                    <td>Traditional haircut with scissors and comb</td>
+                    <td>haircut</td>
+                    <td>KES 500</td>
+                    <td>30 mins</td>
+                    <td><span class="status-badge status-confirmed">Active</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editService(1)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-image" onclick="uploadServiceImage(1, 'Classic Haircut')"><i class="fas fa-camera"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteService(1)"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><img src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;"></td>
+                    <td>Beard Trim & Shape</td>
+                    <td>Professional beard trimming and shaping</td>
+                    <td>beard</td>
+                    <td>KES 400</td>
+                    <td>20 mins</td>
+                    <td><span class="status-badge status-confirmed">Active</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editService(2)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-image" onclick="uploadServiceImage(2, 'Beard Trim & Shape')"><i class="fas fa-camera"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteService(2)"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;"></td>
+                    <td>Hot Towel Shave</td>
+                    <td>Traditional hot towel shave with premium products</td>
+                    <td>shave</td>
+                    <td>KES 800</td>
+                    <td>45 mins</td>
+                    <td><span class="status-badge status-confirmed">Active</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editService(3)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-image" onclick="uploadServiceImage(3, 'Hot Towel Shave')"><i class="fas fa-camera"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteService(3)"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><img src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;"></td>
+                    <td>Kids Haircut</td>
+                    <td>Special haircut for children under 12</td>
+                    <td>haircut</td>
+                    <td>KES 450</td>
+                    <td>25 mins</td>
+                    <td><span class="status-badge status-confirmed">Active</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editService(4)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-image" onclick="uploadServiceImage(4, 'Kids Haircut')"><i class="fas fa-camera"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteService(4)"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;"></td>
+                    <td>Haircut & Beard Combo</td>
+                    <td>Complete grooming package</td>
+                    <td>combo</td>
+                    <td>KES 850</td>
+                    <td>50 mins</td>
+                    <td><span class="status-badge status-confirmed">Active</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editService(5)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-image" onclick="uploadServiceImage(5, 'Haircut & Beard Combo')"><i class="fas fa-camera"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteService(5)"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Upload service image
+        function uploadServiceImage(serviceId, serviceName) {
+            currentServiceId = serviceId;
+            document.getElementById('currentServiceName').textContent = serviceName;
+            showModal('uploadServiceImageModal');
+        }
+
+        // Preview service image
+        function previewServiceImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.match('image.*')) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image size should be less than 5MB');
+                return;
+            }
+            
+            serviceImageFile = file;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewContainer = document.getElementById('serviceImagePreview');
+                const previewImg = document.getElementById('previewServiceImg');
+                
+                previewImg.src = e.target.result;
+                previewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Remove service image preview
+        function removeServiceImagePreview() {
+            serviceImageFile = null;
+            document.getElementById('serviceImagePreview').style.display = 'none';
+            document.getElementById('serviceImageInput').value = '';
+        }
+
+        // Upload service image to server
+        function uploadServiceImageToServer() {
+            if (!serviceImageFile) {
+                alert('Please select an image first');
+                return;
+            }
+            
+            const uploadBtn = document.getElementById('uploadServiceBtn');
+            const originalText = uploadBtn.innerHTML;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            uploadBtn.disabled = true;
+            
+            // Simulate upload
+            setTimeout(function() {
+                alert('Service image uploaded successfully! (This is a demo)');
+                hideModal('uploadServiceImageModal');
+                uploadBtn.innerHTML = originalText;
+                uploadBtn.disabled = false;
+                serviceImageFile = null;
+                loadServices(); // Refresh services
+            }, 1500);
+        }
+
+        // Save new barber
+        function saveBarber() {
+            const barberName = document.getElementById('barberName').value;
+            const barberTitle = document.getElementById('barberTitle').value;
+            
+            if (!barberName) {
+                alert('Please fill in the required fields');
+                return;
+            }
+            
+            alert(`Barber "${barberName}" saved successfully! (This is a demo)`);
+            hideModal('addBarberModal');
+            loadBarbers(); // Refresh barbers list
+        }
+
+        // Edit barber
+        function editBarber(barberId) {
+            showModal('editBarberModal');
+            currentEditId = barberId;
+            
+            const form = document.getElementById('editBarberForm');
+            form.innerHTML = `
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editBarberName">Full Name *</label>
+                        <input type="text" id="editBarberName" class="form-control" value="Mike Barber" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editBarberTitle">Title/Specialty</label>
+                        <input type="text" id="editBarberTitle" class="form-control" value="Senior Barber">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editBarberBio">Bio/Description</label>
+                    <textarea id="editBarberBio" class="form-control" rows="3">Mike has over 8 years of experience in barbering and specializes in classic cuts and beard styling.</textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editBarberExperience">Experience (years)</label>
+                        <input type="number" id="editBarberExperience" class="form-control" value="8">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editBarberPhone">Phone Number</label>
+                        <input type="tel" id="editBarberPhone" class="form-control" value="0712 345 678">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="editBarberActive" checked>
+                        <span>Barber is active and available for booking</span>
+                    </label>
+                </div>
+            `;
+        }
+
+        // Update barber
+        function updateBarber() {
+            alert(`Barber updated successfully! (This is a demo)`);
+            hideModal('editBarberModal');
+            loadBarbers(); // Refresh barbers list
+        }
+
+        // Delete barber
+        function deleteBarber(barberId) {
+            if (confirm('Are you sure you want to delete this barber? This action cannot be undone.')) {
+                alert(`Barber deleted! (This is a demo)`);
+                loadBarbers(); // Refresh barbers list
             }
         }
 
@@ -2120,7 +3249,7 @@
                 const tableBody = document.getElementById('barbersBody');
                 
                 if (!supabaseClient || !tableBody) {
-                    tableBody.innerHTML = '<tr><td>John Doe</td><td>Senior Barber</td><td>5 years</td><td>0712 345 678</td><td><span class="status-badge status-confirmed">Active</span></td><td class="action-buttons"><button class="btn-action btn-edit" onclick="editBarber(1)"><i class="fas fa-edit"></i></button><button class="btn-action btn-delete" onclick="deleteBarber(1)"><i class="fas fa-trash"></i></button></td></tr>';
+                    loadMockBarbers();
                     return;
                 }
                 
@@ -2132,28 +3261,447 @@
                 if (error) throw error;
                 
                 if (!barbers || barbers.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;"><i class="fas fa-user-tie"></i> No barbers found</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;"><i class="fas fa-user-tie"></i> No barbers found</td></tr>';
                     return;
                 }
                 
                 tableBody.innerHTML = '';
                 
                 barbers.forEach(function(barber) {
+                    const imageUrl = barber.image_url || 'https://via.placeholder.com/50';
+                    
                     const row = document.createElement('tr');
-                    row.innerHTML = '<td>' + barber.name + '</td>' +
+                    row.innerHTML = '<td><img src="' + imageUrl + '" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;"></td>' +
+                                   '<td>' + barber.name + '</td>' +
                                    '<td>' + (barber.title || 'Barber') + '</td>' +
                                    '<td>' + (barber.experience_years || '0') + ' years</td>' +
                                    '<td>' + (barber.phone_number || 'N/A') + '</td>' +
                                    '<td><span class="status-badge ' + (barber.active ? 'status-confirmed' : 'status-cancelled') + '">' + (barber.active ? 'Active' : 'Inactive') + '</span></td>' +
                                    '<td class="action-buttons">' +
-                                   '<button class="btn-action btn-edit" onclick="editBarber(\'' + barber.id + '\')"><i class="fas fa-edit"></i></button>' +
-                                   '<button class="btn-action btn-delete" onclick="deleteBarber(\'' + barber.id + '\')"><i class="fas fa-trash"></i></button>' +
+                                   '<button class="btn-action btn-edit" onclick="editBarber(\'' + barber.id + '\')" title="Edit"><i class="fas fa-edit"></i></button>' +
+                                   '<button class="btn-action btn-image" onclick="uploadBarberImage(\'' + barber.id + '\', \'' + barber.name + '\')" title="Upload Image"><i class="fas fa-camera"></i></button>' +
+                                   '<button class="btn-action btn-delete" onclick="deleteBarber(\'' + barber.id + '\')" title="Delete"><i class="fas fa-trash"></i></button>' +
                                    '</td>';
                     tableBody.appendChild(row);
                 });
                 
             } catch (error) {
                 console.error('Error loading barbers:', error);
+                loadMockBarbers();
+            }
+        }
+
+        // Load mock barbers
+        function loadMockBarbers() {
+            const tableBody = document.getElementById('barbersBody');
+            if (!tableBody) return;
+            
+            tableBody.innerHTML = `
+                <tr>
+                    <td><img src="https://images.unsplash.com/photo-1562788869-4ed32648eb72?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;"></td>
+                    <td>Mike Barber</td>
+                    <td>Senior Barber</td>
+                    <td>8 years</td>
+                    <td>0712 345 678</td>
+                    <td><span class="status-badge status-confirmed">Active</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editBarber(1)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-image" onclick="uploadBarberImage(1, 'Mike Barber')"><i class="fas fa-camera"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteBarber(1)"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><img src="https://images.unsplash.com/photo-1580618672591-eb180b1a973f?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;"></td>
+                    <td>Tony Styles</td>
+                    <td>Beard Specialist</td>
+                    <td>6 years</td>
+                    <td>0713 456 789</td>
+                    <td><span class="status-badge status-confirmed">Active</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editBarber(2)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-image" onclick="uploadBarberImage(2, 'Tony Styles')"><i class="fas fa-camera"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteBarber(2)"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><img src="https://images.unsplash.com/photo-1599351431441-4b2565d5c8ce?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;"></td>
+                    <td>David Sharp</td>
+                    <td>Master Barber</td>
+                    <td>12 years</td>
+                    <td>0724 567 890</td>
+                    <td><span class="status-badge status-confirmed">Active</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editBarber(3)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-image" onclick="uploadBarberImage(3, 'David Sharp')"><i class="fas fa-camera"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteBarber(3)"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><img src="https://images.unsplash.com/photo-1605497788044-5a32c7078486?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" style="width: 50px; height: 50px; border-radius: 5px; object-fit: cover;"></td>
+                    <td>Chris Cuts</td>
+                    <td>Junior Barber</td>
+                    <td>2 years</td>
+                    <td>0735 678 901</td>
+                    <td><span class="status-badge status-cancelled">Inactive</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editBarber(4)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-image" onclick="uploadBarberImage(4, 'Chris Cuts')"><i class="fas fa-camera"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteBarber(4)"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Upload barber image
+        function uploadBarberImage(barberId, barberName) {
+            currentBarberId = barberId;
+            document.getElementById('currentBarberName').textContent = barberName;
+            showModal('uploadBarberImageModal');
+        }
+
+        // Preview barber image
+        function previewBarberImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.match('image.*')) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image size should be less than 5MB');
+                return;
+            }
+            
+            barberImageFile = file;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewContainer = document.getElementById('barberImagePreview');
+                const previewImg = document.getElementById('previewBarberImg');
+                
+                previewImg.src = e.target.result;
+                previewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Remove barber image preview
+        function removeBarberImagePreview() {
+            barberImageFile = null;
+            document.getElementById('barberImagePreview').style.display = 'none';
+            document.getElementById('barberImageInput').value = '';
+        }
+
+        // Upload barber image to server
+        function uploadBarberImageToServer() {
+            if (!barberImageFile) {
+                alert('Please select an image first');
+                return;
+            }
+            
+            const uploadBtn = document.getElementById('uploadBarberBtn');
+            const originalText = uploadBtn.innerHTML;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            uploadBtn.disabled = true;
+            
+            // Simulate upload
+            setTimeout(function() {
+                alert('Barber image uploaded successfully! (This is a demo)');
+                hideModal('uploadBarberImageModal');
+                uploadBtn.innerHTML = originalText;
+                uploadBtn.disabled = false;
+                barberImageFile = null;
+                loadBarbers(); // Refresh barbers
+            }, 1500);
+        }
+
+        // Load gallery
+        async function loadGallery() {
+            try {
+                const galleryGrid = document.getElementById('galleryGrid');
+                
+                if (!supabaseClient || !galleryGrid) {
+                    loadMockGallery();
+                    return;
+                }
+                
+                const { data: galleryItems, error } = await supabaseClient
+                    .from('gallery')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    // Table might not exist, show empty state
+                    galleryGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 3rem;"><i class="fas fa-images" style="font-size: 3rem; color: var(--gray); margin-bottom: 1rem;"></i><p>No gallery items yet. Add your first photo!</p></div>';
+                    return;
+                }
+                
+                if (!galleryItems || galleryItems.length === 0) {
+                    galleryGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 3rem;"><i class="fas fa-images" style="font-size: 3rem; color: var(--gray); margin-bottom: 1rem;"></i><p>No gallery items yet. Add your first photo!</p></div>';
+                    return;
+                }
+                
+                galleryGrid.innerHTML = '';
+                
+                galleryItems.forEach(function(item) {
+                    const galleryItem = document.createElement('div');
+                    galleryItem.className = 'gallery-item';
+                    galleryItem.innerHTML = '<img src="' + (item.image_url || 'https://via.placeholder.com/300x200') + '" alt="' + (item.title || 'Gallery image') + '">' +
+                                          '<div class="gallery-item-info">' +
+                                          '<h4>' + item.title + '</h4>' +
+                                          '<p>' + (item.category || 'Uncategorized') + '</p>' +
+                                          '</div>' +
+                                          '<div class="gallery-item-actions">' +
+                                          '<button class="btn-action btn-edit" onclick="editGalleryItem(\'' + item.id + '\')"><i class="fas fa-edit"></i></button>' +
+                                          '<button class="btn-action btn-delete" onclick="deleteGalleryItem(\'' + item.id + '\')"><i class="fas fa-trash"></i></button>' +
+                                          '</div>';
+                    galleryGrid.appendChild(galleryItem);
+                });
+                
+            } catch (error) {
+                console.error('Error loading gallery:', error);
+                loadMockGallery();
+            }
+        }
+
+        // Load mock gallery
+        function loadMockGallery() {
+            const galleryGrid = document.getElementById('galleryGrid');
+            if (!galleryGrid) return;
+            
+            galleryGrid.innerHTML = `
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Barber at work">
+                    <div class="gallery-item-info">
+                        <h4>Professional Haircut</h4>
+                        <p>Haircuts</p>
+                    </div>
+                    <div class="gallery-item-actions">
+                        <button class="btn-action btn-edit" onclick="editGalleryItem(1)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteGalleryItem(1)"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1562788869-4ed32648eb72?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Beard styling">
+                    <div class="gallery-item-info">
+                        <h4>Perfect Beard Trim</h4>
+                        <p>Beard Styling</p>
+                    </div>
+                    <div class="gallery-item-actions">
+                        <button class="btn-action btn-edit" onclick="editGalleryItem(2)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteGalleryItem(2)"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Hot towel shave">
+                    <div class="gallery-item-info">
+                        <h4>Hot Towel Experience</h4>
+                        <p>Shaves</p>
+                    </div>
+                    <div class="gallery-item-actions">
+                        <button class="btn-action btn-edit" onclick="editGalleryItem(3)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteGalleryItem(3)"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1518609878373-06d740f60d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Kids haircut">
+                    <div class="gallery-item-info">
+                        <h4>Kids Special</h4>
+                        <p>Haircuts</p>
+                    </div>
+                    <div class="gallery-item-actions">
+                        <button class="btn-action btn-edit" onclick="editGalleryItem(4)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteGalleryItem(4)"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Barber shop interior">
+                    <div class="gallery-item-info">
+                        <h4>Our Salon</h4>
+                        <p>Salon</p>
+                    </div>
+                    <div class="gallery-item-actions">
+                        <button class="btn-action btn-edit" onclick="editGalleryItem(5)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteGalleryItem(5)"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1599351431441-4b2565d5c8ce?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Barber team">
+                    <div class="gallery-item-info">
+                        <h4>Our Team</h4>
+                        <p>Barbers</p>
+                    </div>
+                    <div class="gallery-item-actions">
+                        <button class="btn-action btn-edit" onclick="editGalleryItem(6)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteGalleryItem(6)"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Filter gallery
+        function filterGallery() {
+            const category = document.getElementById('filterGalleryCategory') ? document.getElementById('filterGalleryCategory').value : 'all';
+            const searchTerm = document.getElementById('searchGallery') ? document.getElementById('searchGallery').value.toLowerCase() : '';
+            
+            const galleryItems = document.querySelectorAll('.gallery-item');
+            
+            galleryItems.forEach(function(item) {
+                const categoryText = item.querySelector('p').textContent.toLowerCase();
+                const titleText = item.querySelector('h4').textContent.toLowerCase();
+                
+                let showItem = true;
+                
+                if (category !== 'all' && !categoryText.includes(category)) {
+                    showItem = false;
+                }
+                
+                if (searchTerm && !titleText.includes(searchTerm) && !categoryText.includes(searchTerm)) {
+                    showItem = false;
+                }
+                
+                item.style.display = showItem ? 'block' : 'none';
+            });
+        }
+
+        // Reset gallery filters
+        function resetGalleryFilters() {
+            const filterCategory = document.getElementById('filterGalleryCategory');
+            const searchGallery = document.getElementById('searchGallery');
+            
+            if (filterCategory) filterCategory.value = 'all';
+            if (searchGallery) searchGallery.value = '';
+            
+            const galleryItems = document.querySelectorAll('.gallery-item');
+            galleryItems.forEach(function(item) {
+                item.style.display = 'block';
+            });
+        }
+
+        // Preview gallery image
+        function previewGalleryImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.match('image.*')) {
+                alert('Please select an image file');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image size should be less than 5MB');
+                return;
+            }
+            
+            galleryImageFile = file;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewContainer = document.getElementById('galleryImagePreview');
+                const previewImg = document.getElementById('previewGalleryImg');
+                
+                previewImg.src = e.target.result;
+                previewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Remove gallery image preview
+        function removeGalleryImagePreview() {
+            galleryImageFile = null;
+            document.getElementById('galleryImagePreview').style.display = 'none';
+            document.getElementById('galleryImageInput').value = '';
+        }
+
+        // Upload gallery image
+        function uploadGalleryImage() {
+            const title = document.getElementById('galleryImageTitle').value;
+            
+            if (!title) {
+                alert('Please enter a title for the image');
+                return;
+            }
+            
+            if (!galleryImageFile) {
+                alert('Please select an image to upload');
+                return;
+            }
+            
+            const uploadBtn = document.getElementById('uploadGalleryBtn');
+            const originalText = uploadBtn.innerHTML;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            uploadBtn.disabled = true;
+            
+            // Simulate upload
+            setTimeout(function() {
+                alert('Gallery image uploaded successfully! (This is a demo)');
+                hideModal('addGalleryImageModal');
+                uploadBtn.innerHTML = originalText;
+                uploadBtn.disabled = false;
+                galleryImageFile = null;
+                loadGallery(); // Refresh gallery
+            }, 1500);
+        }
+
+        // Edit gallery item
+        function editGalleryItem(galleryId) {
+            currentGalleryId = galleryId;
+            showModal('editGalleryImageModal');
+            
+            const form = document.getElementById('editGalleryForm');
+            form.innerHTML = `
+                <div class="form-group">
+                    <label>Image Title *</label>
+                    <input type="text" class="form-control" id="editGalleryTitle" value="Professional Haircut" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="form-control" id="editGalleryDescription" rows="3">Our barber providing a professional haircut service</textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category *</label>
+                        <select class="form-control" id="editGalleryCategory" required>
+                            <option value="haircuts" selected>Haircuts</option>
+                            <option value="beard">Beard Styling</option>
+                            <option value="shaves">Shaves</option>
+                            <option value="salon">Salon Environment</option>
+                            <option value="barbers">Our Barbers</option>
+                            <option value="events">Events</option>
+                            <option value="before-after">Before & After</option>
+                            <option value="tools">Tools & Equipment</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Featured</label>
+                        <div>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="editGalleryFeatured" checked>
+                                <span>Show on homepage featured section</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Update gallery image
+        function updateGalleryImage() {
+            alert('Gallery item updated successfully! (This is a demo)');
+            hideModal('editGalleryImageModal');
+            loadGallery(); // Refresh gallery
+        }
+
+        // Delete gallery item
+        function deleteGalleryItem(galleryId) {
+            if (confirm('Are you sure you want to delete this gallery item? This action cannot be undone.')) {
+                alert('Gallery item deleted! (This is a demo)');
+                loadGallery(); // Refresh gallery
             }
         }
 
@@ -2164,7 +3712,7 @@
                 if (!tableBody) return;
                 
                 if (!supabaseClient) {
-                    tableBody.innerHTML = '<tr><td>John Doe</td><td>★★★★★</td><td>Great service! Will definitely come back.</td><td>2024-01-15</td><td><span class="status-badge status-confirmed">Approved</span></td><td class="action-buttons"><button class="btn-action btn-edit" onclick="editTestimonial(1)"><i class="fas fa-edit"></i></button><button class="btn-action btn-delete" onclick="deleteTestimonial(1)"><i class="fas fa-trash"></i></button></td></tr>';
+                    loadMockTestimonials();
                     return;
                 }
                 
@@ -2204,6 +3752,104 @@
                 
             } catch (error) {
                 console.error('Error loading testimonials:', error);
+                loadMockTestimonials();
+            }
+        }
+
+        // Load mock testimonials
+        function loadMockTestimonials() {
+            const tableBody = document.getElementById('testimonialsBody');
+            if (!tableBody) return;
+            
+            tableBody.innerHTML = `
+                <tr>
+                    <td>James Kamau</td>
+                    <td>★★★★★</td>
+                    <td>Best haircut I've ever had! Mike is a true professional.</td>
+                    <td>2024-01-15</td>
+                    <td><span class="status-badge status-confirmed">Approved</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editTestimonial(1)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteTestimonial(1)"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>David Ochieng</td>
+                    <td>★★★★☆</td>
+                    <td>Great service and friendly staff. My beard has never looked better!</td>
+                    <td>2024-01-10</td>
+                    <td><span class="status-badge status-confirmed">Approved</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editTestimonial(2)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteTestimonial(2)"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Peter Mwangi</td>
+                    <td>★★★★★</td>
+                    <td>The hot towel shave was amazing. Will definitely be back!</td>
+                    <td>2024-01-05</td>
+                    <td><span class="status-badge status-confirmed">Approved</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editTestimonial(3)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteTestimonial(3)"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Brian Otieno</td>
+                    <td>★★★☆☆</td>
+                    <td>Good service but had to wait a bit longer than expected.</td>
+                    <td>2024-01-03</td>
+                    <td><span class="status-badge status-pending">Pending</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editTestimonial(4)"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteTestimonial(4)"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Set rating for testimonial
+        function setRating(rating) {
+            document.getElementById('testimonialRating').value = rating;
+            
+            const stars = document.querySelectorAll('#addTestimonialModal .fa-star');
+            stars.forEach(function(star, index) {
+                if (index < rating) {
+                    star.classList.remove('far');
+                    star.classList.add('fas');
+                } else {
+                    star.classList.remove('fas');
+                    star.classList.add('far');
+                }
+            });
+        }
+
+        // Save testimonial
+        function saveTestimonial() {
+            const name = document.getElementById('testimonialName').value;
+            const comment = document.getElementById('testimonialComment').value;
+            
+            if (!name || !comment) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            alert(`Testimonial from ${name} saved successfully! (This is a demo)`);
+            hideModal('addTestimonialModal');
+            loadTestimonials(); // Refresh testimonials
+        }
+
+        // Edit testimonial
+        function editTestimonial(testimonialId) {
+            alert(`Editing testimonial ${testimonialId} (This is a demo)`);
+        }
+
+        // Delete testimonial
+        function deleteTestimonial(testimonialId) {
+            if (confirm('Are you sure you want to delete this testimonial? This action cannot be undone.')) {
+                alert(`Testimonial deleted! (This is a demo)`);
+                loadTestimonials(); // Refresh testimonials
             }
         }
 
@@ -2211,283 +3857,188 @@
         async function loadCustomers() {
             try {
                 const tableBody = document.getElementById('customersBody');
+                if (!tableBody) return;
                 
-                if (!supabaseClient || !tableBody) {
-                    tableBody.innerHTML = '<tr><td>John Doe</td><td>0712 345 678</td><td>john@example.com</td><td>5</td><td>KES 2,500</td><td>2024-01-15</td><td class="action-buttons"><button class="btn-action btn-view" onclick="viewCustomer(1)"><i class="fas fa-eye"></i></button><button class="btn-action btn-edit" onclick="editCustomer(1)"><i class="fas fa-edit"></i></button></td></tr>';
+                if (!supabaseClient) {
+                    loadMockCustomers();
                     return;
                 }
                 
                 // Get unique customers from appointments
                 const { data: appointments, error } = await supabaseClient
                     .from('appointments')
-                    .select('customer_name, customer_phone, customer_email, service_price, appointment_date')
-                    .order('appointment_date', { ascending: false });
+                    .select('customer_name, customer_phone, customer_email, service_price, created_at')
+                    .order('created_at', { ascending: false });
                 
                 if (error) throw error;
                 
-                // Group by customer phone
-                const customersMap = new Map();
-                
-                appointments?.forEach(function(appointment) {
-                    const phone = appointment.customer_phone;
-                    if (!phone) return;
-                    
-                    if (!customersMap.has(phone)) {
-                        customersMap.set(phone, {
-                            name: appointment.customer_name,
-                            phone: phone,
-                            email: appointment.customer_email,
-                            totalBookings: 0,
-                            totalSpent: 0,
-                            lastVisit: appointment.appointment_date
-                        });
-                    }
-                    
-                    const customer = customersMap.get(phone);
-                    customer.totalBookings++;
-                    customer.totalSpent += appointment.service_price || 0;
-                    
-                    if (new Date(appointment.appointment_date) > new Date(customer.lastVisit)) {
-                        customer.lastVisit = appointment.appointment_date;
-                    }
-                });
-                
-                const customers = Array.from(customersMap.values());
-                
-                if (customers.length === 0) {
+                if (!appointments || appointments.length === 0) {
                     tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;"><i class="fas fa-users"></i> No customers found</td></tr>';
                     return;
                 }
                 
+                // Group appointments by customer phone
+                const customersMap = {};
+                appointments.forEach(function(appointment) {
+                    const phone = appointment.customer_phone;
+                    if (!phone) return;
+                    
+                    if (!customersMap[phone]) {
+                        customersMap[phone] = {
+                            name: appointment.customer_name,
+                            phone: phone,
+                            email: appointment.customer_email || 'N/A',
+                            totalBookings: 0,
+                            totalSpent: 0,
+                            lastVisit: null
+                        };
+                    }
+                    
+                    customersMap[phone].totalBookings++;
+                    customersMap[phone].totalSpent += appointment.service_price || 0;
+                    
+                    const appointmentDate = new Date(appointment.created_at);
+                    if (!customersMap[phone].lastVisit || appointmentDate > customersMap[phone].lastVisit) {
+                        customersMap[phone].lastVisit = appointmentDate;
+                    }
+                });
+                
+                const customers = Object.values(customersMap);
+                
                 tableBody.innerHTML = '';
                 
                 customers.forEach(function(customer) {
-                    const lastVisit = new Date(customer.lastVisit).toLocaleDateString('en-KE');
                     const row = document.createElement('tr');
-                    row.innerHTML = '<td>' + (customer.name || 'Unknown') + '</td>' +
+                    row.innerHTML = '<td>' + customer.name + '</td>' +
                                    '<td>' + customer.phone + '</td>' +
-                                   '<td>' + (customer.email || 'N/A') + '</td>' +
+                                   '<td>' + customer.email + '</td>' +
                                    '<td>' + customer.totalBookings + '</td>' +
-                                   '<td>KES ' + customer.totalSpent.toLocaleString() + '</td>' +
-                                   '<td>' + lastVisit + '</td>' +
+                                   '<td>KES ' + customer.totalSpent + '</td>' +
+                                   '<td>' + (customer.lastVisit ? customer.lastVisit.toLocaleDateString() : 'N/A') + '</td>' +
                                    '<td class="action-buttons">' +
                                    '<button class="btn-action btn-view" onclick="viewCustomer(\'' + customer.phone + '\')"><i class="fas fa-eye"></i></button>' +
-                                   '<button class="btn-action btn-edit" onclick="editCustomer(\'' + customer.phone + '\')"><i class="fas fa-edit"></i></button>' +
                                    '</td>';
                     tableBody.appendChild(row);
                 });
                 
             } catch (error) {
                 console.error('Error loading customers:', error);
+                loadMockCustomers();
             }
+        }
+
+        // Load mock customers
+        function loadMockCustomers() {
+            const tableBody = document.getElementById('customersBody');
+            if (!tableBody) return;
+            
+            tableBody.innerHTML = `
+                <tr>
+                    <td>James Kamau</td>
+                    <td>0712 345 678</td>
+                    <td>james@example.com</td>
+                    <td>5</td>
+                    <td>KES 2,500</td>
+                    <td>2024-01-15</td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-view" onclick="viewCustomer('0712345678')"><i class="fas fa-eye"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>David Ochieng</td>
+                    <td>0713 456 789</td>
+                    <td>david@example.com</td>
+                    <td>3</td>
+                    <td>KES 1,200</td>
+                    <td>2024-01-10</td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-view" onclick="viewCustomer('0713456789')"><i class="fas fa-eye"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Peter Mwangi</td>
+                    <td>0724 567 890</td>
+                    <td>peter@example.com</td>
+                    <td>2</td>
+                    <td>KES 1,600</td>
+                    <td>2024-01-05</td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-view" onclick="viewCustomer('0724567890')"><i class="fas fa-eye"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Samuel Kiptoo</td>
+                    <td>0735 678 901</td>
+                    <td>samuel@example.com</td>
+                    <td>1</td>
+                    <td>KES 800</td>
+                    <td>2024-01-03</td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-view" onclick="viewCustomer('0735678901')"><i class="fas fa-eye"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Brian Otieno</td>
+                    <td>0746 789 012</td>
+                    <td>brian@example.com</td>
+                    <td>1</td>
+                    <td>KES 450</td>
+                    <td>2024-01-02</td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-view" onclick="viewCustomer('0746789012')"><i class="fas fa-eye"></i></button>
+                    </td>
+                </tr>
+            `;
         }
 
         // Search customers
         function searchCustomers() {
-            const searchTerm = document.getElementById('searchCustomers') ? document.getElementById('searchCustomers').value.toLowerCase() : '';
-            const rows = document.querySelectorAll('#customersBody tr');
+            const searchTerm = document.getElementById('searchCustomers').value.toLowerCase();
+            if (!searchTerm) {
+                loadCustomers();
+                return;
+            }
             
-            rows.forEach(function(row) {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchTerm) ? '' : 'none';
-            });
+            alert(`Searching for customers with: ${searchTerm} (This is a demo)`);
+        }
+
+        // View customer details
+        function viewCustomer(phone) {
+            alert(`Viewing customer details for phone: ${phone} (This is a demo)`);
         }
 
         // Generate report
-        async function generateReport() {
-            try {
-                const period = document.getElementById('reportPeriod') ? document.getElementById('reportPeriod').value : 'month';
-                let startDate, endDate;
-                
-                const now = new Date();
-                
-                switch(period) {
-                    case 'today':
-                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-                        break;
-                    case 'week':
-                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-                        endDate = now;
-                        break;
-                    case 'month':
-                        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-                        break;
-                    case 'quarter':
-                        const quarter = Math.floor(now.getMonth() / 3);
-                        startDate = new Date(now.getFullYear(), quarter * 3, 1);
-                        endDate = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
-                        break;
-                    case 'year':
-                        startDate = new Date(now.getFullYear(), 0, 1);
-                        endDate = new Date(now.getFullYear(), 11, 31);
-                        break;
-                    default:
-                        return;
-                }
-                
-                if (!supabaseClient) {
-                    const reportTotalBookings = document.getElementById('reportTotalBookings');
-                    const reportTotalRevenue = document.getElementById('reportTotalRevenue');
-                    const reportAvgBooking = document.getElementById('reportAvgBooking');
-                    const reportSuccessRate = document.getElementById('reportSuccessRate');
-                    
-                    if (reportTotalBookings) reportTotalBookings.textContent = '24';
-                    if (reportTotalRevenue) reportTotalRevenue.textContent = 'KES 12,000';
-                    if (reportAvgBooking) reportAvgBooking.textContent = 'KES 500';
-                    if (reportSuccessRate) reportSuccessRate.textContent = '85%';
-                    
-                    initMockCharts();
-                    return;
-                }
-                
-                // Get bookings for period
-                const { data: bookings, error } = await supabaseClient
-                    .from('appointments')
-                    .select('*')
-                    .gte('appointment_date', startDate.toISOString().split('T')[0])
-                    .lte('appointment_date', endDate.toISOString().split('T')[0]);
-                
-                if (error) throw error;
-                
-                const totalBookings = bookings?.length || 0;
-                const confirmedBookings = bookings?.filter(function(b) { return b.status === 'confirmed' || b.status === 'completed'; }).length || 0;
-                const totalRevenue = bookings
-                    ?.filter(function(b) { return b.payment_status === 'paid'; })
-                    .reduce(function(sum, b) { return sum + (b.service_price || 0); }, 0) || 0;
-                const avgBooking = totalBookings > 0 ? totalRevenue / totalBookings : 0;
-                const successRate = totalBookings > 0 ? (confirmedBookings / totalBookings) * 100 : 0;
-                
-                const reportTotalBookings = document.getElementById('reportTotalBookings');
-                const reportTotalRevenue = document.getElementById('reportTotalRevenue');
-                const reportAvgBooking = document.getElementById('reportAvgBooking');
-                const reportSuccessRate = document.getElementById('reportSuccessRate');
-                
-                if (reportTotalBookings) reportTotalBookings.textContent = totalBookings;
-                if (reportTotalRevenue) reportTotalRevenue.textContent = 'KES ' + totalRevenue.toLocaleString();
-                if (reportAvgBooking) reportAvgBooking.textContent = 'KES ' + Math.round(avgBooking).toLocaleString();
-                if (reportSuccessRate) reportSuccessRate.textContent = Math.round(successRate) + '%';
-                
-                generateBookingTrendChart(bookings || []);
-                generateServiceChart(bookings || []);
-                
-                await loadTopBarbers(bookings || []);
-                
-            } catch (error) {
-                console.error('Error generating report:', error);
-            }
+        function generateReport() {
+            const period = document.getElementById('reportPeriod').value;
+            
+            // Update report stats
+            document.getElementById('reportTotalBookings').textContent = '48';
+            document.getElementById('reportTotalRevenue').textContent = 'KES 24,800';
+            document.getElementById('reportAvgBooking').textContent = 'KES 517';
+            document.getElementById('reportSuccessRate').textContent = '92%';
+            
+            // Generate charts
+            generateBookingTrendChart();
+            generateServiceChart();
+            loadTopBarbers();
         }
 
         // Generate custom report
         function generateCustomReport() {
-            const startDate = document.getElementById('reportStartDate') ? document.getElementById('reportStartDate').value : '';
-            const endDate = document.getElementById('reportEndDate') ? document.getElementById('reportEndDate').value : '';
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
             
             if (!startDate || !endDate) {
                 alert('Please select both start and end dates');
                 return;
             }
             
-            alert('Custom report will be generated for: ' + startDate + ' to ' + endDate);
+            alert(`Generating custom report from ${startDate} to ${endDate} (This is a demo)`);
+            generateReport();
         }
 
-        // Load top barbers for report
-        async function loadTopBarbers(bookings) {
-            try {
-                if (!supabaseClient) {
-                    const tableBody = document.getElementById('topBarbersBody');
-                    if (tableBody) {
-                        tableBody.innerHTML = '<tr><td>John Doe</td><td>15</td><td>KES 7,500</td><td>4.8</td></tr>';
-                    }
-                    return;
-                }
-                
-                const { data: barbers, error } = await supabaseClient
-                    .from('barbers')
-                    .select('*');
-                
-                if (error) throw error;
-                
-                const barberPerformance = barbers?.map(function(barber) {
-                    const barberBookings = bookings.filter(function(b) { return b.barber_name === barber.name; });
-                    const revenue = barberBookings
-                        .filter(function(b) { return b.payment_status === 'paid'; })
-                        .reduce(function(sum, b) { return sum + (b.service_price || 0); }, 0);
-                    
-                    return {
-                        name: barber.name,
-                        bookings: barberBookings.length,
-                        revenue: revenue,
-                        rating: barber.rating || 4.5
-                    };
-                }).sort(function(a, b) { return b.revenue - a.revenue; }).slice(0, 5) || [];
-                
-                const tableBody = document.getElementById('topBarbersBody');
-                if (!tableBody) return;
-                
-                tableBody.innerHTML = '';
-                
-                barberPerformance.forEach(function(barber) {
-                    const row = document.createElement('tr');
-                    row.innerHTML = '<td>' + barber.name + '</td>' +
-                                   '<td>' + barber.bookings + '</td>' +
-                                   '<td>KES ' + barber.revenue.toLocaleString() + '</td>' +
-                                   '<td>' + barber.rating.toFixed(1) + '</td>';
-                    tableBody.appendChild(row);
-                });
-                
-            } catch (error) {
-                console.error('Error loading top barbers:', error);
-            }
-        }
-
-        // Initialize activity chart for dashboard
-        function initActivityChart() {
-            const ctx = document.getElementById('activityChart');
-            if (!ctx) return;
-            
-            if (activityChart) {
-                activityChart.destroy();
-            }
-            
-            const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-            const data = {
-                labels: labels,
-                datasets: [{
-                    label: 'Bookings',
-                    data: [12, 19, 8, 15, 22, 18, 25],
-                    borderColor: 'rgb(212, 175, 55)',
-                    backgroundColor: 'rgba(212, 175, 55, 0.1)',
-                    fill: true,
-                    tension: 0.4
-                }]
-            };
-            
-            activityChart = new Chart(ctx, {
-                type: 'line',
-                data: data,
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 5
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Generate booking trend chart for reports
-        function generateBookingTrendChart(bookings) {
+        // Generate booking trend chart
+        function generateBookingTrendChart() {
             const ctx = document.getElementById('bookingTrendChart');
             if (!ctx) return;
             
@@ -2495,73 +4046,15 @@
                 bookingTrendChart.destroy();
             }
             
-            const bookingsByDay = {};
-            bookings.forEach(function(booking) {
-                const date = booking.appointment_date;
-                if (date) {
-                    bookingsByDay[date] = (bookingsByDay[date] || 0) + 1;
-                }
-            });
-            
-            const labels = Object.keys(bookingsByDay).sort();
-            const data = labels.map(function(date) { return bookingsByDay[date]; });
-            
             bookingTrendChart = new Chart(ctx, {
-                type: 'line',
+                type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
                     datasets: [{
-                        label: 'Bookings per Day',
-                        data: data,
-                        borderColor: 'rgb(40, 167, 69)',
-                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    }
-                }
-            });
-        }
-
-        // Generate service chart for reports
-        function generateServiceChart(bookings) {
-            const ctx = document.getElementById('serviceChart');
-            if (!ctx) return;
-            
-            if (serviceChart) {
-                serviceChart.destroy();
-            }
-            
-            const serviceCounts = {};
-            bookings.forEach(function(booking) {
-                const service = booking.service_name || 'Unknown';
-                serviceCounts[service] = (serviceCounts[service] || 0) + 1;
-            });
-            
-            const labels = Object.keys(serviceCounts);
-            const data = labels.map(function(service) { return serviceCounts[service]; });
-            const backgroundColors = [
-                'rgba(212, 175, 55, 0.8)',
-                'rgba(40, 167, 69, 0.8)',
-                'rgba(0, 123, 255, 0.8)',
-                'rgba(111, 66, 193, 0.8)',
-                'rgba(220, 53, 69, 0.8)'
-            ];
-            
-            serviceChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: backgroundColors.slice(0, labels.length),
+                        label: 'Bookings',
+                        data: [35, 42, 38, 45],
+                        backgroundColor: 'var(--primary)',
+                        borderColor: 'var(--accent)',
                         borderWidth: 1
                     }]
                 },
@@ -2569,1078 +4062,243 @@
                     responsive: true,
                     plugins: {
                         legend: {
-                            position: 'right',
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Bookings'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Week'
+                            }
                         }
                     }
                 }
             });
         }
 
-        // Mock charts for demo
-        function initMockCharts() {
-            const trendCtx = document.getElementById('bookingTrendChart');
-            if (trendCtx) {
-                bookingTrendChart = new Chart(trendCtx, {
-                    type: 'line',
-                    data: {
-                        labels: ['Jan 1', 'Jan 2', 'Jan 3', 'Jan 4', 'Jan 5', 'Jan 6', 'Jan 7'],
-                        datasets: [{
-                            label: 'Bookings per Day',
-                            data: [8, 12, 6, 14, 10, 16, 12],
-                            borderColor: 'rgb(40, 167, 69)',
-                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                            fill: true
-                        }]
+        // Generate service chart
+        function generateServiceChart() {
+            const ctx = document.getElementById('serviceChart');
+            if (!ctx) return;
+            
+            if (serviceChart) {
+                serviceChart.destroy();
+            }
+            
+            serviceChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Classic Haircut', 'Beard Trim', 'Hot Towel Shave', 'Kids Haircut', 'Combo'],
+                    datasets: [{
+                        data: [35, 25, 20, 15, 5],
+                        backgroundColor: [
+                            'var(--primary)',
+                            'var(--success)',
+                            'var(--info)',
+                            'var(--warning)',
+                            'var(--danger)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
                     }
-                });
-            }
-            
-            const serviceCtx = document.getElementById('serviceChart');
-            if (serviceCtx) {
-                serviceChart = new Chart(serviceCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Haircut', 'Beard Trim', 'Shaving', 'Combo'],
-                        datasets: [{
-                            data: [40, 25, 20, 15],
-                            backgroundColor: [
-                                'rgba(212, 175, 55, 0.8)',
-                                'rgba(40, 167, 69, 0.8)',
-                                'rgba(0, 123, 255, 0.8)',
-                                'rgba(111, 66, 193, 0.8)'
-                            ]
-                        }]
-                    }
-                });
-            }
-        }
-
-        // Modal functions
-        function showModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.style.display = 'flex';
-            }
-        }
-
-        function hideModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.style.display = 'none';
-            }
-        }
-
-        // Save service
-        async function saveService() {
-            const name = document.getElementById('serviceName') ? document.getElementById('serviceName').value : '';
-            const price = document.getElementById('servicePrice') ? document.getElementById('servicePrice').value : '';
-            const duration = document.getElementById('serviceDuration') ? document.getElementById('serviceDuration').value : '';
-            
-            if (!name || !price || !duration) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
-            try {
-                if (!supabaseClient) {
-                    alert('Service added successfully!');
-                    hideModal('addServiceModal');
-                    const form = document.getElementById('addServiceForm');
-                    if (form) form.reset();
-                    loadServices();
-                    return;
-                }
-                
-                const { error } = await supabaseClient
-                    .from('services')
-                    .insert([{
-                        name: name,
-                        price: parseFloat(price),
-                        duration: parseInt(duration),
-                        description: document.getElementById('serviceDescription') ? document.getElementById('serviceDescription').value : '',
-                        category: document.getElementById('serviceCategory') ? document.getElementById('serviceCategory').value : 'haircut',
-                        active: document.getElementById('serviceActive') ? document.getElementById('serviceActive').checked : true,
-                        created_at: new Date().toISOString()
-                    }]);
-                
-                if (error) throw error;
-                
-                alert('Service added successfully!');
-                hideModal('addServiceModal');
-                const form = document.getElementById('addServiceForm');
-                if (form) form.reset();
-                loadServices();
-                loadDashboardStats();
-                
-            } catch (error) {
-                console.error('Error adding service:', error);
-                alert('Error adding service: ' + error.message);
-            }
-        }
-
-        // Save barber
-        async function saveBarber() {
-            const name = document.getElementById('barberName') ? document.getElementById('barberName').value : '';
-            
-            if (!name) {
-                alert('Please enter barber name');
-                return;
-            }
-            
-            try {
-                if (!supabaseClient) {
-                    alert('Barber added successfully!');
-                    hideModal('addBarberModal');
-                    const form = document.getElementById('addBarberForm');
-                    if (form) form.reset();
-                    loadBarbers();
-                    return;
-                }
-                
-                const { error } = await supabaseClient
-                    .from('barbers')
-                    .insert([{
-                        name: name,
-                        title: document.getElementById('barberTitle') ? document.getElementById('barberTitle').value : '',
-                        bio: document.getElementById('barberBio') ? document.getElementById('barberBio').value : '',
-                        experience_years: document.getElementById('barberExperience') ? parseInt(document.getElementById('barberExperience').value) || 0 : 0,
-                        phone_number: document.getElementById('barberPhone') ? document.getElementById('barberPhone').value : '',
-                        active: document.getElementById('barberActive') ? document.getElementById('barberActive').checked : true,
-                        created_at: new Date().toISOString()
-                    }]);
-                
-                if (error) throw error;
-                
-                alert('Barber added successfully!');
-                hideModal('addBarberModal');
-                const form = document.getElementById('addBarberForm');
-                if (form) form.reset();
-                loadBarbers();
-                
-            } catch (error) {
-                console.error('Error adding barber:', error);
-                alert('Error adding barber: ' + error.message);
-            }
-        }
-
-        // Save testimonial
-        async function saveTestimonial() {
-            const name = document.getElementById('testimonialName') ? document.getElementById('testimonialName').value : '';
-            const comment = document.getElementById('testimonialComment') ? document.getElementById('testimonialComment').value : '';
-            
-            if (!name || !comment) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
-            try {
-                if (!supabaseClient) {
-                    alert('Testimonial saved successfully!');
-                    hideModal('addTestimonialModal');
-                    resetTestimonialForm();
-                    loadTestimonials();
-                    return;
-                }
-                
-                const { error } = await supabaseClient
-                    .from('testimonials')
-                    .insert([{
-                        customer_name: name,
-                        rating: parseInt(document.getElementById('testimonialRating').value),
-                        comment: comment,
-                        date: document.getElementById('testimonialDate') ? document.getElementById('testimonialDate').value : new Date().toISOString().split('T')[0],
-                        approved: document.getElementById('testimonialApproved') ? document.getElementById('testimonialApproved').checked : true,
-                        created_at: new Date().toISOString()
-                    }]);
-                
-                if (error) throw error;
-                
-                alert('Testimonial saved successfully!');
-                hideModal('addTestimonialModal');
-                resetTestimonialForm();
-                loadTestimonials();
-                
-            } catch (error) {
-                console.error('Error saving testimonial:', error);
-                alert('Error saving testimonial: ' + error.message);
-            }
-        }
-
-        // Set rating for testimonial
-        function setRating(rating) {
-            const ratingInput = document.getElementById('testimonialRating');
-            if (ratingInput) ratingInput.value = rating;
-            
-            const stars = document.querySelectorAll('#addTestimonialModal .fa-star');
-            
-            stars.forEach(function(star, index) {
-                if (index < rating) {
-                    star.className = 'fas fa-star';
-                    star.style.color = '#ffc107';
-                } else {
-                    star.className = 'far fa-star';
-                    star.style.color = '#ffc107';
                 }
             });
         }
 
-        // Reset testimonial form
-        function resetTestimonialForm() {
-            const testimonialName = document.getElementById('testimonialName');
-            const testimonialComment = document.getElementById('testimonialComment');
-            const testimonialDate = document.getElementById('testimonialDate');
-            const testimonialApproved = document.getElementById('testimonialApproved');
+        // Load top barbers
+        function loadTopBarbers() {
+            const tableBody = document.getElementById('topBarbersBody');
+            if (!tableBody) return;
             
-            if (testimonialName) testimonialName.value = '';
-            if (testimonialComment) testimonialComment.value = '';
-            if (testimonialDate) testimonialDate.value = '';
-            if (testimonialApproved) testimonialApproved.checked = true;
-            
-            setRating(5);
-        }
-
-        // Load customer options for notification
-        async function loadCustomerOptions() {
-            const select = document.getElementById('specificCustomers');
-            if (!select) return;
-            
-            select.innerHTML = '<option value="all">All Customers</option>';
-            
-            if (!supabaseClient) {
-                select.innerHTML += '<option value="customer1">John Doe (0712 345 678)</option>';
-                select.innerHTML += '<option value="customer2">Jane Smith (0723 456 789)</option>';
-                return;
-            }
-            
-            try {
-                const { data: customers, error } = await supabaseClient
-                    .from('appointments')
-                    .select('customer_name, customer_phone')
-                    .order('customer_name');
-                
-                if (error) throw error;
-                
-                const uniqueCustomers = [];
-                const seenPhones = new Set();
-                
-                customers?.forEach(function(customer) {
-                    if (customer.customer_phone && !seenPhones.has(customer.customer_phone)) {
-                        seenPhones.add(customer.customer_phone);
-                        uniqueCustomers.push(customer);
-                    }
-                });
-                
-                uniqueCustomers.forEach(function(customer) {
-                    const option = document.createElement('option');
-                    option.value = customer.customer_phone;
-                    option.textContent = customer.customer_name + ' (' + customer.customer_phone + ')';
-                    select.appendChild(option);
-                });
-                
-            } catch (error) {
-                console.error('Error loading customers:', error);
-            }
-        }
-
-        // Send notification
-        async function sendNotification() {
-            const message = document.getElementById('notificationMessage') ? document.getElementById('notificationMessage').value : '';
-            const notificationType = document.getElementById('notificationType') ? document.getElementById('notificationType').value : '';
-            
-            if (!message) {
-                alert('Please enter a notification message');
-                return;
-            }
-            
-            let recipients = [];
-            
-            if (notificationType === 'specific') {
-                const select = document.getElementById('specificCustomers');
-                if (select) {
-                    for (let i = 0; i < select.options.length; i++) {
-                        if (select.options[i].selected) {
-                            recipients.push(select.options[i].value);
-                        }
-                    }
-                }
-            }
-            
-            alert('Notification would be sent to ' + 
-                  (notificationType === 'all' ? 'all customers' : 
-                   notificationType === 'specific' ? recipients.length + ' specific customers' :
-                   notificationType === 'upcoming' ? 'customers with upcoming appointments' :
-                   'recent customers') + 
-                  ' with message: ' + message);
-            
-            hideModal('sendNotificationModal');
-        }
-
-        // View booking details
-        async function viewBookingDetail(reference) {
-            try {
-                let booking = null;
-                
-                if (supabaseClient) {
-                    const { data, error } = await supabaseClient
-                        .from('appointments')
-                        .select('*')
-                        .eq('booking_reference', reference)
-                        .single();
-                    
-                    if (!error && data) {
-                        booking = data;
-                    }
-                }
-                
-                if (!booking) {
-                    // Mock data for demo
-                    booking = {
-                        booking_reference: reference,
-                        customer_name: 'John Doe',
-                        customer_phone: '0712 345 678',
-                        customer_email: 'john@example.com',
-                        service_name: 'Classic Haircut',
-                        service_price: 500,
-                        appointment_date: new Date().toISOString().split('T')[0],
-                        appointment_time: '14:00',
-                        barber_name: 'Any Barber',
-                        status: 'confirmed',
-                        payment_status: 'paid',
-                        notes: 'Customer requested extra beard trimming',
-                        created_at: new Date().toISOString()
-                    };
-                }
-                
-                const date = new Date(booking.appointment_date);
-                const formattedDate = date.toLocaleDateString('en-KE', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                });
-                
-                let statusClass = 'status-pending';
-                let statusText = 'Pending';
-                if (booking.status === 'confirmed') { statusClass = 'status-confirmed'; statusText = 'Confirmed'; }
-                else if (booking.status === 'cancelled') { statusClass = 'status-cancelled'; statusText = 'Cancelled'; }
-                else if (booking.status === 'completed') { statusClass = 'status-completed'; statusText = 'Completed'; }
-                
-                const paymentClass = booking.payment_status === 'paid' ? 'status-paid' : 'status-unpaid';
-                const paymentText = booking.payment_status === 'paid' ? 'Paid' : 'Unpaid';
-                
-                const bookingDetails = document.getElementById('bookingDetails');
-                if (bookingDetails) {
-                    bookingDetails.innerHTML = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">' +
-                        '<div><strong>Booking Reference:</strong><br>' + booking.booking_reference + '</div>' +
-                        '<div><strong>Booking Date:</strong><br>' + new Date(booking.created_at).toLocaleString() + '</div>' +
-                        '<div><strong>Customer Name:</strong><br>' + booking.customer_name + '</div>' +
-                        '<div><strong>Customer Phone:</strong><br>' + booking.customer_phone + '</div>' +
-                        '<div><strong>Customer Email:</strong><br>' + (booking.customer_email || 'N/A') + '</div>' +
-                        '<div><strong>Service:</strong><br>' + booking.service_name + '</div>' +
-                        '<div><strong>Appointment Date:</strong><br>' + formattedDate + '</div>' +
-                        '<div><strong>Appointment Time:</strong><br>' + booking.appointment_time + '</div>' +
-                        '<div><strong>Barber:</strong><br>' + (booking.barber_name || 'Any Barber') + '</div>' +
-                        '<div><strong>Status:</strong><br><span class="status-badge ' + statusClass + '">' + statusText + '</span></div>' +
-                        '<div><strong>Payment Status:</strong><br><span class="status-badge ' + paymentClass + '">' + paymentText + '</span></div>' +
-                        '<div><strong>Amount:</strong><br>KES ' + booking.service_price + '</div>' +
-                        '<div><strong>Notes:</strong><br>' + (booking.notes || 'No notes') + '</div>' +
-                        '</div>';
-                }
-                
-                showModal('viewBookingModal');
-                
-            } catch (error) {
-                console.error('Error viewing booking:', error);
-                alert('Error loading booking details');
-            }
-        }
-
-        // Edit booking detail
-        async function editBookingDetail(reference) {
-            try {
-                let booking = null;
-                
-                if (supabaseClient) {
-                    const { data, error } = await supabaseClient
-                        .from('appointments')
-                        .select('*')
-                        .eq('booking_reference', reference)
-                        .single();
-                    
-                    if (!error && data) {
-                        booking = data;
-                    }
-                }
-                
-                if (!booking) {
-                    // Mock data for demo
-                    booking = {
-                        booking_reference: reference,
-                        customer_name: 'John Doe',
-                        customer_phone: '0712 345 678',
-                        customer_email: 'john@example.com',
-                        service_name: 'Classic Haircut',
-                        service_price: 500,
-                        appointment_date: new Date().toISOString().split('T')[0],
-                        appointment_time: '14:00',
-                        barber_name: 'Any Barber',
-                        status: 'confirmed',
-                        payment_status: 'paid',
-                        notes: ''
-                    };
-                }
-                
-                currentEditId = reference;
-                
-                const form = document.getElementById('editBookingForm');
-                if (form) {
-                    form.innerHTML = '<div class="form-group">' +
-                        '<label>Booking Reference</label>' +
-                        '<input type="text" class="form-control" id="editBookingRef" value="' + booking.booking_reference + '" readonly>' +
-                        '</div>' +
-                        '<div class="form-row">' +
-                        '<div class="form-group">' +
-                        '<label>Customer Name *</label>' +
-                        '<input type="text" class="form-control" id="editCustomerName" value="' + booking.customer_name + '" required>' +
-                        '</div>' +
-                        '<div class="form-group">' +
-                        '<label>Customer Phone *</label>' +
-                        '<input type="tel" class="form-control" id="editCustomerPhone" value="' + booking.customer_phone + '" required>' +
-                        '</div>' +
-                        '</div>' +
-                        '<div class="form-group">' +
-                        '<label>Service</label>' +
-                        '<input type="text" class="form-control" id="editServiceName" value="' + booking.service_name + '">' +
-                        '</div>' +
-                        '<div class="form-row">' +
-                        '<div class="form-group">' +
-                        '<label>Appointment Date</label>' +
-                        '<input type="date" class="form-control" id="editAppointmentDate" value="' + booking.appointment_date + '">' +
-                        '</div>' +
-                        '<div class="form-group">' +
-                        '<label>Appointment Time</label>' +
-                        '<input type="time" class="form-control" id="editAppointmentTime" value="' + booking.appointment_time + '">' +
-                        '</div>' +
-                        '</div>' +
-                        '<div class="form-row">' +
-                        '<div class="form-group">' +
-                        '<label>Status</label>' +
-                        '<select class="form-control" id="editStatus">' +
-                        '<option value="pending"' + (booking.status === 'pending' ? ' selected' : '') + '>Pending</option>' +
-                        '<option value="confirmed"' + (booking.status === 'confirmed' ? ' selected' : '') + '>Confirmed</option>' +
-                        '<option value="completed"' + (booking.status === 'completed' ? ' selected' : '') + '>Completed</option>' +
-                        '<option value="cancelled"' + (booking.status === 'cancelled' ? ' selected' : '') + '>Cancelled</option>' +
-                        '</select>' +
-                        '</div>' +
-                        '<div class="form-group">' +
-                        '<label>Payment Status</label>' +
-                        '<select class="form-control" id="editPaymentStatus">' +
-                        '<option value="pending"' + (booking.payment_status === 'pending' ? ' selected' : '') + '>Pending</option>' +
-                        '<option value="paid"' + (booking.payment_status === 'paid' ? ' selected' : '') + '>Paid</option>' +
-                        '</select>' +
-                        '</div>' +
-                        '</div>' +
-                        '<div class="form-group">' +
-                        '<label>Notes</label>' +
-                        '<textarea class="form-control" id="editNotes" rows="3">' + (booking.notes || '') + '</textarea>' +
-                        '</div>';
-                }
-                
-                showModal('editBookingModal');
-                
-            } catch (error) {
-                console.error('Error loading booking for edit:', error);
-                alert('Error loading booking details for editing');
-            }
-        }
-
-        // Update booking
-        async function updateBooking() {
-            try {
-                const updatedData = {
-                    customer_name: document.getElementById('editCustomerName') ? document.getElementById('editCustomerName').value : '',
-                    customer_phone: document.getElementById('editCustomerPhone') ? document.getElementById('editCustomerPhone').value : '',
-                    service_name: document.getElementById('editServiceName') ? document.getElementById('editServiceName').value : '',
-                    appointment_date: document.getElementById('editAppointmentDate') ? document.getElementById('editAppointmentDate').value : '',
-                    appointment_time: document.getElementById('editAppointmentTime') ? document.getElementById('editAppointmentTime').value : '',
-                    status: document.getElementById('editStatus') ? document.getElementById('editStatus').value : '',
-                    payment_status: document.getElementById('editPaymentStatus') ? document.getElementById('editPaymentStatus').value : '',
-                    notes: document.getElementById('editNotes') ? document.getElementById('editNotes').value : '',
-                    updated_at: new Date().toISOString()
-                };
-                
-                if (!updatedData.customer_name || !updatedData.customer_phone) {
-                    alert('Customer name and phone are required');
-                    return;
-                }
-                
-                if (supabaseClient && currentEditId) {
-                    const { error } = await supabaseClient
-                        .from('appointments')
-                        .update(updatedData)
-                        .eq('booking_reference', currentEditId);
-                    
-                    if (error) throw error;
-                }
-                
-                alert('Booking updated successfully!');
-                hideModal('editBookingModal');
-                loadAllBookings();
-                loadRecentBookings();
-                
-            } catch (error) {
-                console.error('Error updating booking:', error);
-                alert('Error updating booking: ' + error.message);
-            }
-        }
-
-        // Confirm booking
-        async function confirmBooking(reference) {
-            if (confirm('Are you sure you want to confirm this booking?')) {
-                try {
-                    if (supabaseClient) {
-                        const { error } = await supabaseClient
-                            .from('appointments')
-                            .update({ 
-                                status: 'confirmed',
-                                updated_at: new Date().toISOString()
-                            })
-                            .eq('booking_reference', reference);
-                        
-                        if (error) throw error;
-                    }
-                    
-                    alert('Booking confirmed successfully!');
-                    loadAllBookings();
-                    loadRecentBookings();
-                    loadDashboardStats();
-                    
-                } catch (error) {
-                    console.error('Error confirming booking:', error);
-                    alert('Error confirming booking: ' + error.message);
-                }
-            }
-        }
-
-        // Delete booking
-        async function deleteBooking(reference) {
-            if (confirm('Are you sure you want to delete this booking? This action cannot be undone.')) {
-                try {
-                    if (supabaseClient) {
-                        const { error } = await supabaseClient
-                            .from('appointments')
-                            .delete()
-                            .eq('booking_reference', reference);
-                        
-                        if (error) throw error;
-                    }
-                    
-                    alert('Booking deleted successfully!');
-                    loadAllBookings();
-                    loadRecentBookings();
-                    loadDashboardStats();
-                    
-                } catch (error) {
-                    console.error('Error deleting booking:', error);
-                    alert('Error deleting booking: ' + error.message);
-                }
-            }
-        }
-
-        // Edit service
-        async function editService(serviceId) {
-            try {
-                let service = null;
-                
-                if (supabaseClient) {
-                    const { data, error } = await supabaseClient
-                        .from('services')
-                        .select('*')
-                        .eq('id', serviceId)
-                        .single();
-                    
-                    if (!error && data) {
-                        service = data;
-                    }
-                }
-                
-                if (!service) {
-                    // Mock data for demo
-                    service = {
-                        id: serviceId,
-                        name: 'Classic Haircut',
-                        description: 'Traditional haircut with scissors and comb',
-                        price: 500,
-                        duration: 30,
-                        category: 'haircut',
-                        active: true
-                    };
-                }
-                
-                currentEditId = serviceId;
-                
-                const form = document.getElementById('editServiceForm');
-                if (form) {
-                    form.innerHTML = '<div class="form-group">' +
-                        '<label for="editServiceName">Service Name *</label>' +
-                        '<input type="text" id="editServiceName" class="form-control" value="' + service.name + '" required>' +
-                        '</div>' +
-                        '<div class="form-row">' +
-                        '<div class="form-group">' +
-                        '<label for="editServicePrice">Price (KES) *</label>' +
-                        '<input type="number" id="editServicePrice" class="form-control" value="' + service.price + '" required>' +
-                        '</div>' +
-                        '<div class="form-group">' +
-                        '<label for="editServiceDuration">Duration (minutes) *</label>' +
-                        '<input type="number" id="editServiceDuration" class="form-control" value="' + service.duration + '" required>' +
-                        '</div>' +
-                        '</div>' +
-                        '<div class="form-group">' +
-                        '<label for="editServiceDescription">Description</label>' +
-                        '<textarea id="editServiceDescription" class="form-control" rows="3">' + (service.description || '') + '</textarea>' +
-                        '</div>' +
-                        '<div class="form-group">' +
-                        '<label for="editServiceCategory">Category</label>' +
-                        '<select id="editServiceCategory" class="form-control">' +
-                        '<option value="haircut"' + (service.category === 'haircut' ? ' selected' : '') + '>Haircut</option>' +
-                        '<option value="beard"' + (service.category === 'beard' ? ' selected' : '') + '>Beard Grooming</option>' +
-                        '<option value="shave"' + (service.category === 'shave' ? ' selected' : '') + '>Shaving</option>' +
-                        '<option value="combo"' + (service.category === 'combo' ? ' selected' : '') + '>Combination</option>' +
-                        '<option value="other"' + (service.category === 'other' ? ' selected' : '') + '>Other</option>' +
-                        '</select>' +
-                        '</div>' +
-                        '<div class="form-group">' +
-                        '<label class="checkbox-label">' +
-                        '<input type="checkbox" id="editServiceActive"' + (service.active ? ' checked' : '') + '>' +
-                        '<span>Service is active and available for booking</span>' +
-                        '</label>' +
-                        '</div>';
-                }
-                
-                showModal('editServiceModal');
-                
-            } catch (error) {
-                console.error('Error loading service for edit:', error);
-                alert('Error loading service details for editing');
-            }
-        }
-
-        // Update service
-        async function updateService() {
-            try {
-                const updatedData = {
-                    name: document.getElementById('editServiceName') ? document.getElementById('editServiceName').value : '',
-                    price: document.getElementById('editServicePrice') ? parseFloat(document.getElementById('editServicePrice').value) : 0,
-                    duration: document.getElementById('editServiceDuration') ? parseInt(document.getElementById('editServiceDuration').value) : 0,
-                    description: document.getElementById('editServiceDescription') ? document.getElementById('editServiceDescription').value : '',
-                    category: document.getElementById('editServiceCategory') ? document.getElementById('editServiceCategory').value : 'haircut',
-                    active: document.getElementById('editServiceActive') ? document.getElementById('editServiceActive').checked : true,
-                    updated_at: new Date().toISOString()
-                };
-                
-                if (!updatedData.name || !updatedData.price || !updatedData.duration) {
-                    alert('Service name, price, and duration are required');
-                    return;
-                }
-                
-                if (supabaseClient && currentEditId) {
-                    const { error } = await supabaseClient
-                        .from('services')
-                        .update(updatedData)
-                        .eq('id', currentEditId);
-                    
-                    if (error) throw error;
-                }
-                
-                alert('Service updated successfully!');
-                hideModal('editServiceModal');
-                loadServices();
-                loadDashboardStats();
-                
-            } catch (error) {
-                console.error('Error updating service:', error);
-                alert('Error updating service: ' + error.message);
-            }
-        }
-
-        // Delete service
-        async function deleteService(serviceId) {
-            if (confirm('Are you sure you want to delete this service? This action cannot be undone.')) {
-                try {
-                    if (supabaseClient) {
-                        const { error } = await supabaseClient
-                            .from('services')
-                            .delete()
-                            .eq('id', serviceId);
-                        
-                        if (error) throw error;
-                    }
-                    
-                    alert('Service deleted successfully!');
-                    loadServices();
-                    loadDashboardStats();
-                    
-                } catch (error) {
-                    console.error('Error deleting service:', error);
-                    alert('Error deleting service: ' + error.message);
-                }
-            }
-        }
-
-        // Edit barber
-        async function editBarber(barberId) {
-            try {
-                let barber = null;
-                
-                if (supabaseClient) {
-                    const { data, error } = await supabaseClient
-                        .from('barbers')
-                        .select('*')
-                        .eq('id', barberId)
-                        .single();
-                    
-                    if (!error && data) {
-                        barber = data;
-                    }
-                }
-                
-                if (!barber) {
-                    // Mock data for demo
-                    barber = {
-                        id: barberId,
-                        name: 'John Doe',
-                        title: 'Senior Barber',
-                        bio: '5 years of experience in traditional and modern haircuts',
-                        experience_years: 5,
-                        phone_number: '0712 345 678',
-                        active: true
-                    };
-                }
-                
-                currentEditId = barberId;
-                
-                const form = document.getElementById('editBarberForm');
-                if (form) {
-                    form.innerHTML = '<div class="form-row">' +
-                        '<div class="form-group">' +
-                        '<label for="editBarberName">Full Name *</label>' +
-                        '<input type="text" id="editBarberName" class="form-control" value="' + barber.name + '" required>' +
-                        '</div>' +
-                        '<div class="form-group">' +
-                        '<label for="editBarberTitle">Title/Specialty</label>' +
-                        '<input type="text" id="editBarberTitle" class="form-control" value="' + (barber.title || '') + '">' +
-                        '</div>' +
-                        '</div>' +
-                        '<div class="form-group">' +
-                        '<label for="editBarberBio">Bio/Description</label>' +
-                        '<textarea id="editBarberBio" class="form-control" rows="3">' + (barber.bio || '') + '</textarea>' +
-                        '</div>' +
-                        '<div class="form-row">' +
-                        '<div class="form-group">' +
-                        '<label for="editBarberExperience">Experience (years)</label>' +
-                        '<input type="number" id="editBarberExperience" class="form-control" value="' + (barber.experience_years || 0) + '">' +
-                        '</div>' +
-                        '<div class="form-group">' +
-                        '<label for="editBarberPhone">Phone Number</label>' +
-                        '<input type="tel" id="editBarberPhone" class="form-control" value="' + (barber.phone_number || '') + '">' +
-                        '</div>' +
-                        '</div>' +
-                        '<div class="form-group">' +
-                        '<label class="checkbox-label">' +
-                        '<input type="checkbox" id="editBarberActive"' + (barber.active ? ' checked' : '') + '>' +
-                        '<span>Barber is active and available for booking</span>' +
-                        '</label>' +
-                        '</div>';
-                }
-                
-                showModal('editBarberModal');
-                
-            } catch (error) {
-                console.error('Error loading barber for edit:', error);
-                alert('Error loading barber details for editing');
-            }
-        }
-
-        // Update barber
-        async function updateBarber() {
-            try {
-                const updatedData = {
-                    name: document.getElementById('editBarberName') ? document.getElementById('editBarberName').value : '',
-                    title: document.getElementById('editBarberTitle') ? document.getElementById('editBarberTitle').value : '',
-                    bio: document.getElementById('editBarberBio') ? document.getElementById('editBarberBio').value : '',
-                    experience_years: document.getElementById('editBarberExperience') ? parseInt(document.getElementById('editBarberExperience').value) || 0 : 0,
-                    phone_number: document.getElementById('editBarberPhone') ? document.getElementById('editBarberPhone').value : '',
-                    active: document.getElementById('editBarberActive') ? document.getElementById('editBarberActive').checked : true,
-                    updated_at: new Date().toISOString()
-                };
-                
-                if (!updatedData.name) {
-                    alert('Barber name is required');
-                    return;
-                }
-                
-                if (supabaseClient && currentEditId) {
-                    const { error } = await supabaseClient
-                        .from('barbers')
-                        .update(updatedData)
-                        .eq('id', currentEditId);
-                    
-                    if (error) throw error;
-                }
-                
-                alert('Barber updated successfully!');
-                hideModal('editBarberModal');
-                loadBarbers();
-                
-            } catch (error) {
-                console.error('Error updating barber:', error);
-                alert('Error updating barber: ' + error.message);
-            }
-        }
-
-        // Delete barber
-        async function deleteBarber(barberId) {
-            if (confirm('Are you sure you want to delete this barber? This action cannot be undone.')) {
-                try {
-                    if (supabaseClient) {
-                        const { error } = await supabaseClient
-                            .from('barbers')
-                            .delete()
-                            .eq('id', barberId);
-                        
-                        if (error) throw error;
-                    }
-                    
-                    alert('Barber deleted successfully!');
-                    loadBarbers();
-                    
-                } catch (error) {
-                    console.error('Error deleting barber:', error);
-                    alert('Error deleting barber: ' + error.message);
-                }
-            }
-        }
-
-        // Edit testimonial
-        function editTestimonial(testimonialId) {
-            alert('Edit testimonial with ID: ' + testimonialId + ' (Functionality to be implemented)');
-        }
-
-        // Delete testimonial
-        async function deleteTestimonial(testimonialId) {
-            if (confirm('Are you sure you want to delete this testimonial? This action cannot be undone.')) {
-                try {
-                    if (supabaseClient) {
-                        const { error } = await supabaseClient
-                            .from('testimonials')
-                            .delete()
-                            .eq('id', testimonialId);
-                        
-                        if (error) throw error;
-                    }
-                    
-                    alert('Testimonial deleted successfully!');
-                    loadTestimonials();
-                    
-                } catch (error) {
-                    console.error('Error deleting testimonial:', error);
-                    alert('Error deleting testimonial: ' + error.message);
-                }
-            }
-        }
-
-        // View customer
-        function viewCustomer(customerId) {
-            alert('View customer details for: ' + customerId + ' (Functionality to be implemented)');
-        }
-
-        // Edit customer
-        function editCustomer(customerId) {
-            alert('Edit customer with ID: ' + customerId + ' (Functionality to be implemented)');
-        }
-
-        // Export bookings
-        function exportBookings() {
-            alert('Exporting bookings to CSV... (Functionality to be implemented)');
+            tableBody.innerHTML = `
+                <tr>
+                    <td>Mike Barber</td>
+                    <td>28</td>
+                    <td>KES 16,800</td>
+                    <td>4.8</td>
+                </tr>
+                <tr>
+                    <td>Tony Styles</td>
+                    <td>22</td>
+                    <td>KES 13,200</td>
+                    <td>4.6</td>
+                </tr>
+                <tr>
+                    <td>David Sharp</td>
+                    <td>18</td>
+                    <td>KES 10,800</td>
+                    <td>4.9</td>
+                </tr>
+            `;
         }
 
         // Download report
         function downloadReport() {
-            alert('Downloading report... (Functionality to be implemented)');
-        }
-
-        // Print booking details
-        function printBookingDetails() {
-            window.print();
+            alert('Report downloaded successfully! (This is a demo)');
         }
 
         // Load settings
         function loadSettings() {
-            const settings = JSON.parse(localStorage.getItem('kenbarber_settings')) || {};
+            // Load saved settings from localStorage
+            const businessName = localStorage.getItem('kenbarber_businessName') || 'KenBarber Shop';
+            const businessAddress = localStorage.getItem('kenbarber_businessAddress') || '123 Main Street, Nairobi';
+            const businessPhone = localStorage.getItem('kenbarber_businessPhone') || '+254 712 345 678';
+            const businessEmail = localStorage.getItem('kenbarber_businessEmail') || 'info@kenbarber.com';
+            const openingTime = localStorage.getItem('kenbarber_openingTime') || '08:00';
+            const closingTime = localStorage.getItem('kenbarber_closingTime') || '20:00';
+            const slotDuration = localStorage.getItem('kenbarber_slotDuration') || '30';
+            const emailNotifications = localStorage.getItem('kenbarber_emailNotifications') !== 'false';
+            const smsNotifications = localStorage.getItem('kenbarber_smsNotifications') !== 'false';
+            const reminderHours = localStorage.getItem('kenbarber_reminderHours') || '24';
+            const adminUsername = localStorage.getItem('kenbarber_admin_username') || 'admin';
             
-            const businessName = document.getElementById('businessName');
-            const businessAddress = document.getElementById('businessAddress');
-            const businessPhone = document.getElementById('businessPhone');
-            const businessEmail = document.getElementById('businessEmail');
-            const openingTime = document.getElementById('openingTime');
-            const closingTime = document.getElementById('closingTime');
-            const slotDuration = document.getElementById('slotDuration');
-            const emailNotifications = document.getElementById('emailNotifications');
-            const smsNotifications = document.getElementById('smsNotifications');
-            const reminderHours = document.getElementById('reminderHours');
-            const adminUsername = document.getElementById('adminUsername');
+            // Days off
+            const daysOff = JSON.parse(localStorage.getItem('kenbarber_daysOff') || '[]');
             
-            if (businessName) businessName.value = settings.businessName || 'KenBarber Shop';
-            if (businessAddress) businessAddress.value = settings.businessAddress || '';
-            if (businessPhone) businessPhone.value = settings.businessPhone || '';
-            if (businessEmail) businessEmail.value = settings.businessEmail || '';
-            if (openingTime) openingTime.value = settings.openingTime || '08:00';
-            if (closingTime) closingTime.value = settings.closingTime || '20:00';
-            if (slotDuration) slotDuration.value = settings.slotDuration || '30';
-            if (emailNotifications) emailNotifications.checked = settings.emailNotifications !== false;
-            if (smsNotifications) smsNotifications.checked = settings.smsNotifications !== false;
-            if (reminderHours) reminderHours.value = settings.reminderHours || '24';
-            if (adminUsername) adminUsername.value = localStorage.getItem('kenbarber_admin_username') || 'admin';
+            // Set form values
+            document.getElementById('businessName').value = businessName;
+            document.getElementById('businessAddress').value = businessAddress;
+            document.getElementById('businessPhone').value = businessPhone;
+            document.getElementById('businessEmail').value = businessEmail;
+            document.getElementById('openingTime').value = openingTime;
+            document.getElementById('closingTime').value = closingTime;
+            document.getElementById('slotDuration').value = slotDuration;
+            document.getElementById('emailNotifications').checked = emailNotifications;
+            document.getElementById('smsNotifications').checked = smsNotifications;
+            document.getElementById('reminderHours').value = reminderHours;
+            document.getElementById('adminUsername').value = adminUsername;
             
-            // Load days off
-            const daysOff = settings.daysOff || [];
-            const dayCheckboxes = ['sundayOff', 'mondayOff', 'tuesdayOff', 'wednesdayOff', 'thursdayOff', 'fridayOff', 'saturdayOff'];
-            dayCheckboxes.forEach(function(checkboxId, index) {
-                const checkbox = document.getElementById(checkboxId);
+            // Set days off checkboxes
+            ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].forEach(function(day) {
+                const checkbox = document.getElementById(day + 'Off');
                 if (checkbox) {
-                    checkbox.checked = daysOff.includes(checkbox.value);
+                    checkbox.checked = daysOff.includes(day);
                 }
             });
         }
 
         // Save settings
         function saveSettings() {
-            const businessName = document.getElementById('businessName') ? document.getElementById('businessName').value : '';
-            const businessAddress = document.getElementById('businessAddress') ? document.getElementById('businessAddress').value : '';
-            const businessPhone = document.getElementById('businessPhone') ? document.getElementById('businessPhone').value : '';
-            const businessEmail = document.getElementById('businessEmail') ? document.getElementById('businessEmail').value : '';
-            const openingTime = document.getElementById('openingTime') ? document.getElementById('openingTime').value : '';
-            const closingTime = document.getElementById('closingTime') ? document.getElementById('closingTime').value : '';
-            const slotDuration = document.getElementById('slotDuration') ? document.getElementById('slotDuration').value : '';
-            const emailNotifications = document.getElementById('emailNotifications') ? document.getElementById('emailNotifications').checked : true;
-            const smsNotifications = document.getElementById('smsNotifications') ? document.getElementById('smsNotifications').checked : true;
-            const reminderHours = document.getElementById('reminderHours') ? document.getElementById('reminderHours').value : '24';
-            const adminUsername = document.getElementById('adminUsername') ? document.getElementById('adminUsername').value : '';
-            const adminPassword = document.getElementById('adminPassword') ? document.getElementById('adminPassword').value : '';
-            const adminConfirmPassword = document.getElementById('adminConfirmPassword') ? document.getElementById('adminConfirmPassword').value : '';
+            const businessName = document.getElementById('businessName').value;
+            const businessAddress = document.getElementById('businessAddress').value;
+            const businessPhone = document.getElementById('businessPhone').value;
+            const businessEmail = document.getElementById('businessEmail').value;
+            const openingTime = document.getElementById('openingTime').value;
+            const closingTime = document.getElementById('closingTime').value;
+            const slotDuration = document.getElementById('slotDuration').value;
+            const emailNotifications = document.getElementById('emailNotifications').checked;
+            const smsNotifications = document.getElementById('smsNotifications').checked;
+            const reminderHours = document.getElementById('reminderHours').value;
+            const adminUsername = document.getElementById('adminUsername').value;
+            const adminPassword = document.getElementById('adminPassword').value;
+            const adminConfirmPassword = document.getElementById('adminConfirmPassword').value;
             
             // Get days off
             const daysOff = [];
-            const dayCheckboxes = ['sundayOff', 'mondayOff', 'tuesdayOff', 'wednesdayOff', 'thursdayOff', 'fridayOff', 'saturdayOff'];
-            dayCheckboxes.forEach(function(checkboxId) {
-                const checkbox = document.getElementById(checkboxId);
+            ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].forEach(function(day) {
+                const checkbox = document.getElementById(day + 'Off');
                 if (checkbox && checkbox.checked) {
-                    daysOff.push(checkbox.value);
+                    daysOff.push(day);
                 }
             });
             
-            // Validate password if changed
+            // Validate passwords if changed
             if (adminPassword) {
                 if (adminPassword !== adminConfirmPassword) {
                     alert('Passwords do not match');
                     return;
                 }
-                
                 if (adminPassword.length < 6) {
                     alert('Password must be at least 6 characters long');
                     return;
                 }
-                
-                // In a real application, you would hash the password before saving
-                alert('Password would be updated. In a real app, this would be securely stored.');
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('kenbarber_businessName', businessName);
+            localStorage.setItem('kenbarber_businessAddress', businessAddress);
+            localStorage.setItem('kenbarber_businessPhone', businessPhone);
+            localStorage.setItem('kenbarber_businessEmail', businessEmail);
+            localStorage.setItem('kenbarber_openingTime', openingTime);
+            localStorage.setItem('kenbarber_closingTime', closingTime);
+            localStorage.setItem('kenbarber_slotDuration', slotDuration);
+            localStorage.setItem('kenbarber_emailNotifications', emailNotifications);
+            localStorage.setItem('kenbarber_smsNotifications', smsNotifications);
+            localStorage.setItem('kenbarber_reminderHours', reminderHours);
+            localStorage.setItem('kenbarber_daysOff', JSON.stringify(daysOff));
+            
+            if (adminPassword) {
+                localStorage.setItem('kenbarber_admin_password', adminPassword);
             }
             
             // Update admin username if changed
-            if (adminUsername && adminUsername !== localStorage.getItem('kenbarber_admin_username')) {
+            const currentUsername = localStorage.getItem('kenbarber_admin_username');
+            if (adminUsername && adminUsername !== currentUsername) {
                 localStorage.setItem('kenbarber_admin_username', adminUsername);
-                const adminNameEl = document.getElementById('adminName');
-                if (adminNameEl) {
-                    adminNameEl.textContent = adminUsername;
-                }
+                document.getElementById('adminName').textContent = adminUsername;
             }
-            
-            // Save settings to localStorage
-            const settings = {
-                businessName: businessName,
-                businessAddress: businessAddress,
-                businessPhone: businessPhone,
-                businessEmail: businessEmail,
-                openingTime: openingTime,
-                closingTime: closingTime,
-                slotDuration: slotDuration,
-                daysOff: daysOff,
-                emailNotifications: emailNotifications,
-                smsNotifications: smsNotifications,
-                reminderHours: reminderHours,
-                lastUpdated: new Date().toISOString()
-            };
-            
-            localStorage.setItem('kenbarber_settings', JSON.stringify(settings));
             
             alert('Settings saved successfully!');
         }
 
-        // Use mock data for demo
-        function useMockData() {
-            console.log('Using mock data for demo');
+        // Load customer options for notification
+        function loadCustomerOptions() {
+            const select = document.getElementById('specificCustomers');
+            if (!select) return;
             
-            // Update dashboard stats
-            const todayBookingsEl = document.getElementById('todayBookings');
-            const bookingCountEl = document.getElementById('bookingCount');
-            const monthRevenueEl = document.getElementById('monthRevenue');
-            const totalServicesEl = document.getElementById('totalServices');
-            const totalCustomersEl = document.getElementById('totalCustomers');
-            
-            if (todayBookingsEl) todayBookingsEl.textContent = '8';
-            if (bookingCountEl) bookingCountEl.textContent = '8';
-            if (monthRevenueEl) monthRevenueEl.textContent = 'KES 12,500';
-            if (totalServicesEl) totalServicesEl.textContent = '6';
-            if (totalCustomersEl) totalCustomersEl.textContent = '42';
-            
-            // Load mock recent bookings
-            const recentBookingsBody = document.getElementById('recentBookingsBody');
-            if (recentBookingsBody) {
-                recentBookingsBody.innerHTML = 
-                    '<tr>' +
-                    '<td>KB-2024-001</td>' +
-                    '<td>John Doe</td>' +
-                    '<td>Classic Haircut</td>' +
-                    '<td>Today, 2:00 PM</td>' +
-                    '<td>Any Barber</td>' +
-                    '<td>KES 500</td>' +
-                    '<td><span class="status-badge status-confirmed">Confirmed</span></td>' +
-                    '<td class="action-buttons">' +
-                    '<button class="btn-action btn-view" onclick="viewBookingDetail(\'KB-2024-001\')"><i class="fas fa-eye"></i></button>' +
-                    '<button class="btn-action btn-edit" onclick="editBookingDetail(\'KB-2024-001\')"><i class="fas fa-edit"></i></button>' +
-                    '</td>' +
-                    '</tr>' +
-                    '<tr>' +
-                    '<td>KB-2024-002</td>' +
-                    '<td>Jane Smith</td>' +
-                    '<td>Beard Trim</td>' +
-                    '<td>Tomorrow, 10:00 AM</td>' +
-                    '<td>Barber John</td>' +
-                    '<td>KES 300</td>' +
-                    '<td><span class="status-badge status-pending">Pending</span></td>' +
-                    '<td class="action-buttons">' +
-                    '<button class="btn-action btn-view" onclick="viewBookingDetail(\'KB-2024-002\')"><i class="fas fa-eye"></i></button>' +
-                    '<button class="btn-action btn-edit" onclick="editBookingDetail(\'KB-2024-002\')"><i class="fas fa-edit"></i></button>' +
-                    '</td>' +
-                    '</tr>';
-            }
-            
-            // Initialize charts
-            initActivityChart();
+            // In a real app, this would load from the database
+            select.innerHTML = `
+                <option value="0712345678">James Kamau (0712 345 678)</option>
+                <option value="0713456789">David Ochieng (0713 456 789)</option>
+                <option value="0724567890">Peter Mwangi (0724 567 890)</option>
+                <option value="0735678901">Samuel Kiptoo (0735 678 901)</option>
+                <option value="0746789012">Brian Otieno (0746 789 012)</option>
+            `;
         }
 
-        // Use mock dashboard data
-        function useMockDashboardData() {
-            useMockData();
+        // Send notification
+        function sendNotification() {
+            const type = document.getElementById('notificationType').value;
+            const message = document.getElementById('notificationMessage').value;
+            const sendSMS = document.getElementById('sendSMS').checked;
+            const sendEmail = document.getElementById('sendEmail').checked;
+            
+            if (!message.trim()) {
+                alert('Please enter a notification message');
+                return;
+            }
+            
+            if (!sendSMS && !sendEmail) {
+                alert('Please select at least one delivery method');
+                return;
+            }
+            
+            let recipients = '';
+            if (type === 'specific') {
+                const selectedOptions = Array.from(document.getElementById('specificCustomers').selectedOptions);
+                recipients = selectedOptions.map(option => option.text).join(', ');
+            } else {
+                recipients = type + ' customers';
+            }
+            
+            alert(`Notification sent to ${recipients}!\n\nMessage: ${message}\n\nDelivery: ${sendSMS ? 'SMS ' : ''}${sendEmail ? 'Email' : ''}`);
+            hideModal('sendNotificationModal');
         }
     </script>
 </body>
