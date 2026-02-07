@@ -66,28 +66,25 @@ function initializeFormElements() {
             }
         });
     }
+   const dateInput = document.getElementById('appointmentDate');
+if (dateInput) {
+    const today = new Date(); // <-- Change "tomorrow" to "today"
+    const formatDate = (date) => date.toISOString().split('T')[0];
     
-    const dateInput = document.getElementById('appointmentDate');
-    if (dateInput) {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const formatDate = (date) => date.toISOString().split('T')[0];
-        
-        dateInput.min = formatDate(tomorrow);
-        const maxDate = new Date();
-        maxDate.setMonth(maxDate.getMonth() + 3);
-        dateInput.max = formatDate(maxDate);
-        dateInput.value = formatDate(tomorrow);
-        
-        dateInput.addEventListener('input', function() {
-            const selectedDate = new Date(this.value);
-            const dayOfWeek = selectedDate.getDay();
-            if (dayOfWeek === 0 || dayOfWeek === 6) {
-                this.value = '';
-                showBookingError('We are closed on weekends. Please select a weekday (Monday-Friday).', 'warning');
-            }
-        });
-    }
+    dateInput.min = formatDate(today); // <-- Allow today's date
+    const maxDate = new Date();
+    maxDate.setMonth(maxDate.getMonth() + 3);
+    dateInput.max = formatDate(maxDate);
+    dateInput.value = formatDate(today); // <-- Default to today
+    
+    dateInput.addEventListener('input', function() {
+        const selectedDate = new Date(this.value);
+        const dayOfWeek = selectedDate.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            this.value = '';
+            showBookingError('We are closed on weekends. Please select a weekday (Monday-Friday).', 'warning');
+        }
+    });
 }
 
 function updatePriceDisplay() {
