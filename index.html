@@ -7,11 +7,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Add modern fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&family=Roboto+Slab:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/booking.css">
-     </style>
+    <style>
         /* Additional inline styles for special features */
         .special-offer-banner {
             background: linear-gradient(90deg, var(--primary), #ffd700);
@@ -170,8 +169,7 @@
                 <li><a href="#booking">Book Now</a></li>
                 <li><a href="#testimonials">Reviews</a></li>
                 <li><a href="#contact">Contact</a></li>
-                <li><a href="admin-login.html" style="color: var(--primary); font-weight: 600;">
-                </a></li>
+                <li><a href="admin-login.html" style="color: var(--primary); font-weight: 600;">Admin</a></li>
             </ul>
         </div>
     </header>
@@ -186,7 +184,7 @@
                 <button class="btn-primary" onclick="scrollToBooking()">
                     <i class="fas fa-calendar-alt"></i> Book Appointment
                 </button>
-                <a href="tel:+254712345678" class="btn-secondary">
+                <a href="tel:+254704325810" class="btn-secondary">
                     <i class="fas fa-phone"></i> Call Now: 0704 325 810
                 </a>
             </div>
@@ -277,7 +275,7 @@
                         <div class="barber-social">
                             <a href="#"><i class="fab fa-instagram"></i></a>
                             <a href="#"><i class="fab fa-facebook"></i></a>
-                            <a href="tel:+254712345678"><i class="fas fa-phone"></i></a>
+                            <a href="tel:+254704325810"><i class="fas fa-phone"></i></a>
                         </div>
                     </div>
                 </div>
@@ -402,66 +400,68 @@
                             <h4>Service Total: <span id="totalPrice">KES 0</span></h4>
                             <p class="payment-note">Payment can be made via M-Pesa now or cash at shop</p>
                         </div>
-                     <div class="payment-section">
-    <h4>Payment Method *</h4>
-    <div class="payment-options">
-        <label class="payment-option">
-            <input type="radio" name="payment" value="cash" checked>
-            <span>Pay at Shop (Cash)</span>
-        </label>
-        <label class="payment-option">
-            <input type="radio" name="payment" value="mpesa_stk" id="mpesaStkRadio">
-            <span><i class="fas fa-mobile-alt"></i> M-Pesa STK Push (Pay Now)</span>
-        </label>
-        <label class="payment-option">
-            <input type="radio" name="payment" value="mpesa_manual" id="mpesaManualRadio">
-            <span><i class="fas fa-mobile-alt"></i> M-Pesa (Manual Payment)</span>
-        </label>
-        <label class="payment-option">
-            <input type="radio" name="payment" value="card">
-            <span><i class="far fa-credit-card"></i> Card at Shop</span>
-        </label>
-    </div>
-    
-    <!-- STK Push Instructions (shown when selected) -->
-    <div id="stkPaymentInfo" class="mpesa-payment" style="display: none;">
-        <div class="stk-instructions">
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i>
-                <strong>How STK Push Works:</strong>
-            </div>
-            <ol>
-                <li>Click "Confirm Booking" below</li>
-                <li>You'll receive an <strong>M-Pesa prompt</strong> on your phone</li>
-                <li>Enter your <strong>M-Pesa PIN</strong> to complete payment</li>
-                <li>Payment confirmation happens automatically</li>
-                <li>Your booking will be instantly confirmed</li>
-            </ol>
-            <div class="payment-security">
-                <i class="fas fa-shield-alt"></i>
-                <small>Secure payment processed via Lipa Na. No card details stored.</small>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Manual M-Pesa Instructions (shown when selected) -->
-    <div id="manualMpesaPayment" class="mpesa-payment" style="display: none;">
-        <div class="form-group">
-            <label for="mpesaNumber">M-Pesa Number *</label>
-            <input type="tel" id="mpesaNumber" class="form-control" placeholder="0712 345 678">
-        </div>
-        <div class="mpesa-instructions">
-            <p><strong>Manual M-Pesa Payment:</strong></p>
-            <ol>
-                <li>We'll send you payment details after booking</li>
-                <li>Make payment to our M-Pesa number</li>
-                <li>Send us the transaction code via WhatsApp</li>
-                <li>We'll manually confirm your booking</li>
-            </ol>
-        </div>
-    </div>
-</div>
- <div class="form-group terms-group">
+                        
+                        <div class="payment-section">
+                            <h4>Payment Method *</h4>
+                            <div class="payment-options">
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="cash" checked>
+                                    <span>Pay at Shop (Cash)</span>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="mpesa_stk" id="mpesaStkRadio">
+                                    <span><i class="fas fa-mobile-alt"></i> M-Pesa STK Push (Pay Now)</span>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="mpesa_manual" id="mpesaManualRadio">
+                                    <span><i class="fas fa-mobile-alt"></i> M-Pesa (Manual Payment)</span>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="card">
+                                    <span><i class="far fa-credit-card"></i> Card at Shop</span>
+                                </label>
+                            </div>
+                            
+                            <!-- STK Push Instructions (shown when selected) -->
+                            <div id="stkPaymentInfo" class="mpesa-payment" style="display: none;">
+                                <div class="stk-instructions">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <strong>How STK Push Works:</strong>
+                                    </div>
+                                    <ol>
+                                        <li>Click "Confirm Booking" below</li>
+                                        <li>You'll receive an <strong>M-Pesa prompt</strong> on your phone</li>
+                                        <li>Enter your <strong>M-Pesa PIN</strong> to complete payment</li>
+                                        <li>Payment confirmation happens automatically</li>
+                                        <li>Your booking will be instantly confirmed</li>
+                                    </ol>
+                                    <div class="payment-security">
+                                        <i class="fas fa-shield-alt"></i>
+                                        <small>Secure payment processed via Lipa Na. No card details stored.</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Manual M-Pesa Instructions (shown when selected) -->
+                            <div id="manualMpesaPayment" class="mpesa-payment" style="display: none;">
+                                <div class="form-group">
+                                    <label for="mpesaNumber">M-Pesa Number *</label>
+                                    <input type="tel" id="mpesaNumber" class="form-control" placeholder="0712 345 678">
+                                </div>
+                                <div class="mpesa-instructions">
+                                    <p><strong>Manual M-Pesa Payment:</strong></p>
+                                    <ol>
+                                        <li>We'll send you payment details after booking</li>
+                                        <li>Make payment to our M-Pesa number</li>
+                                        <li>Send us the transaction code via WhatsApp</li>
+                                        <li>We'll manually confirm your booking</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group terms-group">
                             <label class="checkbox-label">
                                 <input type="checkbox" id="termsAgree" required>
                                 <span>I agree to receive SMS and email notifications about my appointment. I understand that I may receive a reminder 24 hours before my appointment.</span>
@@ -487,6 +487,7 @@
             </div>
         </div>
     </section>
+
     <!-- Testimonials Section -->
     <section class="section" id="testimonials" style="background-color: var(--secondary); color: white;">
         <div class="container">
@@ -579,7 +580,7 @@
                             <a href="https://instagram.com" target="_blank"><i class="fab fa-instagram"></i></a>
                             <a href="https://twitter.com" target="_blank"><i class="fab fa-twitter"></i></a>
                             <a href="https://tiktok.com" target="_blank"><i class="fab fa-tiktok"></i></a>
-                            <a href="https://wa.me/254712345678" target="_blank"><i class="fab fa-whatsapp"></i></a>
+                            <a href="https://wa.me/254704325810" target="_blank"><i class="fab fa-whatsapp"></i></a>
                         </div>
                     </div>
                     
@@ -699,7 +700,7 @@
     </footer>
 
     <!-- WhatsApp Float Button -->
-    <a href="https://wa.me/2540790969743?text=Hello%20KenBarber%2C%20I%20would%20like%20to%20book%20an%20appointment" 
+    <a href="https://wa.me/254704325810?text=Hello%20KenBarber%2C%20I%20would%20like%20to%20book%20an%20appointment" 
        class="whatsapp-float" 
        target="_blank"
        title="Chat on WhatsApp">
@@ -740,7 +741,7 @@
                 <p class="reminder-note"><i class="fas fa-bell"></i> You will receive a reminder 24 hours before your appointment.</p>
                 
                 <div class="whatsapp-note">
-                    <p><i class="fab fa-whatsapp"></i> Need to make changes? WhatsApp us: 0712 345 678</p>
+                    <p><i class="fab fa-whatsapp"></i> Need to make changes? WhatsApp us: 0704 325 810</p>
                 </div>
             </div>
             <div class="modal-footer">
@@ -763,288 +764,287 @@
         </div>
     </div>
 
-<!-- FIXED SUPABASE LOADER -->
-<script>
-    console.log('🚀 Starting KenBarber Website...');
-    
-    // Update status function
-    function updateStatus(message, type = 'info') {
-        const dbStatus = document.getElementById('dbStatus');
-        if (!dbStatus) return;
+    <script>
+        console.log('🚀 Starting KenBarber Website...');
         
-        const colors = {
-            info: 'var(--secondary)',
-            success: '#28a745',
-            warning: '#ffc107',
-            error: '#dc3545'
-        };
-        
-        dbStatus.style.backgroundColor = colors[type] || colors.info;
-        dbStatus.innerHTML = `<i class="fas fa-circle"></i> <span>${message}</span>`;
-    }
-    
-    // Initialize website
-    function initializeWebsite() {
-        console.log('⚡ Initializing website...');
-        updateStatus('Starting...', 'info');
-        
-        // Set current year
-        const yearElement = document.getElementById('currentYear');
-        if (yearElement) {
-            yearElement.textContent = new Date().getFullYear();
-        }
-        
-        // Initialize mobile menu toggle
-        const mobileToggle = document.getElementById('mobileToggle');
-        const navMenu = document.getElementById('navMenu');
-        if (mobileToggle && navMenu) {
-            mobileToggle.addEventListener('click', function() {
-                navMenu.classList.toggle('active');
-            });
-        }
-        
-        // Load Supabase
-        loadSupabase();
-    }
-    
-    // Load Supabase with retry logic
-    function loadSupabase() {
-        console.log('📦 Loading Supabase...');
-        updateStatus('Connecting to database...', 'info');
-        
-        // First try: Load from standard CDN
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-        
-        script.onload = function() {
-            console.log('✅ Supabase JS library loaded');
-            initializeSupabaseClient();
-        };
-        
-        script.onerror = function() {
-            console.warn('⚠️ Failed to load from unpkg, trying jsDelivr...');
-            loadSupabaseFromJsDelivr();
-        };
-        
-        document.head.appendChild(script);
-    }
-    
-    // Alternative CDN
-    function loadSupabaseFromJsDelivr() {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-        
-        script.onload = function() {
-            console.log('✅ Supabase loaded from jsDelivr');
-            initializeSupabaseClient();
-        };
-        
-        script.onerror = function() {
-            console.error('❌ Failed to load Supabase from all CDNs');
-            updateStatus('Database offline', 'error');
-            // Still load main.js without Supabase
-            loadMainJS();
-        };
-        
-        document.head.appendChild(script);
-    }
-    
-    // Initialize Supabase client
-    function initializeSupabaseClient() {
-        try {
-            // Your Supabase credentials
-            const SUPABASE_URL = 'https://eqjdkpanqwjhuyavvdaf.supabase.co';
-            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA';
+        // Update status function
+        function updateStatus(message, type = 'info') {
+            const dbStatus = document.getElementById('dbStatus');
+            if (!dbStatus) return;
             
-            // Create client
-            window.supabase = window.supabase.createClient(
-                SUPABASE_URL,
-                SUPABASE_ANON_KEY,
-                {
-                    auth: {
-                        persistSession: false,
-                        autoRefreshToken: false
-                    },
-                    global: {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'apikey': SUPABASE_ANON_KEY
+            const colors = {
+                info: 'var(--secondary)',
+                success: '#28a745',
+                warning: '#ffc107',
+                error: '#dc3545'
+            };
+            
+            dbStatus.style.backgroundColor = colors[type] || colors.info;
+            dbStatus.innerHTML = `<i class="fas fa-circle"></i> <span>${message}</span>`;
+        }
+        
+        // Initialize website
+        function initializeWebsite() {
+            console.log('⚡ Initializing website...');
+            updateStatus('Starting...', 'info');
+            
+            // Set current year
+            const yearElement = document.getElementById('currentYear');
+            if (yearElement) {
+                yearElement.textContent = new Date().getFullYear();
+            }
+            
+            // Initialize mobile menu toggle
+            const mobileToggle = document.getElementById('mobileToggle');
+            const navMenu = document.getElementById('navMenu');
+            if (mobileToggle && navMenu) {
+                mobileToggle.addEventListener('click', function() {
+                    navMenu.classList.toggle('active');
+                });
+            }
+            
+            // Load Supabase
+            loadSupabase();
+        }
+        
+        // Load Supabase with retry logic
+        function loadSupabase() {
+            console.log('📦 Loading Supabase...');
+            updateStatus('Connecting to database...', 'info');
+            
+            // First try: Load from standard CDN
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+            
+            script.onload = function() {
+                console.log('✅ Supabase JS library loaded');
+                initializeSupabaseClient();
+            };
+            
+            script.onerror = function() {
+                console.warn('⚠️ Failed to load from unpkg, trying jsDelivr...');
+                loadSupabaseFromJsDelivr();
+            };
+            
+            document.head.appendChild(script);
+        }
+        
+        // Alternative CDN
+        function loadSupabaseFromJsDelivr() {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+            
+            script.onload = function() {
+                console.log('✅ Supabase loaded from jsDelivr');
+                initializeSupabaseClient();
+            };
+            
+            script.onerror = function() {
+                console.error('❌ Failed to load Supabase from all CDNs');
+                updateStatus('Database offline', 'error');
+                // Still load main.js without Supabase
+                loadMainJS();
+            };
+            
+            document.head.appendChild(script);
+        }
+        
+        // Initialize Supabase client
+        function initializeSupabaseClient() {
+            try {
+                // Your Supabase credentials
+                const SUPABASE_URL = 'https://eqjdkpanqwjhuyavvdaf.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA';
+                
+                // Create client
+                window.supabase = window.supabase.createClient(
+                    SUPABASE_URL,
+                    SUPABASE_ANON_KEY,
+                    {
+                        auth: {
+                            persistSession: false,
+                            autoRefreshToken: false
+                        },
+                        global: {
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'apikey': SUPABASE_ANON_KEY
+                            }
                         }
                     }
+                );
+                
+                console.log('🎉 Supabase client created successfully!');
+                console.log('Client URL:', window.supabase.supabaseUrl);
+                
+                // Test connection
+                testSupabaseConnection();
+                
+            } catch (error) {
+                console.error('❌ Error creating Supabase client:', error);
+                updateStatus('Database connection failed', 'error');
+                loadMainJS();
+            }
+        }
+        
+        // Test the connection
+        async function testSupabaseConnection() {
+            try {
+                console.log('🔍 Testing Supabase connection...');
+                
+                // Simple test query
+                const { data, error } = await window.supabase
+                    .from('services')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) {
+                    console.warn('⚠️ Supabase test query error:', error.message);
+                    updateStatus('Database ready (limited)', 'warning');
+                } else {
+                    console.log('✅ Supabase connection successful!');
+                    updateStatus('Database connected', 'success');
                 }
-            );
+                
+            } catch (error) {
+                console.warn('⚠️ Supabase test failed:', error.message);
+                updateStatus('Database connected', 'info');
+            }
             
-            console.log('🎉 Supabase client created successfully!');
-            console.log('Client URL:', window.supabase.supabaseUrl);
-            
-            // Test connection
-            testSupabaseConnection();
-            
-        } catch (error) {
-            console.error('❌ Error creating Supabase client:', error);
-            updateStatus('Database connection failed', 'error');
+            // Always load main.js after testing
             loadMainJS();
         }
-    }
-    
-    // Test the connection
-    async function testSupabaseConnection() {
-        try {
-            console.log('🔍 Testing Supabase connection...');
+        
+        // Load main.js
+        function loadMainJS() {
+            console.log('📦 Loading main.js...');
             
-            // Simple test query
-            const { data, error } = await window.supabase
-                .from('services')
-                .select('count')
-                .limit(1);
+            const script = document.createElement('script');
+            script.src = 'js/main.js';
             
-            if (error) {
-                console.warn('⚠️ Supabase test query error:', error.message);
-                updateStatus('Database ready (limited)', 'warning');
-            } else {
-                console.log('✅ Supabase connection successful!');
-                updateStatus('Database connected', 'success');
-            }
-            
-        } catch (error) {
-            console.warn('⚠️ Supabase test failed:', error.message);
-            updateStatus('Database connected', 'info');
-        }
-        
-        // Always load main.js after testing
-        loadMainJS();
-    }
-    
-    // Load main.js
-    function loadMainJS() {
-        console.log('📦 Loading main.js...');
-        
-        const script = document.createElement('script');
-        script.src = 'js/main.js';
-        
-        script.onload = function() {
-            console.log('✅ main.js loaded');
-            
-            // Load booking.js after a short delay
-            setTimeout(loadBookingJS, 500);
-        };
-        
-        script.onerror = function() {
-            console.error('❌ Failed to load main.js');
-            // Still try to load booking.js
-            loadBookingJS();
-        };
-        
-        document.body.appendChild(script);
-    }
-    
-    // Load booking.js
-    function loadBookingJS() {
-        console.log('📦 Loading booking.js...');
-        
-        const script = document.createElement('script');
-        script.src = 'js/booking.js';
-        
-        script.onload = function() {
-            console.log('✅ booking.js loaded');
-            console.log('🎉 All systems ready!');
-            
-            // Update status to show system is ready
-            setTimeout(() => {
-                updateStatus('System Ready', 'success');
-            }, 1000);
-        };
-        
-        script.onerror = function() {
-            console.error('❌ Failed to load booking.js');
-        };
-        
-        document.body.appendChild(script);
-    }
-    
-    // Global utility functions
-    window.openGoogleMaps = function() {
-        window.open('https://maps.google.com/?q=-0.3031,36.0800', '_blank');
-    };
-    
-    window.scrollToBooking = function() {
-        const bookingSection = document.getElementById('booking');
-        if (bookingSection) {
-            const header = document.querySelector('header');
-            const headerHeight = header ? header.offsetHeight : 80;
-            window.scrollTo({
-                top: bookingSection.offsetTop - headerHeight,
-                behavior: 'smooth'
-            });
-        }
-    };
-    
-    window.subscribeNewsletter = async function() {
-        const emailInput = document.getElementById('newsletterEmail');
-        if (!emailInput) return;
-        
-        const email = emailInput.value.trim();
-        if (!email || !email.includes('@')) {
-            alert('Please enter a valid email address');
-            return;
-        }
-        
-        const button = emailInput.nextElementSibling;
-        const originalText = button ? button.innerHTML : 'Subscribe';
-        
-        if (button) {
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            button.disabled = true;
-        }
-        
-        try {
-            if (window.supabase) {
-                const { error } = await window.supabase
-                    .from('newsletter_subscriptions')
-                    .insert({ 
-                        email: email, 
-                        subscribed_at: new Date().toISOString() 
-                    });
+            script.onload = function() {
+                console.log('✅ main.js loaded');
                 
-                if (!error) {
-                    alert('Thank you for subscribing to KenBarber updates!');
-                } else {
-                    console.warn('Database error:', error);
-                }
-            }
-        } catch (error) {
-            console.warn('Database error:', error);
+                // Load booking.js after a short delay
+                setTimeout(loadBookingJS, 500);
+            };
+            
+            script.onerror = function() {
+                console.error('❌ Failed to load main.js');
+                // Still try to load booking.js
+                loadBookingJS();
+            };
+            
+            document.body.appendChild(script);
         }
         
-        // Save locally as fallback
-        try {
-            let subscriptions = JSON.parse(localStorage.getItem('kenbarber_newsletter') || '[]');
-            if (!subscriptions.includes(email)) {
-                subscriptions.push(email);
-                localStorage.setItem('kenbarber_newsletter', JSON.stringify(subscriptions));
-                if (!window.supabase) {
-                    alert('Thank you for subscribing!');
-                }
-            }
-        } catch (error) {
-            console.warn('Local storage error:', error);
+        // Load booking.js
+        function loadBookingJS() {
+            console.log('📦 Loading booking.js...');
+            
+            const script = document.createElement('script');
+            script.src = 'js/booking.js';
+            
+            script.onload = function() {
+                console.log('✅ booking.js loaded');
+                console.log('🎉 All systems ready!');
+                
+                // Update status to show system is ready
+                setTimeout(() => {
+                    updateStatus('System Ready', 'success');
+                }, 1000);
+            };
+            
+            script.onerror = function() {
+                console.error('❌ Failed to load booking.js');
+            };
+            
+            document.body.appendChild(script);
         }
         
-        // Reset button and input
-        if (button) {
-            button.innerHTML = originalText;
-            button.disabled = false;
+        // Global utility functions
+        window.openGoogleMaps = function() {
+            window.open('https://maps.google.com/?q=-0.3031,36.0800', '_blank');
+        };
+        
+        window.scrollToBooking = function() {
+            const bookingSection = document.getElementById('booking');
+            if (bookingSection) {
+                const header = document.querySelector('header');
+                const headerHeight = header ? header.offsetHeight : 80;
+                window.scrollTo({
+                    top: bookingSection.offsetTop - headerHeight,
+                    behavior: 'smooth'
+                });
+            }
+        };
+        
+        window.subscribeNewsletter = async function() {
+            const emailInput = document.getElementById('newsletterEmail');
+            if (!emailInput) return;
+            
+            const email = emailInput.value.trim();
+            if (!email || !email.includes('@')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+            
+            const button = emailInput.nextElementSibling;
+            const originalText = button ? button.innerHTML : 'Subscribe';
+            
+            if (button) {
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                button.disabled = true;
+            }
+            
+            try {
+                if (window.supabase) {
+                    const { error } = await window.supabase
+                        .from('newsletter_subscriptions')
+                        .insert({ 
+                            email: email, 
+                            subscribed_at: new Date().toISOString() 
+                        });
+                    
+                    if (!error) {
+                        alert('Thank you for subscribing to KenBarber updates!');
+                    } else {
+                        console.warn('Database error:', error);
+                    }
+                }
+            } catch (error) {
+                console.warn('Database error:', error);
+            }
+            
+            // Save locally as fallback
+            try {
+                let subscriptions = JSON.parse(localStorage.getItem('kenbarber_newsletter') || '[]');
+                if (!subscriptions.includes(email)) {
+                    subscriptions.push(email);
+                    localStorage.setItem('kenbarber_newsletter', JSON.stringify(subscriptions));
+                    if (!window.supabase) {
+                        alert('Thank you for subscribing!');
+                    }
+                }
+            } catch (error) {
+                console.warn('Local storage error:', error);
+            }
+            
+            // Reset button and input
+            if (button) {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+            emailInput.value = '';
+        };
+        
+        // Start everything when DOM is ready
+        document.addEventListener('DOMContentLoaded', initializeWebsite);
+        
+        // If DOM is already loaded
+        if (document.readyState === 'interactive' || document.readyState === 'complete') {
+            initializeWebsite();
         }
-        emailInput.value = '';
-    };
-    
-    // Start everything when DOM is ready
-    document.addEventListener('DOMContentLoaded', initializeWebsite);
-    
-    // If DOM is already loaded
-    if (document.readyState === 'interactive' || document.readyState === 'complete') {
-        initializeWebsite();
-    }
-</script>
+    </script>
 </body>
 </html>
