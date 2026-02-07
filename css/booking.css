@@ -1,811 +1,353 @@
-/* ===== Modern Booking System Styles ===== */
-:root {
-    --primary: #D4AF37; /* Gold */
-    --primary-dark: #b8941f;
-    --primary-light: #f5e8c3;
-    --secondary: #2C3E50; /* Dark blue */
-    --secondary-light: #34495e;
-    --light-bg: #f8f9fa;
-    --dark-bg: #1a1a1a;
-    --success: #28a745;
-    --warning: #ffc107;
-    --danger: #dc3545;
-    --gray-light: #e9ecef;
-    --gray: #6c757d;
-    --gray-dark: #343a40;
-    --border-radius: 12px;
-    --box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-    --box-shadow-hover: 0 15px 40px rgba(0,0,0,0.12);
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* ===== Barber Display Styles ===== */
+
+/* Barber Section Header */
+.barber-section {
+    margin: 2rem 0;
 }
 
-/* ===== Main Container ===== */
-.booking-section {
-    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-    min-height: 100vh;
-    padding: 2rem 1rem;
+.barber-section h3 {
+    color: var(--secondary);
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 0.75rem;
 }
 
-.booking-wrapper {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
+.barber-section h3 i {
+    color: var(--primary);
 }
 
-/* ===== Modern Grid Layout ===== */
-.booking-container {
+/* Barber Cards Grid */
+.barbers-grid {
     display: grid;
-    grid-template-columns: 1fr 1.4fr;
-    gap: 2.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-top: 1.5rem;
+}
+
+/* Individual Barber Card */
+.barber-card {
     background: white;
     border-radius: var(--border-radius);
     overflow: hidden;
     box-shadow: var(--box-shadow);
-    min-height: 700px;
-    position: relative;
-}
-
-@media (max-width: 1024px) {
-    .booking-container {
-        grid-template-columns: 1fr;
-        gap: 0;
-    }
-}
-
-/* ===== Summary Card (Left Side) ===== */
-.booking-summary {
-    background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
-    color: white;
-    padding: 3rem 2rem;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    overflow: hidden;
-}
-
-.booking-summary::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.03)"/></svg>');
-    background-size: cover;
-}
-
-.summary-header {
-    margin-bottom: 2.5rem;
-    position: relative;
-    z-index: 1;
-}
-
-.summary-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    padding: 0.75rem 1.25rem;
-    border-radius: 50px;
-    margin-bottom: 1.5rem;
-}
-
-.summary-badge i {
-    color: var(--primary);
-    font-size: 1.25rem;
-}
-
-.summary-badge span {
-    font-weight: 600;
-    font-size: 0.9rem;
-    letter-spacing: 0.5px;
-}
-
-.summary-header h2 {
-    font-size: 2.2rem;
-    margin: 0 0 0.5rem 0;
-    font-weight: 700;
-    line-height: 1.2;
-}
-
-.summary-header p {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 1rem;
-    margin: 0;
-    line-height: 1.6;
-}
-
-/* Summary Details */
-.summary-details {
-    position: relative;
-    z-index: 1;
-    flex: 1;
-}
-
-.detail-item {
-    display: flex;
-    gap: 1.25rem;
-    padding: 1.25rem;
-    background: rgba(255, 255, 255, 0.07);
-    border-radius: 10px;
-    margin-bottom: 1rem;
-    border-left: 3px solid var(--primary);
     transition: var(--transition);
-}
-
-.detail-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateX(5px);
-}
-
-.detail-icon {
-    color: var(--primary);
-    font-size: 1.3rem;
-    width: 24px;
-    flex-shrink: 0;
-}
-
-.detail-content h4 {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.detail-content p {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: white;
-    line-height: 1.4;
-}
-
-/* Pricing Section */
-.pricing-summary {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 10px;
-    padding: 1.75rem;
-    margin-top: auto;
     position: relative;
-    z-index: 1;
-    backdrop-filter: blur(10px);
-}
-
-.pricing-summary h4 {
-    margin: 0 0 1.5rem 0;
-    font-size: 1.2rem;
-    color: white;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.pricing-summary h4 i {
-    color: var(--primary);
-}
-
-.pricing-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.pricing-row:last-child {
-    border-bottom: none;
-}
-
-.pricing-row.total {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 2px solid var(--primary);
-    font-size: 1.3rem;
-    font-weight: 700;
-}
-
-.pricing-label {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.95rem;
-}
-
-.pricing-value {
-    color: white;
-    font-weight: 500;
-}
-
-.pricing-value.total {
-    color: var(--primary);
-    font-size: 1.5rem;
-}
-
-/* ===== Booking Form (Right Side) ===== */
-.booking-form-container {
-    padding: 3rem 2.5rem;
-    display: flex;
-    flex-direction: column;
     height: 100%;
-}
-
-.form-header {
-    margin-bottom: 2.5rem;
-}
-
-.form-header h3 {
-    font-size: 1.8rem;
-    color: var(--secondary);
-    margin: 0 0 0.75rem 0;
-    font-weight: 700;
-}
-
-.form-header p {
-    color: var(--gray);
-    font-size: 1rem;
-    margin: 0;
-    line-height: 1.6;
-}
-
-/* Form Grid */
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-@media (max-width: 768px) {
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-.form-group {
-    position: relative;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: var(--secondary);
-    font-size: 0.95rem;
-    transition: var(--transition);
-}
-
-.form-control {
-    width: 100%;
-    padding: 1rem 1.25rem;
-    border: 2px solid var(--gray-light);
-    border-radius: 8px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 1rem;
-    transition: var(--transition);
-    background: white;
-    color: var(--gray-dark);
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
-    background: white;
-}
-
-.form-control:hover {
-    border-color: var(--primary);
-}
-
-/* Service Selection */
-.service-select {
-    position: relative;
-}
-
-.service-select select {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%232C3E50' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1.25rem center;
-    padding-right: 3rem;
-}
-
-/* Date & Time Section */
-.datetime-section {
-    background: var(--light-bg);
-    border-radius: 10px;
-    padding: 1.75rem;
-    margin-bottom: 2rem;
-}
-
-.datetime-section h4 {
-    color: var(--secondary);
-    margin: 0 0 1.5rem 0;
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.datetime-section h4 i {
-    color: var(--primary);
-}
-
-.datetime-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-}
-
-@media (max-width: 768px) {
-    .datetime-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Date Picker Styling */
-.date-picker-wrapper {
-    position: relative;
-}
-
-.date-picker-wrapper .form-control {
-    cursor: pointer;
-    background-color: white;
-}
-
-/* Time Slots */
-.time-slots-container {
-    position: relative;
-}
-
-.time-slots-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
-    gap: 0.75rem;
-    margin-top: 0.5rem;
-}
-
-.time-slot-btn {
-    padding: 0.75rem 0.5rem;
-    text-align: center;
-    border: 2px solid var(--gray-light);
-    border-radius: 6px;
-    background: white;
-    color: var(--gray-dark);
-    cursor: pointer;
-    transition: var(--transition);
-    font-size: 0.9rem;
-    font-weight: 500;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 60px;
 }
 
-.time-slot-btn:hover:not(.booked) {
-    border-color: var(--primary);
-    color: var(--primary);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.time-slot-btn.selected {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
-}
-
-.time-slot-btn.booked {
-    background: var(--gray-light);
-    color: var(--gray);
-    cursor: not-allowed;
-    opacity: 0.7;
-    position: relative;
-    overflow: hidden;
-}
-
-.time-slot-btn.booked::after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 1px;
-    background: var(--danger);
-    transform: rotate(-45deg);
-    top: 50%;
-    left: 0;
-}
-
-.time-slot-period {
-    font-size: 0.75rem;
-    opacity: 0.7;
-    margin-top: 0.25rem;
-}
-
-/* Payment Section */
-.payment-section {
-    margin-bottom: 2rem;
-}
-
-.payment-header {
-    color: var(--secondary);
-    margin: 0 0 1.5rem 0;
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.payment-header i {
-    color: var(--primary);
-}
-
-.payment-options {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.payment-option {
-    position: relative;
-    cursor: pointer;
-}
-
-.payment-option input[type="radio"] {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-}
-
-.payment-label {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.25rem;
-    border: 2px solid var(--gray-light);
-    border-radius: 8px;
-    background: white;
-    transition: var(--transition);
-}
-
-.payment-label:hover {
-    border-color: var(--primary);
-    transform: translateY(-2px);
-}
-
-.payment-option input[type="radio"]:checked + .payment-label {
-    border-color: var(--primary);
-    background: rgba(212, 175, 55, 0.05);
-    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.1);
-}
-
-.payment-icon {
-    color: var(--primary);
-    font-size: 1.5rem;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(212, 175, 55, 0.1);
-    border-radius: 6px;
-}
-
-.payment-text h5 {
-    margin: 0 0 0.25rem 0;
-    font-size: 1rem;
-    color: var(--secondary);
-}
-
-.payment-text p {
-    margin: 0;
-    font-size: 0.85rem;
-    color: var(--gray);
-}
-
-/* M-Pesa Info Box */
-.mpesa-info-box {
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-    border: 2px dashed #64b5f6;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-top: 1rem;
-    display: none;
-    animation: slideDown 0.3s ease-out;
-}
-
-.mpesa-info-box.active {
-    display: block;
-}
-
-.mpesa-info-box h5 {
-    color: #1976d2;
-    margin: 0 0 0.75rem 0;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.mpesa-info-box p {
-    color: #1565c0;
-    margin: 0;
-    font-size: 0.95rem;
-    line-height: 1.5;
-}
-
-/* Terms Section */
-.terms-section {
-    background: var(--light-bg);
-    border-radius: 10px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.terms-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.terms-item:last-child {
-    margin-bottom: 0;
-}
-
-.terms-item input[type="checkbox"] {
-    margin-top: 0.25rem;
-    accent-color: var(--primary);
-}
-
-.terms-item label {
-    color: var(--gray-dark);
-    font-size: 0.95rem;
-    line-height: 1.6;
-    cursor: pointer;
-    user-select: none;
-}
-
-.terms-item label a {
-    color: var(--primary);
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.terms-item label a:hover {
-    text-decoration: underline;
-}
-
-/* Submit Button */
-.submit-section {
-    margin-top: auto;
-}
-
-.btn-confirm {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: white;
-    border: none;
-    padding: 1.25rem 2.5rem;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-}
-
-.btn-confirm:hover {
-    transform: translateY(-3px);
+.barber-card:hover {
+    transform: translateY(-8px);
     box-shadow: var(--box-shadow-hover);
 }
 
-.btn-confirm:active {
-    transform: translateY(-1px);
-}
-
-.btn-confirm:disabled {
-    background: var(--gray-light);
-    color: var(--gray);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-}
-
-.btn-confirm i {
-    font-size: 1.2rem;
-}
-
-/* Loading Spinner */
-.btn-confirm.loading {
+/* Barber Image Container - FIXED */
+.barber-image-container {
     position: relative;
-    color: transparent;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
 }
 
-.btn-confirm.loading::after {
-    content: '';
+.barber-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: transform 0.5s ease;
+}
+
+.barber-card:hover .barber-image {
+    transform: scale(1.08);
+}
+
+/* Status Badge */
+.status-badge {
     position: absolute;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: white;
-    animation: spin 1s linear infinite;
+    top: 12px;
+    right: 12px;
+    background: var(--primary);
+    color: var(--secondary);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 10;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-/* Progress Steps */
-.progress-steps {
+/* Barber Info - FIXED POSITIONING */
+.barber-info {
+    padding: 1.5rem;
+    flex-grow: 1;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 3rem;
+    flex-direction: column;
     position: relative;
-}
-
-.progress-steps::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 2rem;
-    right: 2rem;
-    height: 2px;
-    background: var(--gray-light);
-    transform: translateY(-50%);
+    background: white;
     z-index: 1;
 }
 
-.step {
-    position: relative;
-    z-index: 2;
+/* Barber Name - Fixed styling */
+.barber-name {
+    font-size: 1.3rem;
+    color: var(--secondary);
+    margin: 0 0 0.5rem 0;
+    font-weight: 700;
+    line-height: 1.3;
+    min-height: 2.6rem;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    flex: 1;
 }
 
-.step-number {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: white;
-    border: 2px solid var(--gray-light);
+/* Barber Title */
+.barber-title {
+    color: var(--primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Barber Details */
+.barber-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 1rem 0;
+    flex-grow: 1;
+}
+
+.detail-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--gray);
+}
+
+.detail-row i {
+    color: var(--primary);
+    width: 16px;
+    text-align: center;
+}
+
+/* Barber Bio */
+.barber-bio {
+    color: var(--gray-dark);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 1rem 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Barber Action Buttons */
+.barber-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: auto;
+}
+
+.btn-select-barber {
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    background: var(--primary);
+    color: var(--secondary);
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
-    color: var(--gray);
-    margin-bottom: 0.75rem;
-    transition: var(--transition);
-}
-
-.step.active .step-number {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: white;
-    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
-}
-
-.step.completed .step-number {
-    background: var(--success);
-    border-color: var(--success);
-    color: white;
-}
-
-.step-label {
-    font-size: 0.9rem;
-    color: var(--gray);
-    font-weight: 500;
-    transition: var(--transition);
-}
-
-.step.active .step-label {
-    color: var(--secondary);
-    font-weight: 600;
-}
-
-/* Form Validation Styles */
-.form-group.error .form-control {
-    border-color: var(--danger);
-    background: rgba(220, 53, 69, 0.02);
-}
-
-.form-group.error .error-message {
-    color: var(--danger);
-    font-size: 0.85rem;
-    margin-top: 0.5rem;
-    display: flex;
-    align-items: center;
     gap: 0.5rem;
 }
 
-.form-group.success .form-control {
-    border-color: var(--success);
-    background: rgba(40, 167, 69, 0.02);
+.btn-select-barber:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
 }
 
-/* Responsive Adjustments */
+.btn-select-barber.selected {
+    background: var(--success);
+    color: white;
+}
+
+.btn-view-profile {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    background: var(--light-bg);
+    color: var(--gray);
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-view-profile:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Any Barber Card Special Styling */
+.barber-card.any-barber {
+    border: 2px dashed var(--primary);
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(212, 175, 55, 0.02) 100%);
+}
+
+.barber-card.any-barber .barber-image-container {
+    background: linear-gradient(135deg, var(--primary-light) 0%, #f8f3e3 100%);
+}
+
+.barber-card.any-barber .barber-image {
+    object-fit: contain;
+    padding: 2rem;
+    opacity: 0.7;
+}
+
+.barber-card.any-barber .barber-name {
+    color: var(--secondary);
+}
+
+.barber-card.any-barber .barber-title {
+    color: var(--gray);
+}
+
+/* Loading State */
+.barber-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+.barber-loading i {
+    color: var(--primary);
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    animation: pulse 1.5s infinite;
+}
+
+/* Responsive Styles */
 @media (max-width: 768px) {
-    .booking-container {
-        border-radius: 0;
+    .barbers-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .barber-image-container {
+        height: 180px;
+    }
+    
+    .barber-info {
+        padding: 1.25rem;
+    }
+    
+    .barber-name {
+        font-size: 1.2rem;
         min-height: auto;
-    }
-    
-    .booking-summary,
-    .booking-form-container {
-        padding: 2rem 1.5rem;
-    }
-    
-    .summary-header h2 {
-        font-size: 1.8rem;
-    }
-    
-    .payment-options {
-        grid-template-columns: 1fr;
-    }
-    
-    .time-slots-grid {
-        grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
-    }
-    
-    .progress-steps {
-        display: none;
     }
 }
 
 @media (max-width: 480px) {
-    .booking-summary,
-    .booking-form-container {
-        padding: 1.5rem 1rem;
+    .barbers-grid {
+        grid-template-columns: 1fr;
     }
     
-    .form-header h3 {
-        font-size: 1.5rem;
+    .barber-card {
+        max-width: 100%;
     }
     
-    .detail-item {
-        padding: 1rem;
+    .barber-actions {
+        flex-direction: column;
     }
     
-    .btn-confirm {
-        padding: 1rem 1.5rem;
-        font-size: 1rem;
+    .btn-select-barber {
+        width: 100%;
     }
 }
 
-/* Animations */
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Animation */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+/* Barber Selection Animation */
+.barber-card.selected {
+    border: 2px solid var(--primary);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+    animation: pulseBorder 2s infinite;
 }
 
-/* Form Group Focus Effect */
-.form-group:focus-within label {
-    color: var(--primary);
+@keyframes pulseBorder {
+    0%, 100% { border-color: var(--primary); }
+    50% { border-color: rgba(212, 175, 55, 0.5); }
 }
 
-/* Success Modal Styling */
-.success-modal {
-    animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+/* Rating Stars */
+.barber-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin: 0.5rem 0;
+}
+
+.barber-rating i {
+    color: #FFD700;
+    font-size: 0.9rem;
+}
+
+.rating-value {
+    font-weight: 600;
+    color: var(--gray-dark);
+    margin-left: 0.5rem;
+}
+
+/* Barber Availability */
+.availability-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+.availability-status.available {
+    background: rgba(40, 167, 69, 0.1);
+    color: var(--success);
+}
+
+.availability-status.busy {
+    background: rgba(255, 193, 7, 0.1);
+    color: var(--warning);
+}
+
+.availability-status.offline {
+    background: rgba(108, 117, 125, 0.1);
+    color: var(--gray);
+}
+
+.availability-status i {
+    font-size: 0.8rem;
 }
