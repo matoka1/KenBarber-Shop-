@@ -85,8 +85,9 @@ if (dateInput) {
             showBookingError('We are closed on weekends. Please select a weekday (Monday-Friday).', 'warning');
         }
     });
+      }
 }
-
+    
 function updatePriceDisplay() {
     const priceDisplay = document.getElementById('priceDisplay');
     const totalPrice = document.getElementById('totalPrice');
