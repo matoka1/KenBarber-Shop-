@@ -589,19 +589,29 @@ async function initiateSTKPushPayment(bookingData) {
 async function pollForPaymentConfirmation(bookingReference, transactionId) {
     console.log('🔍 Starting payment polling for:', bookingReference, 'Transaction:', transactionId);
     
+    // Clear any existing interval FIRST
     if (currentPaymentPollInterval) {
+        console.log('🔄 Clearing existing interval first');
         clearInterval(currentPaymentPollInterval);
+        currentPaymentPollInterval = null;
     }
     
     let pollCount = 0;
     const maxPolls = 60; // 5 minutes (60 * 5 seconds)
+    let isProcessingSuccess = false; // 🔥 NEW: Prevent multiple success processing
     
     currentPaymentPollInterval = setInterval(async () => {
         pollCount++;
         console.log(`⏰ Payment polling attempt ${pollCount} for: ${transactionId}`);
         
+        // Prevent multiple concurrent success processing
+        if (isProcessingSuccess) {
+            console.log('⏸️ Already processing success, skipping...');
+            return;
+        }
+        
         try {
-            // Call your new check-payment function
+            // Call your check-payment function
             const response = await fetch(`https://eqjdkpanqwjhuyavvdaf.supabase.co/functions/v1/check-payment?transactionId=${transactionId}`);
             
             if (response.ok) {
@@ -609,16 +619,25 @@ async function pollForPaymentConfirmation(bookingReference, transactionId) {
                 console.log('📊 Payment check result:', result);
                 
                 if (result.status === 'success' || result.status === 'completed') {
+                    // 🔥 NEW: Set flag to prevent duplicate processing
+                    isProcessingSuccess = true;
+                    
                     // ✅ PAYMENT CONFIRMED!
-                    clearInterval(currentPaymentPollInterval);
-                    currentPaymentPollInterval = null;
+                    console.log('🎉 Payment confirmed! Clearing interval...');
                     
-                    console.log('🎉 Payment confirmed!');
+                    // Clear interval immediately
+                    if (currentPaymentPollInterval) {
+                        clearInterval(currentPaymentPollInterval);
+                        currentPaymentPollInterval = null;
+                    }
                     
-                    // Update booking status
+                    // Refresh schema cache before updating
+                    await refreshSupabaseSchema();
+                    
+                    // Update booking status to PAID (not pending!)
                     await updateBookingPaymentStatus(
                         bookingReference,
-                        'paid',
+                        'paid', // 🔥 FIXED: was 'pending' on first update!
                         transactionId,
                         result.mpesa_receipt
                     );
@@ -626,41 +645,49 @@ async function pollForPaymentConfirmation(bookingReference, transactionId) {
                     // Show success notification
                     showPaymentSuccessNotification(bookingReference, result);
                     
-                    // Reset form
+                    // Reset form (ONCE)
                     resetBookingForm();
                     
-                    console.log('✅ Booking confirmed and form reset');
+                    console.log('✅ Booking confirmed and form reset - POLLING STOPPED');
                     
-                } else if (result.status === 'failed' || result.status === 'cancelled') {
-                    clearInterval(currentPaymentPollInterval);
+                    // 🔥 NEW: Clear the interval variable to prevent reuse
                     currentPaymentPollInterval = null;
                     
-                    console.log('❌ Payment failed');
+                } else if (result.status === 'failed' || result.status === 'cancelled') {
+                    console.log('❌ Payment failed, clearing interval...');
+                    
+                    if (currentPaymentPollInterval) {
+                        clearInterval(currentPaymentPollInterval);
+                        currentPaymentPollInterval = null;
+                    }
+                    
                     await updateBookingStatus(bookingReference, 'payment_failed');
                     showBookingError('Payment failed. Please try again.', 'error');
                     
+                } else {
+                    // Still pending, continue polling
+                    console.log('⏳ Payment still pending...');
                 }
-                // If still pending, continue polling
             } else {
                 console.warn('⚠️ Polling request failed:', response.status);
             }
         } catch (error) {
             console.error('❌ Payment polling error:', error);
+            isProcessingSuccess = false; // Reset flag on error
         }
         
         // Stop polling after 5 minutes
-        if (pollCount >= maxPolls) {
+        if (pollCount >= maxPolls && currentPaymentPollInterval) {
+            console.log('⏰ Payment polling timeout, clearing interval...');
             clearInterval(currentPaymentPollInterval);
             currentPaymentPollInterval = null;
-            console.log('⏰ Payment polling timeout');
             
-            // Check one last time
+            // Final check
             try {
                 const response = await fetch(`https://eqjdkpanqwjhuyavvdaf.supabase.co/functions/v1/check-payment?transactionId=${transactionId}`);
                 if (response.ok) {
                     const result = await response.json();
                     if (result.status === 'success') {
-                        // Payment completed
                         await updateBookingPaymentStatus(bookingReference, 'paid', transactionId);
                         showPaymentSuccessNotification(bookingReference, result);
                         resetBookingForm();
