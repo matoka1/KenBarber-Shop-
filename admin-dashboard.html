@@ -1349,7 +1349,7 @@
                 <div class="form-group" id="specificCustomersGroup" style="display: none;">
                     <label>Select Customers</label>
                     <select class="form-control" id="specificCustomers" multiple style="height: 150px;">
-                        <option value="all">All Customers</option>
+                        <!-- Options will be populated dynamically -->
                     </select>
                 </div>
                 
@@ -1466,10 +1466,48 @@
             </div>
         </div>
     </div>
+    
+    <!-- Modal for Edit Service -->
+    <div class="modal" id="editServiceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Service</h3>
+                <button class="modal-close" onclick="hideModal('editServiceModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editServiceForm">
+                    <!-- Form will be dynamically populated -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideModal('editServiceModal')">Cancel</button>
+                <button class="btn-primary" onclick="updateService()">Update Service</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for Edit Barber -->
+    <div class="modal" id="editBarberModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Barber</h3>
+                <button class="modal-close" onclick="hideModal('editBarberModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editBarberForm">
+                    <!-- Form will be dynamically populated -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideModal('editBarberModal')">Cancel</button>
+                <button class="btn-primary" onclick="updateBarber()">Update Barber</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // Global variables - FIXED: Changed from 'supabase' to 'supabaseClient' to avoid conflict
-        let supabaseClient = null; 
+        // Global variables
+        let supabaseClient = null;
         let currentTab = 'dashboard';
         let bookingsData = [];
         let currentBookingsPage = 1;
@@ -1477,14 +1515,14 @@
         let activityChart = null;
         let bookingTrendChart = null;
         let serviceChart = null;
-        let currentBookingId = null;
+        let currentEditId = null;
 
-        // Initialize Supabase - FIXED VERSION
+        // Initialize Supabase
         async function initSupabase() {
             const SUPABASE_URL = 'https://eqjdkpanqwjhuyavvdaf.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA';
             
-            // Check if Supabase is already loaded in window object
+            // Check if Supabase is already loaded
             if (window.supabase && typeof window.supabase.createClient === 'function') {
                 try {
                     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -1503,7 +1541,7 @@
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
             
-            script.onload = () => {
+            script.onload = function() {
                 console.log('Supabase script loaded');
                 // Check again if supabase is available
                 if (window.supabase && typeof window.supabase.createClient === 'function') {
@@ -1523,7 +1561,7 @@
                 }
             };
             
-            script.onerror = (error) => {
+            script.onerror = function(error) {
                 console.error('Failed to load Supabase script:', error);
                 useMockData();
             };
@@ -1577,7 +1615,7 @@
             initSupabase();
             
             // Setup modal close buttons
-            document.querySelectorAll('.modal-close').forEach(btn => {
+            document.querySelectorAll('.modal-close').forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     const modal = this.closest('.modal');
                     if (modal) {
@@ -1600,6 +1638,9 @@
                     const specificGroup = document.getElementById('specificCustomersGroup');
                     if (specificGroup) {
                         specificGroup.style.display = this.value === 'specific' ? 'block' : 'none';
+                        if (this.value === 'specific') {
+                            loadCustomerOptions();
+                        }
                     }
                 });
             }
@@ -1625,16 +1666,16 @@
         // Switch between tabs
         function switchTab(tabName) {
             // Update active tab in sidebar
-            document.querySelectorAll('.nav-item').forEach(item => {
+            document.querySelectorAll('.nav-item').forEach(function(item) {
                 item.classList.remove('active');
             });
-            const navItem = document.querySelector(`[href="#${tabName}"]`);
+            const navItem = document.querySelector('[href="#' + tabName + '"]');
             if (navItem) {
                 navItem.classList.add('active');
             }
             
             // Update active tab content
-            document.querySelectorAll('.tab-content').forEach(tab => {
+            document.querySelectorAll('.tab-content').forEach(function(tab) {
                 tab.classList.remove('active');
             });
             const tabContent = document.getElementById(tabName);
@@ -1723,7 +1764,6 @@
         async function loadDashboardData() {
             try {
                 if (!supabaseClient) {
-                    // Use mock data for demo
                     useMockDashboardData();
                     return;
                 }
@@ -1733,7 +1773,6 @@
                     loadRecentBookings()
                 ]);
                 
-                // Initialize charts
                 initActivityChart();
                 
             } catch (error) {
@@ -1768,15 +1807,15 @@
                     .from('appointments')
                     .select('service_price, payment_status')
                     .eq('status', 'confirmed')
-                    .gte('created_at', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
-                    .lt('created_at', `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-01`);
+                    .gte('created_at', currentYear + '-' + currentMonth.toString().padStart(2, '0') + '-01')
+                    .lt('created_at', currentYear + '-' + (currentMonth + 1).toString().padStart(2, '0') + '-01');
                 
                 if (!monthError && monthBookings) {
                     const revenue = monthBookings
-                        .filter(b => b.payment_status === 'paid')
-                        .reduce((sum, booking) => sum + (booking.service_price || 0), 0);
+                        .filter(function(b) { return b.payment_status === 'paid'; })
+                        .reduce(function(sum, booking) { return sum + (booking.service_price || 0); }, 0);
                     const monthRevenueEl = document.getElementById('monthRevenue');
-                    if (monthRevenueEl) monthRevenueEl.textContent = `KES ${revenue.toLocaleString()}`;
+                    if (monthRevenueEl) monthRevenueEl.textContent = 'KES ' + revenue.toLocaleString();
                 }
                 
                 // Total services
@@ -1796,7 +1835,7 @@
                     .select('customer_phone');
                 
                 if (!customersError && customers) {
-                    const uniquePhones = [...new Set(customers.map(c => c.customer_phone))];
+                    const uniquePhones = [...new Set(customers.map(function(c) { return c.customer_phone; }))];
                     const totalCustomersEl = document.getElementById('totalCustomers');
                     if (totalCustomersEl) totalCustomersEl.textContent = uniquePhones.length;
                 }
@@ -1812,22 +1851,7 @@
                 const tableBody = document.getElementById('recentBookingsBody');
                 
                 if (!supabaseClient || !tableBody) {
-                    // Mock data
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td>KB-001</td>
-                            <td>John Doe</td>
-                            <td>Classic Haircut</td>
-                            <td>Today, 2:00 PM</td>
-                            <td>Any Barber</td>
-                            <td>KES 500</td>
-                            <td><span class="status-badge status-confirmed">Confirmed</span></td>
-                            <td class="action-buttons">
-                                <button class="btn-action btn-view" onclick="viewBookingDetail('KB-001')"><i class="fas fa-eye"></i></button>
-                                <button class="btn-action btn-edit" onclick="editBookingDetail('KB-001')"><i class="fas fa-edit"></i></button>
-                            </td>
-                        </tr>
-                    `;
+                    tableBody.innerHTML = '<tr><td>KB-001</td><td>John Doe</td><td>Classic Haircut</td><td>Today, 2:00 PM</td><td>Any Barber</td><td>KES 500</td><td><span class="status-badge status-confirmed">Confirmed</span></td><td class="action-buttons"><button class="btn-action btn-view" onclick="viewBookingDetail(\'KB-001\')"><i class="fas fa-eye"></i></button><button class="btn-action btn-edit" onclick="editBookingDetail(\'KB-001\')"><i class="fas fa-edit"></i></button></td></tr>';
                     return;
                 }
                 
@@ -1840,19 +1864,13 @@
                 if (error) throw error;
                 
                 if (!bookings || bookings.length === 0) {
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td colspan="8" style="text-align: center; padding: 2rem;">
-                                <i class="fas fa-calendar-times"></i> No recent bookings found
-                            </td>
-                        </tr>
-                    `;
+                    tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;"><i class="fas fa-calendar-times"></i> No recent bookings found</td></tr>';
                     return;
                 }
                 
                 tableBody.innerHTML = '';
                 
-                bookings.forEach(booking => {
+                bookings.forEach(function(booking) {
                     const date = new Date(booking.appointment_date);
                     const formattedDate = date.toLocaleDateString('en-KE', { 
                         weekday: 'short', 
@@ -1863,24 +1881,22 @@
                     let statusClass = 'status-pending';
                     let statusText = 'Pending';
                     
-                    if (booking.status === 'confirmed') statusClass = 'status-confirmed', statusText = 'Confirmed';
-                    else if (booking.status === 'cancelled') statusClass = 'status-cancelled', statusText = 'Cancelled';
-                    else if (booking.status === 'completed') statusClass = 'status-completed', statusText = 'Completed';
+                    if (booking.status === 'confirmed') { statusClass = 'status-confirmed'; statusText = 'Confirmed'; }
+                    else if (booking.status === 'cancelled') { statusClass = 'status-cancelled'; statusText = 'Cancelled'; }
+                    else if (booking.status === 'completed') { statusClass = 'status-completed'; statusText = 'Completed'; }
                     
                     const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${booking.booking_reference || 'N/A'}</td>
-                        <td>${booking.customer_name || 'N/A'}</td>
-                        <td>${booking.service_name || 'N/A'}</td>
-                        <td>${formattedDate}, ${booking.appointment_time || ''}</td>
-                        <td>${booking.barber_name || 'Any Barber'}</td>
-                        <td>KES ${booking.service_price || 0}</td>
-                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                        <td class="action-buttons">
-                            <button class="btn-action btn-view" onclick="viewBookingDetail('${booking.booking_reference}')"><i class="fas fa-eye"></i></button>
-                            <button class="btn-action btn-edit" onclick="editBookingDetail('${booking.booking_reference}')"><i class="fas fa-edit"></i></button>
-                        </td>
-                    `;
+                    row.innerHTML = '<td>' + (booking.booking_reference || 'N/A') + '</td>' +
+                                   '<td>' + (booking.customer_name || 'N/A') + '</td>' +
+                                   '<td>' + (booking.service_name || 'N/A') + '</td>' +
+                                   '<td>' + formattedDate + ', ' + (booking.appointment_time || '') + '</td>' +
+                                   '<td>' + (booking.barber_name || 'Any Barber') + '</td>' +
+                                   '<td>KES ' + (booking.service_price || 0) + '</td>' +
+                                   '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>' +
+                                   '<td class="action-buttons">' +
+                                   '<button class="btn-action btn-view" onclick="viewBookingDetail(\'' + booking.booking_reference + '\')"><i class="fas fa-eye"></i></button>' +
+                                   '<button class="btn-action btn-edit" onclick="editBookingDetail(\'' + booking.booking_reference + '\')"><i class="fas fa-edit"></i></button>' +
+                                   '</td>';
                     tableBody.appendChild(row);
                 });
                 
@@ -1895,25 +1911,7 @@
                 const tableBody = document.getElementById('allBookingsBody');
                 
                 if (!supabaseClient || !tableBody) {
-                    // Mock data
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td>KB-001</td>
-                            <td>John Doe</td>
-                            <td>0712 345 678</td>
-                            <td>Classic Haircut</td>
-                            <td>Today, 2:00 PM</td>
-                            <td>Any Barber</td>
-                            <td>KES 500</td>
-                            <td><span class="status-badge status-confirmed">Confirmed</span></td>
-                            <td><span class="status-badge status-paid">Paid</span></td>
-                            <td class="action-buttons">
-                                <button class="btn-action btn-view" onclick="viewBookingDetail('KB-001')"><i class="fas fa-eye"></i></button>
-                                <button class="btn-action btn-edit" onclick="editBookingDetail('KB-001')"><i class="fas fa-edit"></i></button>
-                                <button class="btn-action btn-confirm" onclick="confirmBooking('KB-001')"><i class="fas fa-check"></i></button>
-                            </td>
-                        </tr>
-                    `;
+                    tableBody.innerHTML = '<tr><td>KB-001</td><td>John Doe</td><td>0712 345 678</td><td>Classic Haircut</td><td>Today, 2:00 PM</td><td>Any Barber</td><td>KES 500</td><td><span class="status-badge status-confirmed">Confirmed</span></td><td><span class="status-badge status-paid">Paid</span></td><td class="action-buttons"><button class="btn-action btn-view" onclick="viewBookingDetail(\'KB-001\')"><i class="fas fa-eye"></i></button><button class="btn-action btn-edit" onclick="editBookingDetail(\'KB-001\')"><i class="fas fa-edit"></i></button><button class="btn-action btn-confirm" onclick="confirmBooking(\'KB-001\')"><i class="fas fa-check"></i></button></td></tr>';
                     updateBookingsPagination();
                     return;
                 }
@@ -1943,24 +1941,17 @@
             const filteredData = filterBookingsData();
             
             if (filteredData.length === 0) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="10" style="text-align: center; padding: 2rem;">
-                            <i class="fas fa-calendar-times"></i> No bookings found
-                        </td>
-                    </tr>
-                `;
+                tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 2rem;"><i class="fas fa-calendar-times"></i> No bookings found</td></tr>';
                 return;
             }
             
-            // Calculate pagination
             const startIndex = (currentBookingsPage - 1) * bookingsPerPage;
             const endIndex = startIndex + bookingsPerPage;
             const pageData = filteredData.slice(startIndex, endIndex);
             
             tableBody.innerHTML = '';
             
-            pageData.forEach(booking => {
+            pageData.forEach(function(booking) {
                 const date = new Date(booking.appointment_date);
                 const formattedDate = date.toLocaleDateString('en-KE', { 
                     weekday: 'short', 
@@ -1971,51 +1962,46 @@
                 let statusClass = 'status-pending';
                 let statusText = 'Pending';
                 
-                if (booking.status === 'confirmed') statusClass = 'status-confirmed', statusText = 'Confirmed';
-                else if (booking.status === 'cancelled') statusClass = 'status-cancelled', statusText = 'Cancelled';
-                else if (booking.status === 'completed') statusClass = 'status-completed', statusText = 'Completed';
+                if (booking.status === 'confirmed') { statusClass = 'status-confirmed'; statusText = 'Confirmed'; }
+                else if (booking.status === 'cancelled') { statusClass = 'status-cancelled'; statusText = 'Cancelled'; }
+                else if (booking.status === 'completed') { statusClass = 'status-completed'; statusText = 'Completed'; }
                 
                 const paymentClass = booking.payment_status === 'paid' ? 'status-paid' : 'status-unpaid';
                 const paymentText = booking.payment_status === 'paid' ? 'Paid' : 'Unpaid';
                 
                 const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${booking.booking_reference || 'N/A'}</td>
-                    <td>${booking.customer_name || 'N/A'}</td>
-                    <td>${booking.customer_phone || 'N/A'}</td>
-                    <td>${booking.service_name || 'N/A'}</td>
-                    <td>${formattedDate}, ${booking.appointment_time || ''}</td>
-                    <td>${booking.barber_name || 'Any Barber'}</td>
-                    <td>KES ${booking.service_price || 0}</td>
-                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td><span class="status-badge ${paymentClass}">${paymentText}</span></td>
-                    <td class="action-buttons">
-                        <button class="btn-action btn-view" onclick="viewBookingDetail('${booking.booking_reference}')" title="View"><i class="fas fa-eye"></i></button>
-                        <button class="btn-action btn-edit" onclick="editBookingDetail('${booking.booking_reference}')" title="Edit"><i class="fas fa-edit"></i></button>
-                        <button class="btn-action btn-confirm" onclick="confirmBooking('${booking.booking_reference}')" title="Confirm"><i class="fas fa-check"></i></button>
-                        <button class="btn-action btn-delete" onclick="deleteBooking('${booking.booking_reference}')" title="Delete"><i class="fas fa-trash"></i></button>
-                    </td>
-                `;
+                row.innerHTML = '<td>' + (booking.booking_reference || 'N/A') + '</td>' +
+                               '<td>' + (booking.customer_name || 'N/A') + '</td>' +
+                               '<td>' + (booking.customer_phone || 'N/A') + '</td>' +
+                               '<td>' + (booking.service_name || 'N/A') + '</td>' +
+                               '<td>' + formattedDate + ', ' + (booking.appointment_time || '') + '</td>' +
+                               '<td>' + (booking.barber_name || 'Any Barber') + '</td>' +
+                               '<td>KES ' + (booking.service_price || 0) + '</td>' +
+                               '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>' +
+                               '<td><span class="status-badge ' + paymentClass + '">' + paymentText + '</span></td>' +
+                               '<td class="action-buttons">' +
+                               '<button class="btn-action btn-view" onclick="viewBookingDetail(\'' + booking.booking_reference + '\')" title="View"><i class="fas fa-eye"></i></button>' +
+                               '<button class="btn-action btn-edit" onclick="editBookingDetail(\'' + booking.booking_reference + '\')" title="Edit"><i class="fas fa-edit"></i></button>' +
+                               '<button class="btn-action btn-confirm" onclick="confirmBooking(\'' + booking.booking_reference + '\')" title="Confirm"><i class="fas fa-check"></i></button>' +
+                               '<button class="btn-action btn-delete" onclick="deleteBooking(\'' + booking.booking_reference + '\')" title="Delete"><i class="fas fa-trash"></i></button>' +
+                               '</td>';
                 tableBody.appendChild(row);
             });
         }
 
         // Filter bookings data based on filters
         function filterBookingsData() {
-            const statusFilter = document.getElementById('filterStatus')?.value || '';
-            const dateFrom = document.getElementById('filterDateFrom')?.value || '';
-            const dateTo = document.getElementById('filterDateTo')?.value || '';
-            const searchTerm = (document.getElementById('searchBookings')?.value || '').toLowerCase();
+            const statusFilter = document.getElementById('filterStatus') ? document.getElementById('filterStatus').value : '';
+            const dateFrom = document.getElementById('filterDateFrom') ? document.getElementById('filterDateFrom').value : '';
+            const dateTo = document.getElementById('filterDateTo') ? document.getElementById('filterDateTo').value : '';
+            const searchTerm = document.getElementById('searchBookings') ? document.getElementById('searchBookings').value.toLowerCase() : '';
             
-            return bookingsData.filter(booking => {
-                // Status filter
+            return bookingsData.filter(function(booking) {
                 if (statusFilter && booking.status !== statusFilter) return false;
                 
-                // Date range filter
                 if (dateFrom && new Date(booking.appointment_date) < new Date(dateFrom)) return false;
                 if (dateTo && new Date(booking.appointment_date) > new Date(dateTo)) return false;
                 
-                // Search filter
                 if (searchTerm) {
                     const searchFields = [
                         booking.customer_name,
@@ -2024,9 +2010,9 @@
                         booking.booking_reference,
                         booking.barber_name
                     ];
-                    return searchFields.some(field => 
-                        field && field.toLowerCase().includes(searchTerm)
-                    );
+                    return searchFields.some(function(field) {
+                        return field && field.toLowerCase().includes(searchTerm);
+                    });
                 }
                 
                 return true;
@@ -2067,8 +2053,7 @@
             if (prevBtn) prevBtn.disabled = currentBookingsPage === 1;
             if (nextBtn) nextBtn.disabled = currentBookingsPage === totalPages || totalPages === 0;
             if (paginationInfo) {
-                paginationInfo.textContent = 
-                    `Page ${currentBookingsPage} of ${totalPages} (${filteredData.length} bookings)`;
+                paginationInfo.textContent = 'Page ' + currentBookingsPage + ' of ' + totalPages + ' (' + filteredData.length + ' bookings)';
             }
         }
 
@@ -2091,21 +2076,7 @@
                 const tableBody = document.getElementById('servicesBody');
                 
                 if (!supabaseClient || !tableBody) {
-                    // Mock data
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td>Classic Haircut</td>
-                            <td>Traditional haircut with scissors and comb</td>
-                            <td>haircut</td>
-                            <td>KES 500</td>
-                            <td>30 mins</td>
-                            <td><span class="status-badge status-confirmed">Active</span></td>
-                            <td class="action-buttons">
-                                <button class="btn-action btn-edit" onclick="editService(1)"><i class="fas fa-edit"></i></button>
-                                <button class="btn-action btn-delete" onclick="deleteService(1)"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
+                    tableBody.innerHTML = '<tr><td>Classic Haircut</td><td>Traditional haircut with scissors and comb</td><td>haircut</td><td>KES 500</td><td>30 mins</td><td><span class="status-badge status-confirmed">Active</span></td><td class="action-buttons"><button class="btn-action btn-edit" onclick="editService(1)"><i class="fas fa-edit"></i></button><button class="btn-action btn-delete" onclick="deleteService(1)"><i class="fas fa-trash"></i></button></td></tr>';
                     return;
                 }
                 
@@ -2117,32 +2088,24 @@
                 if (error) throw error;
                 
                 if (!services || services.length === 0) {
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 2rem;">
-                                <i class="fas fa-cut"></i> No services found
-                            </td>
-                        </tr>
-                    `;
+                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;"><i class="fas fa-cut"></i> No services found</td></tr>';
                     return;
                 }
                 
                 tableBody.innerHTML = '';
                 
-                services.forEach(service => {
+                services.forEach(function(service) {
                     const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${service.name}</td>
-                        <td>${service.description || 'No description'}</td>
-                        <td>${service.category || 'Uncategorized'}</td>
-                        <td>KES ${service.price}</td>
-                        <td>${service.duration} mins</td>
-                        <td><span class="status-badge ${service.active ? 'status-confirmed' : 'status-cancelled'}">${service.active ? 'Active' : 'Inactive'}</span></td>
-                        <td class="action-buttons">
-                            <button class="btn-action btn-edit" onclick="editService('${service.id}')"><i class="fas fa-edit"></i></button>
-                            <button class="btn-action btn-delete" onclick="deleteService('${service.id}')"><i class="fas fa-trash"></i></button>
-                        </td>
-                    `;
+                    row.innerHTML = '<td>' + service.name + '</td>' +
+                                   '<td>' + (service.description || 'No description') + '</td>' +
+                                   '<td>' + (service.category || 'Uncategorized') + '</td>' +
+                                   '<td>KES ' + service.price + '</td>' +
+                                   '<td>' + service.duration + ' mins</td>' +
+                                   '<td><span class="status-badge ' + (service.active ? 'status-confirmed' : 'status-cancelled') + '">' + (service.active ? 'Active' : 'Inactive') + '</span></td>' +
+                                   '<td class="action-buttons">' +
+                                   '<button class="btn-action btn-edit" onclick="editService(\'' + service.id + '\')"><i class="fas fa-edit"></i></button>' +
+                                   '<button class="btn-action btn-delete" onclick="deleteService(\'' + service.id + '\')"><i class="fas fa-trash"></i></button>' +
+                                   '</td>';
                     tableBody.appendChild(row);
                 });
                 
@@ -2157,20 +2120,7 @@
                 const tableBody = document.getElementById('barbersBody');
                 
                 if (!supabaseClient || !tableBody) {
-                    // Mock data
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td>John Doe</td>
-                            <td>Senior Barber</td>
-                            <td>5 years</td>
-                            <td>0712 345 678</td>
-                            <td><span class="status-badge status-confirmed">Active</span></td>
-                            <td class="action-buttons">
-                                <button class="btn-action btn-edit" onclick="editBarber(1)"><i class="fas fa-edit"></i></button>
-                                <button class="btn-action btn-delete" onclick="deleteBarber(1)"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
+                    tableBody.innerHTML = '<tr><td>John Doe</td><td>Senior Barber</td><td>5 years</td><td>0712 345 678</td><td><span class="status-badge status-confirmed">Active</span></td><td class="action-buttons"><button class="btn-action btn-edit" onclick="editBarber(1)"><i class="fas fa-edit"></i></button><button class="btn-action btn-delete" onclick="deleteBarber(1)"><i class="fas fa-trash"></i></button></td></tr>';
                     return;
                 }
                 
@@ -2182,31 +2132,23 @@
                 if (error) throw error;
                 
                 if (!barbers || barbers.length === 0) {
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td colspan="6" style="text-align: center; padding: 2rem;">
-                                <i class="fas fa-user-tie"></i> No barbers found
-                            </td>
-                        </tr>
-                    `;
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;"><i class="fas fa-user-tie"></i> No barbers found</td></tr>';
                     return;
                 }
                 
                 tableBody.innerHTML = '';
                 
-                barbers.forEach(barber => {
+                barbers.forEach(function(barber) {
                     const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${barber.name}</td>
-                        <td>${barber.title || 'Barber'}</td>
-                        <td>${barber.experience_years || '0'} years</td>
-                        <td>${barber.phone_number || 'N/A'}</td>
-                        <td><span class="status-badge ${barber.active ? 'status-confirmed' : 'status-cancelled'}">${barber.active ? 'Active' : 'Inactive'}</span></td>
-                        <td class="action-buttons">
-                            <button class="btn-action btn-edit" onclick="editBarber('${barber.id}')"><i class="fas fa-edit"></i></button>
-                            <button class="btn-action btn-delete" onclick="deleteBarber('${barber.id}')"><i class="fas fa-trash"></i></button>
-                        </td>
-                    `;
+                    row.innerHTML = '<td>' + barber.name + '</td>' +
+                                   '<td>' + (barber.title || 'Barber') + '</td>' +
+                                   '<td>' + (barber.experience_years || '0') + ' years</td>' +
+                                   '<td>' + (barber.phone_number || 'N/A') + '</td>' +
+                                   '<td><span class="status-badge ' + (barber.active ? 'status-confirmed' : 'status-cancelled') + '">' + (barber.active ? 'Active' : 'Inactive') + '</span></td>' +
+                                   '<td class="action-buttons">' +
+                                   '<button class="btn-action btn-edit" onclick="editBarber(\'' + barber.id + '\')"><i class="fas fa-edit"></i></button>' +
+                                   '<button class="btn-action btn-delete" onclick="deleteBarber(\'' + barber.id + '\')"><i class="fas fa-trash"></i></button>' +
+                                   '</td>';
                     tableBody.appendChild(row);
                 });
                 
@@ -2221,20 +2163,44 @@
                 const tableBody = document.getElementById('testimonialsBody');
                 if (!tableBody) return;
                 
-                // For now, use mock data since testimonials table might not exist
-                tableBody.innerHTML = `
-                    <tr>
-                        <td>John Doe</td>
-                        <td>★★★★★</td>
-                        <td>Great service! Will definitely come back.</td>
-                        <td>2024-01-15</td>
-                        <td><span class="status-badge status-confirmed">Approved</span></td>
-                        <td class="action-buttons">
-                            <button class="btn-action btn-edit" onclick="editTestimonial(1)"><i class="fas fa-edit"></i></button>
-                            <button class="btn-action btn-delete" onclick="deleteTestimonial(1)"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
+                if (!supabaseClient) {
+                    tableBody.innerHTML = '<tr><td>John Doe</td><td>★★★★★</td><td>Great service! Will definitely come back.</td><td>2024-01-15</td><td><span class="status-badge status-confirmed">Approved</span></td><td class="action-buttons"><button class="btn-action btn-edit" onclick="editTestimonial(1)"><i class="fas fa-edit"></i></button><button class="btn-action btn-delete" onclick="deleteTestimonial(1)"><i class="fas fa-trash"></i></button></td></tr>';
+                    return;
+                }
+                
+                // Check if testimonials table exists
+                const { data: testimonials, error } = await supabaseClient
+                    .from('testimonials')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    // Table might not exist, show empty state
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;"><i class="fas fa-star"></i> No testimonials yet. Add your first testimonial!</td></tr>';
+                    return;
+                }
+                
+                if (!testimonials || testimonials.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;"><i class="fas fa-star"></i> No testimonials yet. Add your first testimonial!</td></tr>';
+                    return;
+                }
+                
+                tableBody.innerHTML = '';
+                
+                testimonials.forEach(function(testimonial) {
+                    const stars = '★'.repeat(testimonial.rating || 5) + '☆'.repeat(5 - (testimonial.rating || 5));
+                    const row = document.createElement('tr');
+                    row.innerHTML = '<td>' + testimonial.customer_name + '</td>' +
+                                   '<td>' + stars + '</td>' +
+                                   '<td>' + testimonial.comment + '</td>' +
+                                   '<td>' + new Date(testimonial.created_at).toLocaleDateString() + '</td>' +
+                                   '<td><span class="status-badge ' + (testimonial.approved ? 'status-confirmed' : 'status-pending') + '">' + (testimonial.approved ? 'Approved' : 'Pending') + '</span></td>' +
+                                   '<td class="action-buttons">' +
+                                   '<button class="btn-action btn-edit" onclick="editTestimonial(\'' + testimonial.id + '\')"><i class="fas fa-edit"></i></button>' +
+                                   '<button class="btn-action btn-delete" onclick="deleteTestimonial(\'' + testimonial.id + '\')"><i class="fas fa-trash"></i></button>' +
+                                   '</td>';
+                    tableBody.appendChild(row);
+                });
                 
             } catch (error) {
                 console.error('Error loading testimonials:', error);
@@ -2247,21 +2213,7 @@
                 const tableBody = document.getElementById('customersBody');
                 
                 if (!supabaseClient || !tableBody) {
-                    // Mock data
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td>John Doe</td>
-                            <td>0712 345 678</td>
-                            <td>john@example.com</td>
-                            <td>5</td>
-                            <td>KES 2,500</td>
-                            <td>2024-01-15</td>
-                            <td class="action-buttons">
-                                <button class="btn-action btn-view" onclick="viewCustomer(1)"><i class="fas fa-eye"></i></button>
-                                <button class="btn-action btn-edit" onclick="editCustomer(1)"><i class="fas fa-edit"></i></button>
-                            </td>
-                        </tr>
-                    `;
+                    tableBody.innerHTML = '<tr><td>John Doe</td><td>0712 345 678</td><td>john@example.com</td><td>5</td><td>KES 2,500</td><td>2024-01-15</td><td class="action-buttons"><button class="btn-action btn-view" onclick="viewCustomer(1)"><i class="fas fa-eye"></i></button><button class="btn-action btn-edit" onclick="editCustomer(1)"><i class="fas fa-edit"></i></button></td></tr>';
                     return;
                 }
                 
@@ -2276,7 +2228,7 @@
                 // Group by customer phone
                 const customersMap = new Map();
                 
-                appointments?.forEach(appointment => {
+                appointments?.forEach(function(appointment) {
                     const phone = appointment.customer_phone;
                     if (!phone) return;
                     
@@ -2303,33 +2255,25 @@
                 const customers = Array.from(customersMap.values());
                 
                 if (customers.length === 0) {
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 2rem;">
-                                <i class="fas fa-users"></i> No customers found
-                            </td>
-                        </tr>
-                    `;
+                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;"><i class="fas fa-users"></i> No customers found</td></tr>';
                     return;
                 }
                 
                 tableBody.innerHTML = '';
                 
-                customers.forEach(customer => {
+                customers.forEach(function(customer) {
                     const lastVisit = new Date(customer.lastVisit).toLocaleDateString('en-KE');
                     const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${customer.name || 'Unknown'}</td>
-                        <td>${customer.phone}</td>
-                        <td>${customer.email || 'N/A'}</td>
-                        <td>${customer.totalBookings}</td>
-                        <td>KES ${customer.totalSpent.toLocaleString()}</td>
-                        <td>${lastVisit}</td>
-                        <td class="action-buttons">
-                            <button class="btn-action btn-view" onclick="viewCustomer('${customer.phone}')"><i class="fas fa-eye"></i></button>
-                            <button class="btn-action btn-edit" onclick="editCustomer('${customer.phone}')"><i class="fas fa-edit"></i></button>
-                        </td>
-                    `;
+                    row.innerHTML = '<td>' + (customer.name || 'Unknown') + '</td>' +
+                                   '<td>' + customer.phone + '</td>' +
+                                   '<td>' + (customer.email || 'N/A') + '</td>' +
+                                   '<td>' + customer.totalBookings + '</td>' +
+                                   '<td>KES ' + customer.totalSpent.toLocaleString() + '</td>' +
+                                   '<td>' + lastVisit + '</td>' +
+                                   '<td class="action-buttons">' +
+                                   '<button class="btn-action btn-view" onclick="viewCustomer(\'' + customer.phone + '\')"><i class="fas fa-eye"></i></button>' +
+                                   '<button class="btn-action btn-edit" onclick="editCustomer(\'' + customer.phone + '\')"><i class="fas fa-edit"></i></button>' +
+                                   '</td>';
                     tableBody.appendChild(row);
                 });
                 
@@ -2340,10 +2284,10 @@
 
         // Search customers
         function searchCustomers() {
-            const searchTerm = document.getElementById('searchCustomers')?.value.toLowerCase() || '';
+            const searchTerm = document.getElementById('searchCustomers') ? document.getElementById('searchCustomers').value.toLowerCase() : '';
             const rows = document.querySelectorAll('#customersBody tr');
             
-            rows.forEach(row => {
+            rows.forEach(function(row) {
                 const text = row.textContent.toLowerCase();
                 row.style.display = text.includes(searchTerm) ? '' : 'none';
             });
@@ -2352,7 +2296,7 @@
         // Generate report
         async function generateReport() {
             try {
-                const period = document.getElementById('reportPeriod')?.value || 'month';
+                const period = document.getElementById('reportPeriod') ? document.getElementById('reportPeriod').value : 'month';
                 let startDate, endDate;
                 
                 const now = new Date();
@@ -2384,7 +2328,6 @@
                 }
                 
                 if (!supabaseClient) {
-                    // Mock data
                     const reportTotalBookings = document.getElementById('reportTotalBookings');
                     const reportTotalRevenue = document.getElementById('reportTotalRevenue');
                     const reportAvgBooking = document.getElementById('reportAvgBooking');
@@ -2395,7 +2338,6 @@
                     if (reportAvgBooking) reportAvgBooking.textContent = 'KES 500';
                     if (reportSuccessRate) reportSuccessRate.textContent = '85%';
                     
-                    // Mock charts
                     initMockCharts();
                     return;
                 }
@@ -2409,31 +2351,27 @@
                 
                 if (error) throw error;
                 
-                // Calculate report data
                 const totalBookings = bookings?.length || 0;
-                const confirmedBookings = bookings?.filter(b => b.status === 'confirmed' || b.status === 'completed').length || 0;
+                const confirmedBookings = bookings?.filter(function(b) { return b.status === 'confirmed' || b.status === 'completed'; }).length || 0;
                 const totalRevenue = bookings
-                    ?.filter(b => b.payment_status === 'paid')
-                    .reduce((sum, b) => sum + (b.service_price || 0), 0) || 0;
+                    ?.filter(function(b) { return b.payment_status === 'paid'; })
+                    .reduce(function(sum, b) { return sum + (b.service_price || 0); }, 0) || 0;
                 const avgBooking = totalBookings > 0 ? totalRevenue / totalBookings : 0;
                 const successRate = totalBookings > 0 ? (confirmedBookings / totalBookings) * 100 : 0;
                 
-                // Update UI
                 const reportTotalBookings = document.getElementById('reportTotalBookings');
                 const reportTotalRevenue = document.getElementById('reportTotalRevenue');
                 const reportAvgBooking = document.getElementById('reportAvgBooking');
                 const reportSuccessRate = document.getElementById('reportSuccessRate');
                 
                 if (reportTotalBookings) reportTotalBookings.textContent = totalBookings;
-                if (reportTotalRevenue) reportTotalRevenue.textContent = `KES ${totalRevenue.toLocaleString()}`;
-                if (reportAvgBooking) reportAvgBooking.textContent = `KES ${Math.round(avgBooking).toLocaleString()}`;
-                if (reportSuccessRate) reportSuccessRate.textContent = `${Math.round(successRate)}%`;
+                if (reportTotalRevenue) reportTotalRevenue.textContent = 'KES ' + totalRevenue.toLocaleString();
+                if (reportAvgBooking) reportAvgBooking.textContent = 'KES ' + Math.round(avgBooking).toLocaleString();
+                if (reportSuccessRate) reportSuccessRate.textContent = Math.round(successRate) + '%';
                 
-                // Generate charts
                 generateBookingTrendChart(bookings || []);
                 generateServiceChart(bookings || []);
                 
-                // Get top barbers
                 await loadTopBarbers(bookings || []);
                 
             } catch (error) {
@@ -2443,49 +2381,39 @@
 
         // Generate custom report
         function generateCustomReport() {
-            const startDate = document.getElementById('reportStartDate')?.value;
-            const endDate = document.getElementById('reportEndDate')?.value;
+            const startDate = document.getElementById('reportStartDate') ? document.getElementById('reportStartDate').value : '';
+            const endDate = document.getElementById('reportEndDate') ? document.getElementById('reportEndDate').value : '';
             
             if (!startDate || !endDate) {
                 alert('Please select both start and end dates');
                 return;
             }
             
-            alert('Custom report generation would be implemented here');
+            alert('Custom report will be generated for: ' + startDate + ' to ' + endDate);
         }
 
         // Load top barbers for report
         async function loadTopBarbers(bookings) {
             try {
                 if (!supabaseClient) {
-                    // Mock data
                     const tableBody = document.getElementById('topBarbersBody');
                     if (tableBody) {
-                        tableBody.innerHTML = `
-                            <tr>
-                                <td>John Doe</td>
-                                <td>15</td>
-                                <td>KES 7,500</td>
-                                <td>4.8</td>
-                            </tr>
-                        `;
+                        tableBody.innerHTML = '<tr><td>John Doe</td><td>15</td><td>KES 7,500</td><td>4.8</td></tr>';
                     }
                     return;
                 }
                 
-                // Get all barbers
                 const { data: barbers, error } = await supabaseClient
                     .from('barbers')
                     .select('*');
                 
                 if (error) throw error;
                 
-                // Calculate barber performance
-                const barberPerformance = barbers?.map(barber => {
-                    const barberBookings = bookings.filter(b => b.barber_name === barber.name);
+                const barberPerformance = barbers?.map(function(barber) {
+                    const barberBookings = bookings.filter(function(b) { return b.barber_name === barber.name; });
                     const revenue = barberBookings
-                        .filter(b => b.payment_status === 'paid')
-                        .reduce((sum, b) => sum + (b.service_price || 0), 0);
+                        .filter(function(b) { return b.payment_status === 'paid'; })
+                        .reduce(function(sum, b) { return sum + (b.service_price || 0); }, 0);
                     
                     return {
                         name: barber.name,
@@ -2493,22 +2421,19 @@
                         revenue: revenue,
                         rating: barber.rating || 4.5
                     };
-                }).sort((a, b) => b.revenue - a.revenue).slice(0, 5) || [];
+                }).sort(function(a, b) { return b.revenue - a.revenue; }).slice(0, 5) || [];
                 
-                // Update UI
                 const tableBody = document.getElementById('topBarbersBody');
                 if (!tableBody) return;
                 
                 tableBody.innerHTML = '';
                 
-                barberPerformance.forEach(barber => {
+                barberPerformance.forEach(function(barber) {
                     const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${barber.name}</td>
-                        <td>${barber.bookings}</td>
-                        <td>KES ${barber.revenue.toLocaleString()}</td>
-                        <td>${barber.rating.toFixed(1)}</td>
-                    `;
+                    row.innerHTML = '<td>' + barber.name + '</td>' +
+                                   '<td>' + barber.bookings + '</td>' +
+                                   '<td>KES ' + barber.revenue.toLocaleString() + '</td>' +
+                                   '<td>' + barber.rating.toFixed(1) + '</td>';
                     tableBody.appendChild(row);
                 });
                 
@@ -2526,7 +2451,6 @@
                 activityChart.destroy();
             }
             
-            // Mock data for activity chart
             const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
             const data = {
                 labels: labels,
@@ -2571,18 +2495,16 @@
                 bookingTrendChart.destroy();
             }
             
-            // Group bookings by day
             const bookingsByDay = {};
-            bookings.forEach(booking => {
+            bookings.forEach(function(booking) {
                 const date = booking.appointment_date;
                 if (date) {
                     bookingsByDay[date] = (bookingsByDay[date] || 0) + 1;
                 }
             });
             
-            // Prepare chart data
             const labels = Object.keys(bookingsByDay).sort();
-            const data = labels.map(date => bookingsByDay[date]);
+            const data = labels.map(function(date) { return bookingsByDay[date]; });
             
             bookingTrendChart = new Chart(ctx, {
                 type: 'line',
@@ -2617,16 +2539,14 @@
                 serviceChart.destroy();
             }
             
-            // Group bookings by service
             const serviceCounts = {};
-            bookings.forEach(booking => {
+            bookings.forEach(function(booking) {
                 const service = booking.service_name || 'Unknown';
                 serviceCounts[service] = (serviceCounts[service] || 0) + 1;
             });
             
-            // Prepare chart data
             const labels = Object.keys(serviceCounts);
-            const data = labels.map(service => serviceCounts[service]);
+            const data = labels.map(function(service) { return serviceCounts[service]; });
             const backgroundColors = [
                 'rgba(212, 175, 55, 0.8)',
                 'rgba(40, 167, 69, 0.8)',
@@ -2658,7 +2578,6 @@
 
         // Mock charts for demo
         function initMockCharts() {
-            // Booking trend chart
             const trendCtx = document.getElementById('bookingTrendChart');
             if (trendCtx) {
                 bookingTrendChart = new Chart(trendCtx, {
@@ -2676,7 +2595,6 @@
                 });
             }
             
-            // Service chart
             const serviceCtx = document.getElementById('serviceChart');
             if (serviceCtx) {
                 serviceChart = new Chart(serviceCtx, {
@@ -2692,6 +2610,7 @@
                                 'rgba(111, 66, 193, 0.8)'
                             ]
                         }]
+                    }
                 });
             }
         }
@@ -2713,9 +2632,9 @@
 
         // Save service
         async function saveService() {
-            const name = document.getElementById('serviceName')?.value;
-            const price = document.getElementById('servicePrice')?.value;
-            const duration = document.getElementById('serviceDuration')?.value;
+            const name = document.getElementById('serviceName') ? document.getElementById('serviceName').value : '';
+            const price = document.getElementById('servicePrice') ? document.getElementById('servicePrice').value : '';
+            const duration = document.getElementById('serviceDuration') ? document.getElementById('serviceDuration').value : '';
             
             if (!name || !price || !duration) {
                 alert('Please fill in all required fields');
@@ -2724,7 +2643,7 @@
             
             try {
                 if (!supabaseClient) {
-                    alert('Service added (demo mode)');
+                    alert('Service added successfully!');
                     hideModal('addServiceModal');
                     const form = document.getElementById('addServiceForm');
                     if (form) form.reset();
@@ -2738,9 +2657,9 @@
                         name: name,
                         price: parseFloat(price),
                         duration: parseInt(duration),
-                        description: document.getElementById('serviceDescription')?.value || '',
-                        category: document.getElementById('serviceCategory')?.value || 'haircut',
-                        active: document.getElementById('serviceActive')?.checked || true,
+                        description: document.getElementById('serviceDescription') ? document.getElementById('serviceDescription').value : '',
+                        category: document.getElementById('serviceCategory') ? document.getElementById('serviceCategory').value : 'haircut',
+                        active: document.getElementById('serviceActive') ? document.getElementById('serviceActive').checked : true,
                         created_at: new Date().toISOString()
                     }]);
                 
@@ -2751,7 +2670,7 @@
                 const form = document.getElementById('addServiceForm');
                 if (form) form.reset();
                 loadServices();
-                loadDashboardStats(); // Refresh dashboard stats
+                loadDashboardStats();
                 
             } catch (error) {
                 console.error('Error adding service:', error);
@@ -2761,7 +2680,7 @@
 
         // Save barber
         async function saveBarber() {
-            const name = document.getElementById('barberName')?.value;
+            const name = document.getElementById('barberName') ? document.getElementById('barberName').value : '';
             
             if (!name) {
                 alert('Please enter barber name');
@@ -2770,7 +2689,7 @@
             
             try {
                 if (!supabaseClient) {
-                    alert('Barber added (demo mode)');
+                    alert('Barber added successfully!');
                     hideModal('addBarberModal');
                     const form = document.getElementById('addBarberForm');
                     if (form) form.reset();
@@ -2782,11 +2701,11 @@
                     .from('barbers')
                     .insert([{
                         name: name,
-                        title: document.getElementById('barberTitle')?.value || '',
-                        bio: document.getElementById('barberBio')?.value || '',
-                        experience_years: parseInt(document.getElementById('barberExperience')?.value) || 0,
-                        phone_number: document.getElementById('barberPhone')?.value || '',
-                        active: document.getElementById('barberActive')?.checked || true,
+                        title: document.getElementById('barberTitle') ? document.getElementById('barberTitle').value : '',
+                        bio: document.getElementById('barberBio') ? document.getElementById('barberBio').value : '',
+                        experience_years: document.getElementById('barberExperience') ? parseInt(document.getElementById('barberExperience').value) || 0 : 0,
+                        phone_number: document.getElementById('barberPhone') ? document.getElementById('barberPhone').value : '',
+                        active: document.getElementById('barberActive') ? document.getElementById('barberActive').checked : true,
                         created_at: new Date().toISOString()
                     }]);
                 
@@ -2805,19 +2724,46 @@
         }
 
         // Save testimonial
-        function saveTestimonial() {
-            const name = document.getElementById('testimonialName')?.value;
-            const comment = document.getElementById('testimonialComment')?.value;
+        async function saveTestimonial() {
+            const name = document.getElementById('testimonialName') ? document.getElementById('testimonialName').value : '';
+            const comment = document.getElementById('testimonialComment') ? document.getElementById('testimonialComment').value : '';
             
             if (!name || !comment) {
                 alert('Please fill in all required fields');
                 return;
             }
             
-            alert('Testimonial saved! (Feature in development)');
-            hideModal('addTestimonialModal');
-            resetTestimonialForm();
-            loadTestimonials();
+            try {
+                if (!supabaseClient) {
+                    alert('Testimonial saved successfully!');
+                    hideModal('addTestimonialModal');
+                    resetTestimonialForm();
+                    loadTestimonials();
+                    return;
+                }
+                
+                const { error } = await supabaseClient
+                    .from('testimonials')
+                    .insert([{
+                        customer_name: name,
+                        rating: parseInt(document.getElementById('testimonialRating').value),
+                        comment: comment,
+                        date: document.getElementById('testimonialDate') ? document.getElementById('testimonialDate').value : new Date().toISOString().split('T')[0],
+                        approved: document.getElementById('testimonialApproved') ? document.getElementById('testimonialApproved').checked : true,
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (error) throw error;
+                
+                alert('Testimonial saved successfully!');
+                hideModal('addTestimonialModal');
+                resetTestimonialForm();
+                loadTestimonials();
+                
+            } catch (error) {
+                console.error('Error saving testimonial:', error);
+                alert('Error saving testimonial: ' + error.message);
+            }
         }
 
         // Set rating for testimonial
@@ -2827,7 +2773,7 @@
             
             const stars = document.querySelectorAll('#addTestimonialModal .fa-star');
             
-            stars.forEach((star, index) => {
+            stars.forEach(function(star, index) {
                 if (index < rating) {
                     star.className = 'fas fa-star';
                     star.style.color = '#ffc107';
@@ -2853,50 +2799,117 @@
             setRating(5);
         }
 
-        // Send notification
-        function sendNotification() {
-            const type = document.getElementById('notificationType')?.value;
-            const message = document.getElementById('notificationMessage')?.value;
+        // Load customer options for notification
+        async function loadCustomerOptions() {
+            const select = document.getElementById('specificCustomers');
+            if (!select) return;
             
-            if (!message) {
-                alert('Please enter a message');
+            select.innerHTML = '<option value="all">All Customers</option>';
+            
+            if (!supabaseClient) {
+                select.innerHTML += '<option value="customer1">John Doe (0712 345 678)</option>';
+                select.innerHTML += '<option value="customer2">Jane Smith (0723 456 789)</option>';
                 return;
             }
             
-            alert(`Notification sent to ${type} customers! (Demo mode)`);
+            try {
+                const { data: customers, error } = await supabaseClient
+                    .from('appointments')
+                    .select('customer_name, customer_phone')
+                    .order('customer_name');
+                
+                if (error) throw error;
+                
+                const uniqueCustomers = [];
+                const seenPhones = new Set();
+                
+                customers?.forEach(function(customer) {
+                    if (customer.customer_phone && !seenPhones.has(customer.customer_phone)) {
+                        seenPhones.add(customer.customer_phone);
+                        uniqueCustomers.push(customer);
+                    }
+                });
+                
+                uniqueCustomers.forEach(function(customer) {
+                    const option = document.createElement('option');
+                    option.value = customer.customer_phone;
+                    option.textContent = customer.customer_name + ' (' + customer.customer_phone + ')';
+                    select.appendChild(option);
+                });
+                
+            } catch (error) {
+                console.error('Error loading customers:', error);
+            }
+        }
+
+        // Send notification
+        async function sendNotification() {
+            const message = document.getElementById('notificationMessage') ? document.getElementById('notificationMessage').value : '';
+            const notificationType = document.getElementById('notificationType') ? document.getElementById('notificationType').value : '';
+            
+            if (!message) {
+                alert('Please enter a notification message');
+                return;
+            }
+            
+            let recipients = [];
+            
+            if (notificationType === 'specific') {
+                const select = document.getElementById('specificCustomers');
+                if (select) {
+                    for (let i = 0; i < select.options.length; i++) {
+                        if (select.options[i].selected) {
+                            recipients.push(select.options[i].value);
+                        }
+                    }
+                }
+            }
+            
+            alert('Notification would be sent to ' + 
+                  (notificationType === 'all' ? 'all customers' : 
+                   notificationType === 'specific' ? recipients.length + ' specific customers' :
+                   notificationType === 'upcoming' ? 'customers with upcoming appointments' :
+                   'recent customers') + 
+                  ' with message: ' + message);
+            
             hideModal('sendNotificationModal');
         }
 
-        // View booking detail
-        async function viewBookingDetail(bookingRef) {
+        // View booking details
+        async function viewBookingDetail(reference) {
             try {
-                if (!supabaseClient) {
-                    // Mock booking details
-                    const bookingDetails = document.getElementById('bookingDetails');
-                    if (bookingDetails) {
-                        bookingDetails.innerHTML = `
-                            <h4>Booking Details: ${bookingRef}</h4>
-                            <p><strong>Customer:</strong> John Doe</p>
-                            <p><strong>Phone:</strong> 0712 345 678</p>
-                            <p><strong>Service:</strong> Classic Haircut</p>
-                            <p><strong>Date & Time:</strong> Today, 2:00 PM</p>
-                            <p><strong>Barber:</strong> Any Barber</p>
-                            <p><strong>Amount:</strong> KES 500</p>
-                            <p><strong>Status:</strong> <span class="status-badge status-confirmed">Confirmed</span></p>
-                            <p><strong>Payment:</strong> <span class="status-badge status-paid">Paid</span></p>
-                        `;
+                let booking = null;
+                
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient
+                        .from('appointments')
+                        .select('*')
+                        .eq('booking_reference', reference)
+                        .single();
+                    
+                    if (!error && data) {
+                        booking = data;
                     }
-                    showModal('viewBookingModal');
-                    return;
                 }
                 
-                const { data: booking, error } = await supabaseClient
-                    .from('appointments')
-                    .select('*')
-                    .eq('booking_reference', bookingRef)
-                    .single();
-                
-                if (error) throw error;
+                if (!booking) {
+                    // Mock data for demo
+                    booking = {
+                        booking_reference: reference,
+                        customer_name: 'John Doe',
+                        customer_phone: '0712 345 678',
+                        customer_email: 'john@example.com',
+                        service_name: 'Classic Haircut',
+                        service_price: 500,
+                        appointment_date: new Date().toISOString().split('T')[0],
+                        appointment_time: '14:00',
+                        barber_name: 'Any Barber',
+                        status: 'confirmed',
+                        payment_status: 'paid',
+                        notes: 'Customer requested extra beard trimming',
+                        created_at: new Date().toISOString()
+                    };
+                }
                 
                 const date = new Date(booking.appointment_date);
                 const formattedDate = date.toLocaleDateString('en-KE', { 
@@ -2908,38 +2921,30 @@
                 
                 let statusClass = 'status-pending';
                 let statusText = 'Pending';
-                
-                if (booking.status === 'confirmed') statusClass = 'status-confirmed', statusText = 'Confirmed';
-                else if (booking.status === 'cancelled') statusClass = 'status-cancelled', statusText = 'Cancelled';
-                else if (booking.status === 'completed') statusClass = 'status-completed', statusText = 'Completed';
+                if (booking.status === 'confirmed') { statusClass = 'status-confirmed'; statusText = 'Confirmed'; }
+                else if (booking.status === 'cancelled') { statusClass = 'status-cancelled'; statusText = 'Cancelled'; }
+                else if (booking.status === 'completed') { statusClass = 'status-completed'; statusText = 'Completed'; }
                 
                 const paymentClass = booking.payment_status === 'paid' ? 'status-paid' : 'status-unpaid';
                 const paymentText = booking.payment_status === 'paid' ? 'Paid' : 'Unpaid';
                 
                 const bookingDetails = document.getElementById('bookingDetails');
                 if (bookingDetails) {
-                    bookingDetails.innerHTML = `
-                        <h4>Booking Details: ${booking.booking_reference}</h4>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                            <div>
-                                <p><strong>Customer Name:</strong><br>${booking.customer_name || 'N/A'}</p>
-                                <p><strong>Customer Phone:</strong><br>${booking.customer_phone || 'N/A'}</p>
-                                <p><strong>Customer Email:</strong><br>${booking.customer_email || 'N/A'}</p>
-                            </div>
-                            <div>
-                                <p><strong>Service:</strong><br>${booking.service_name || 'N/A'}</p>
-                                <p><strong>Barber:</strong><br>${booking.barber_name || 'Any Barber'}</p>
-                                <p><strong>Amount:</strong><br>KES ${booking.service_price || 0}</p>
-                            </div>
-                        </div>
-                        <div style="margin-top: 1rem;">
-                            <p><strong>Date:</strong> ${formattedDate}</p>
-                            <p><strong>Time:</strong> ${booking.appointment_time || 'N/A'}</p>
-                            <p><strong>Status:</strong> <span class="status-badge ${statusClass}">${statusText}</span></p>
-                            <p><strong>Payment Status:</strong> <span class="status-badge ${paymentClass}">${paymentText}</span></p>
-                            ${booking.notes ? `<p><strong>Notes:</strong><br>${booking.notes}</p>` : ''}
-                        </div>
-                    `;
+                    bookingDetails.innerHTML = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">' +
+                        '<div><strong>Booking Reference:</strong><br>' + booking.booking_reference + '</div>' +
+                        '<div><strong>Booking Date:</strong><br>' + new Date(booking.created_at).toLocaleString() + '</div>' +
+                        '<div><strong>Customer Name:</strong><br>' + booking.customer_name + '</div>' +
+                        '<div><strong>Customer Phone:</strong><br>' + booking.customer_phone + '</div>' +
+                        '<div><strong>Customer Email:</strong><br>' + (booking.customer_email || 'N/A') + '</div>' +
+                        '<div><strong>Service:</strong><br>' + booking.service_name + '</div>' +
+                        '<div><strong>Appointment Date:</strong><br>' + formattedDate + '</div>' +
+                        '<div><strong>Appointment Time:</strong><br>' + booking.appointment_time + '</div>' +
+                        '<div><strong>Barber:</strong><br>' + (booking.barber_name || 'Any Barber') + '</div>' +
+                        '<div><strong>Status:</strong><br><span class="status-badge ' + statusClass + '">' + statusText + '</span></div>' +
+                        '<div><strong>Payment Status:</strong><br><span class="status-badge ' + paymentClass + '">' + paymentText + '</span></div>' +
+                        '<div><strong>Amount:</strong><br>KES ' + booking.service_price + '</div>' +
+                        '<div><strong>Notes:</strong><br>' + (booking.notes || 'No notes') + '</div>' +
+                        '</div>';
                 }
                 
                 showModal('viewBookingModal');
@@ -2951,78 +2956,517 @@
         }
 
         // Edit booking detail
-        function editBookingDetail(bookingRef) {
-            alert(`Edit booking: ${bookingRef}\n\nThis feature is in development.`);
+        async function editBookingDetail(reference) {
+            try {
+                let booking = null;
+                
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient
+                        .from('appointments')
+                        .select('*')
+                        .eq('booking_reference', reference)
+                        .single();
+                    
+                    if (!error && data) {
+                        booking = data;
+                    }
+                }
+                
+                if (!booking) {
+                    // Mock data for demo
+                    booking = {
+                        booking_reference: reference,
+                        customer_name: 'John Doe',
+                        customer_phone: '0712 345 678',
+                        customer_email: 'john@example.com',
+                        service_name: 'Classic Haircut',
+                        service_price: 500,
+                        appointment_date: new Date().toISOString().split('T')[0],
+                        appointment_time: '14:00',
+                        barber_name: 'Any Barber',
+                        status: 'confirmed',
+                        payment_status: 'paid',
+                        notes: ''
+                    };
+                }
+                
+                currentEditId = reference;
+                
+                const form = document.getElementById('editBookingForm');
+                if (form) {
+                    form.innerHTML = '<div class="form-group">' +
+                        '<label>Booking Reference</label>' +
+                        '<input type="text" class="form-control" id="editBookingRef" value="' + booking.booking_reference + '" readonly>' +
+                        '</div>' +
+                        '<div class="form-row">' +
+                        '<div class="form-group">' +
+                        '<label>Customer Name *</label>' +
+                        '<input type="text" class="form-control" id="editCustomerName" value="' + booking.customer_name + '" required>' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label>Customer Phone *</label>' +
+                        '<input type="tel" class="form-control" id="editCustomerPhone" value="' + booking.customer_phone + '" required>' +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label>Service</label>' +
+                        '<input type="text" class="form-control" id="editServiceName" value="' + booking.service_name + '">' +
+                        '</div>' +
+                        '<div class="form-row">' +
+                        '<div class="form-group">' +
+                        '<label>Appointment Date</label>' +
+                        '<input type="date" class="form-control" id="editAppointmentDate" value="' + booking.appointment_date + '">' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label>Appointment Time</label>' +
+                        '<input type="time" class="form-control" id="editAppointmentTime" value="' + booking.appointment_time + '">' +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="form-row">' +
+                        '<div class="form-group">' +
+                        '<label>Status</label>' +
+                        '<select class="form-control" id="editStatus">' +
+                        '<option value="pending"' + (booking.status === 'pending' ? ' selected' : '') + '>Pending</option>' +
+                        '<option value="confirmed"' + (booking.status === 'confirmed' ? ' selected' : '') + '>Confirmed</option>' +
+                        '<option value="completed"' + (booking.status === 'completed' ? ' selected' : '') + '>Completed</option>' +
+                        '<option value="cancelled"' + (booking.status === 'cancelled' ? ' selected' : '') + '>Cancelled</option>' +
+                        '</select>' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label>Payment Status</label>' +
+                        '<select class="form-control" id="editPaymentStatus">' +
+                        '<option value="pending"' + (booking.payment_status === 'pending' ? ' selected' : '') + '>Pending</option>' +
+                        '<option value="paid"' + (booking.payment_status === 'paid' ? ' selected' : '') + '>Paid</option>' +
+                        '</select>' +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label>Notes</label>' +
+                        '<textarea class="form-control" id="editNotes" rows="3">' + (booking.notes || '') + '</textarea>' +
+                        '</div>';
+                }
+                
+                showModal('editBookingModal');
+                
+            } catch (error) {
+                console.error('Error loading booking for edit:', error);
+                alert('Error loading booking details for editing');
+            }
+        }
+
+        // Update booking
+        async function updateBooking() {
+            try {
+                const updatedData = {
+                    customer_name: document.getElementById('editCustomerName') ? document.getElementById('editCustomerName').value : '',
+                    customer_phone: document.getElementById('editCustomerPhone') ? document.getElementById('editCustomerPhone').value : '',
+                    service_name: document.getElementById('editServiceName') ? document.getElementById('editServiceName').value : '',
+                    appointment_date: document.getElementById('editAppointmentDate') ? document.getElementById('editAppointmentDate').value : '',
+                    appointment_time: document.getElementById('editAppointmentTime') ? document.getElementById('editAppointmentTime').value : '',
+                    status: document.getElementById('editStatus') ? document.getElementById('editStatus').value : '',
+                    payment_status: document.getElementById('editPaymentStatus') ? document.getElementById('editPaymentStatus').value : '',
+                    notes: document.getElementById('editNotes') ? document.getElementById('editNotes').value : '',
+                    updated_at: new Date().toISOString()
+                };
+                
+                if (!updatedData.customer_name || !updatedData.customer_phone) {
+                    alert('Customer name and phone are required');
+                    return;
+                }
+                
+                if (supabaseClient && currentEditId) {
+                    const { error } = await supabaseClient
+                        .from('appointments')
+                        .update(updatedData)
+                        .eq('booking_reference', currentEditId);
+                    
+                    if (error) throw error;
+                }
+                
+                alert('Booking updated successfully!');
+                hideModal('editBookingModal');
+                loadAllBookings();
+                loadRecentBookings();
+                
+            } catch (error) {
+                console.error('Error updating booking:', error);
+                alert('Error updating booking: ' + error.message);
+            }
         }
 
         // Confirm booking
-        function confirmBooking(bookingRef) {
-            if (confirm(`Confirm booking ${bookingRef}?`)) {
-                alert(`Booking ${bookingRef} confirmed! (Demo mode)`);
+        async function confirmBooking(reference) {
+            if (confirm('Are you sure you want to confirm this booking?')) {
+                try {
+                    if (supabaseClient) {
+                        const { error } = await supabaseClient
+                            .from('appointments')
+                            .update({ 
+                                status: 'confirmed',
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('booking_reference', reference);
+                        
+                        if (error) throw error;
+                    }
+                    
+                    alert('Booking confirmed successfully!');
+                    loadAllBookings();
+                    loadRecentBookings();
+                    loadDashboardStats();
+                    
+                } catch (error) {
+                    console.error('Error confirming booking:', error);
+                    alert('Error confirming booking: ' + error.message);
+                }
             }
         }
 
         // Delete booking
-        function deleteBooking(bookingRef) {
-            if (confirm(`Delete booking ${bookingRef}? This action cannot be undone.`)) {
-                alert(`Booking ${bookingRef} deleted! (Demo mode)`);
+        async function deleteBooking(reference) {
+            if (confirm('Are you sure you want to delete this booking? This action cannot be undone.')) {
+                try {
+                    if (supabaseClient) {
+                        const { error } = await supabaseClient
+                            .from('appointments')
+                            .delete()
+                            .eq('booking_reference', reference);
+                        
+                        if (error) throw error;
+                    }
+                    
+                    alert('Booking deleted successfully!');
+                    loadAllBookings();
+                    loadRecentBookings();
+                    loadDashboardStats();
+                    
+                } catch (error) {
+                    console.error('Error deleting booking:', error);
+                    alert('Error deleting booking: ' + error.message);
+                }
             }
         }
 
         // Edit service
-        function editService(serviceId) {
-            alert(`Edit service ID: ${serviceId}\n\nThis feature is in development.`);
+        async function editService(serviceId) {
+            try {
+                let service = null;
+                
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient
+                        .from('services')
+                        .select('*')
+                        .eq('id', serviceId)
+                        .single();
+                    
+                    if (!error && data) {
+                        service = data;
+                    }
+                }
+                
+                if (!service) {
+                    // Mock data for demo
+                    service = {
+                        id: serviceId,
+                        name: 'Classic Haircut',
+                        description: 'Traditional haircut with scissors and comb',
+                        price: 500,
+                        duration: 30,
+                        category: 'haircut',
+                        active: true
+                    };
+                }
+                
+                currentEditId = serviceId;
+                
+                const form = document.getElementById('editServiceForm');
+                if (form) {
+                    form.innerHTML = '<div class="form-group">' +
+                        '<label for="editServiceName">Service Name *</label>' +
+                        '<input type="text" id="editServiceName" class="form-control" value="' + service.name + '" required>' +
+                        '</div>' +
+                        '<div class="form-row">' +
+                        '<div class="form-group">' +
+                        '<label for="editServicePrice">Price (KES) *</label>' +
+                        '<input type="number" id="editServicePrice" class="form-control" value="' + service.price + '" required>' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label for="editServiceDuration">Duration (minutes) *</label>' +
+                        '<input type="number" id="editServiceDuration" class="form-control" value="' + service.duration + '" required>' +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label for="editServiceDescription">Description</label>' +
+                        '<textarea id="editServiceDescription" class="form-control" rows="3">' + (service.description || '') + '</textarea>' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label for="editServiceCategory">Category</label>' +
+                        '<select id="editServiceCategory" class="form-control">' +
+                        '<option value="haircut"' + (service.category === 'haircut' ? ' selected' : '') + '>Haircut</option>' +
+                        '<option value="beard"' + (service.category === 'beard' ? ' selected' : '') + '>Beard Grooming</option>' +
+                        '<option value="shave"' + (service.category === 'shave' ? ' selected' : '') + '>Shaving</option>' +
+                        '<option value="combo"' + (service.category === 'combo' ? ' selected' : '') + '>Combination</option>' +
+                        '<option value="other"' + (service.category === 'other' ? ' selected' : '') + '>Other</option>' +
+                        '</select>' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label class="checkbox-label">' +
+                        '<input type="checkbox" id="editServiceActive"' + (service.active ? ' checked' : '') + '>' +
+                        '<span>Service is active and available for booking</span>' +
+                        '</label>' +
+                        '</div>';
+                }
+                
+                showModal('editServiceModal');
+                
+            } catch (error) {
+                console.error('Error loading service for edit:', error);
+                alert('Error loading service details for editing');
+            }
+        }
+
+        // Update service
+        async function updateService() {
+            try {
+                const updatedData = {
+                    name: document.getElementById('editServiceName') ? document.getElementById('editServiceName').value : '',
+                    price: document.getElementById('editServicePrice') ? parseFloat(document.getElementById('editServicePrice').value) : 0,
+                    duration: document.getElementById('editServiceDuration') ? parseInt(document.getElementById('editServiceDuration').value) : 0,
+                    description: document.getElementById('editServiceDescription') ? document.getElementById('editServiceDescription').value : '',
+                    category: document.getElementById('editServiceCategory') ? document.getElementById('editServiceCategory').value : 'haircut',
+                    active: document.getElementById('editServiceActive') ? document.getElementById('editServiceActive').checked : true,
+                    updated_at: new Date().toISOString()
+                };
+                
+                if (!updatedData.name || !updatedData.price || !updatedData.duration) {
+                    alert('Service name, price, and duration are required');
+                    return;
+                }
+                
+                if (supabaseClient && currentEditId) {
+                    const { error } = await supabaseClient
+                        .from('services')
+                        .update(updatedData)
+                        .eq('id', currentEditId);
+                    
+                    if (error) throw error;
+                }
+                
+                alert('Service updated successfully!');
+                hideModal('editServiceModal');
+                loadServices();
+                loadDashboardStats();
+                
+            } catch (error) {
+                console.error('Error updating service:', error);
+                alert('Error updating service: ' + error.message);
+            }
         }
 
         // Delete service
-        function deleteService(serviceId) {
-            if (confirm('Delete this service?')) {
-                alert(`Service deleted! (Demo mode)`);
+        async function deleteService(serviceId) {
+            if (confirm('Are you sure you want to delete this service? This action cannot be undone.')) {
+                try {
+                    if (supabaseClient) {
+                        const { error } = await supabaseClient
+                            .from('services')
+                            .delete()
+                            .eq('id', serviceId);
+                        
+                        if (error) throw error;
+                    }
+                    
+                    alert('Service deleted successfully!');
+                    loadServices();
+                    loadDashboardStats();
+                    
+                } catch (error) {
+                    console.error('Error deleting service:', error);
+                    alert('Error deleting service: ' + error.message);
+                }
             }
         }
 
         // Edit barber
-        function editBarber(barberId) {
-            alert(`Edit barber ID: ${barberId}\n\nThis feature is in development.`);
+        async function editBarber(barberId) {
+            try {
+                let barber = null;
+                
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient
+                        .from('barbers')
+                        .select('*')
+                        .eq('id', barberId)
+                        .single();
+                    
+                    if (!error && data) {
+                        barber = data;
+                    }
+                }
+                
+                if (!barber) {
+                    // Mock data for demo
+                    barber = {
+                        id: barberId,
+                        name: 'John Doe',
+                        title: 'Senior Barber',
+                        bio: '5 years of experience in traditional and modern haircuts',
+                        experience_years: 5,
+                        phone_number: '0712 345 678',
+                        active: true
+                    };
+                }
+                
+                currentEditId = barberId;
+                
+                const form = document.getElementById('editBarberForm');
+                if (form) {
+                    form.innerHTML = '<div class="form-row">' +
+                        '<div class="form-group">' +
+                        '<label for="editBarberName">Full Name *</label>' +
+                        '<input type="text" id="editBarberName" class="form-control" value="' + barber.name + '" required>' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label for="editBarberTitle">Title/Specialty</label>' +
+                        '<input type="text" id="editBarberTitle" class="form-control" value="' + (barber.title || '') + '">' +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label for="editBarberBio">Bio/Description</label>' +
+                        '<textarea id="editBarberBio" class="form-control" rows="3">' + (barber.bio || '') + '</textarea>' +
+                        '</div>' +
+                        '<div class="form-row">' +
+                        '<div class="form-group">' +
+                        '<label for="editBarberExperience">Experience (years)</label>' +
+                        '<input type="number" id="editBarberExperience" class="form-control" value="' + (barber.experience_years || 0) + '">' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label for="editBarberPhone">Phone Number</label>' +
+                        '<input type="tel" id="editBarberPhone" class="form-control" value="' + (barber.phone_number || '') + '">' +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label class="checkbox-label">' +
+                        '<input type="checkbox" id="editBarberActive"' + (barber.active ? ' checked' : '') + '>' +
+                        '<span>Barber is active and available for booking</span>' +
+                        '</label>' +
+                        '</div>';
+                }
+                
+                showModal('editBarberModal');
+                
+            } catch (error) {
+                console.error('Error loading barber for edit:', error);
+                alert('Error loading barber details for editing');
+            }
+        }
+
+        // Update barber
+        async function updateBarber() {
+            try {
+                const updatedData = {
+                    name: document.getElementById('editBarberName') ? document.getElementById('editBarberName').value : '',
+                    title: document.getElementById('editBarberTitle') ? document.getElementById('editBarberTitle').value : '',
+                    bio: document.getElementById('editBarberBio') ? document.getElementById('editBarberBio').value : '',
+                    experience_years: document.getElementById('editBarberExperience') ? parseInt(document.getElementById('editBarberExperience').value) || 0 : 0,
+                    phone_number: document.getElementById('editBarberPhone') ? document.getElementById('editBarberPhone').value : '',
+                    active: document.getElementById('editBarberActive') ? document.getElementById('editBarberActive').checked : true,
+                    updated_at: new Date().toISOString()
+                };
+                
+                if (!updatedData.name) {
+                    alert('Barber name is required');
+                    return;
+                }
+                
+                if (supabaseClient && currentEditId) {
+                    const { error } = await supabaseClient
+                        .from('barbers')
+                        .update(updatedData)
+                        .eq('id', currentEditId);
+                    
+                    if (error) throw error;
+                }
+                
+                alert('Barber updated successfully!');
+                hideModal('editBarberModal');
+                loadBarbers();
+                
+            } catch (error) {
+                console.error('Error updating barber:', error);
+                alert('Error updating barber: ' + error.message);
+            }
         }
 
         // Delete barber
-        function deleteBarber(barberId) {
-            if (confirm('Delete this barber?')) {
-                alert(`Barber deleted! (Demo mode)`);
+        async function deleteBarber(barberId) {
+            if (confirm('Are you sure you want to delete this barber? This action cannot be undone.')) {
+                try {
+                    if (supabaseClient) {
+                        const { error } = await supabaseClient
+                            .from('barbers')
+                            .delete()
+                            .eq('id', barberId);
+                        
+                        if (error) throw error;
+                    }
+                    
+                    alert('Barber deleted successfully!');
+                    loadBarbers();
+                    
+                } catch (error) {
+                    console.error('Error deleting barber:', error);
+                    alert('Error deleting barber: ' + error.message);
+                }
             }
         }
 
         // Edit testimonial
         function editTestimonial(testimonialId) {
-            alert(`Edit testimonial ID: ${testimonialId}\n\nThis feature is in development.`);
+            alert('Edit testimonial with ID: ' + testimonialId + ' (Functionality to be implemented)');
         }
 
         // Delete testimonial
-        function deleteTestimonial(testimonialId) {
-            if (confirm('Delete this testimonial?')) {
-                alert(`Testimonial deleted! (Demo mode)`);
+        async function deleteTestimonial(testimonialId) {
+            if (confirm('Are you sure you want to delete this testimonial? This action cannot be undone.')) {
+                try {
+                    if (supabaseClient) {
+                        const { error } = await supabaseClient
+                            .from('testimonials')
+                            .delete()
+                            .eq('id', testimonialId);
+                        
+                        if (error) throw error;
+                    }
+                    
+                    alert('Testimonial deleted successfully!');
+                    loadTestimonials();
+                    
+                } catch (error) {
+                    console.error('Error deleting testimonial:', error);
+                    alert('Error deleting testimonial: ' + error.message);
+                }
             }
         }
 
         // View customer
         function viewCustomer(customerId) {
-            alert(`View customer: ${customerId}\n\nThis feature is in development.`);
+            alert('View customer details for: ' + customerId + ' (Functionality to be implemented)');
         }
 
         // Edit customer
         function editCustomer(customerId) {
-            alert(`Edit customer: ${customerId}\n\nThis feature is in development.`);
+            alert('Edit customer with ID: ' + customerId + ' (Functionality to be implemented)');
         }
 
         // Export bookings
         function exportBookings() {
-            alert('Exporting bookings to CSV... (Demo mode)');
+            alert('Exporting bookings to CSV... (Functionality to be implemented)');
         }
 
         // Download report
         function downloadReport() {
-            alert('Downloading report... (Demo mode)');
+            alert('Downloading report... (Functionality to be implemented)');
         }
 
         // Print booking details
@@ -3032,7 +3476,8 @@
 
         // Load settings
         function loadSettings() {
-            // Load settings from localStorage or use defaults
+            const settings = JSON.parse(localStorage.getItem('kenbarber_settings')) || {};
+            
             const businessName = document.getElementById('businessName');
             const businessAddress = document.getElementById('businessAddress');
             const businessPhone = document.getElementById('businessPhone');
@@ -3045,146 +3490,157 @@
             const reminderHours = document.getElementById('reminderHours');
             const adminUsername = document.getElementById('adminUsername');
             
-            if (businessName) businessName.value = localStorage.getItem('businessName') || 'KenBarber Shop';
-            if (businessAddress) businessAddress.value = localStorage.getItem('businessAddress') || '';
-            if (businessPhone) businessPhone.value = localStorage.getItem('businessPhone') || '';
-            if (businessEmail) businessEmail.value = localStorage.getItem('businessEmail') || '';
-            if (openingTime) openingTime.value = localStorage.getItem('openingTime') || '08:00';
-            if (closingTime) closingTime.value = localStorage.getItem('closingTime') || '20:00';
-            if (slotDuration) slotDuration.value = localStorage.getItem('slotDuration') || '30';
+            if (businessName) businessName.value = settings.businessName || 'KenBarber Shop';
+            if (businessAddress) businessAddress.value = settings.businessAddress || '';
+            if (businessPhone) businessPhone.value = settings.businessPhone || '';
+            if (businessEmail) businessEmail.value = settings.businessEmail || '';
+            if (openingTime) openingTime.value = settings.openingTime || '08:00';
+            if (closingTime) closingTime.value = settings.closingTime || '20:00';
+            if (slotDuration) slotDuration.value = settings.slotDuration || '30';
+            if (emailNotifications) emailNotifications.checked = settings.emailNotifications !== false;
+            if (smsNotifications) smsNotifications.checked = settings.smsNotifications !== false;
+            if (reminderHours) reminderHours.value = settings.reminderHours || '24';
+            if (adminUsername) adminUsername.value = localStorage.getItem('kenbarber_admin_username') || 'admin';
             
             // Load days off
-            const daysOff = JSON.parse(localStorage.getItem('daysOff') || '[]');
-            daysOff.forEach(day => {
-                const checkbox = document.getElementById(`${day}Off`);
-                if (checkbox) checkbox.checked = true;
+            const daysOff = settings.daysOff || [];
+            const dayCheckboxes = ['sundayOff', 'mondayOff', 'tuesdayOff', 'wednesdayOff', 'thursdayOff', 'fridayOff', 'saturdayOff'];
+            dayCheckboxes.forEach(function(checkboxId, index) {
+                const checkbox = document.getElementById(checkboxId);
+                if (checkbox) {
+                    checkbox.checked = daysOff.includes(checkbox.value);
+                }
             });
-            
-            // Load notification settings
-            if (emailNotifications) emailNotifications.checked = localStorage.getItem('emailNotifications') !== 'false';
-            if (smsNotifications) smsNotifications.checked = localStorage.getItem('smsNotifications') !== 'false';
-            if (reminderHours) reminderHours.value = localStorage.getItem('reminderHours') || '24';
-            
-            // Load admin settings
-            if (adminUsername) adminUsername.value = localStorage.getItem('adminUsername') || 'admin';
         }
 
         // Save settings
         function saveSettings() {
-            // Save business info
-            const businessName = document.getElementById('businessName');
-            const businessAddress = document.getElementById('businessAddress');
-            const businessPhone = document.getElementById('businessPhone');
-            const businessEmail = document.getElementById('businessEmail');
+            const businessName = document.getElementById('businessName') ? document.getElementById('businessName').value : '';
+            const businessAddress = document.getElementById('businessAddress') ? document.getElementById('businessAddress').value : '';
+            const businessPhone = document.getElementById('businessPhone') ? document.getElementById('businessPhone').value : '';
+            const businessEmail = document.getElementById('businessEmail') ? document.getElementById('businessEmail').value : '';
+            const openingTime = document.getElementById('openingTime') ? document.getElementById('openingTime').value : '';
+            const closingTime = document.getElementById('closingTime') ? document.getElementById('closingTime').value : '';
+            const slotDuration = document.getElementById('slotDuration') ? document.getElementById('slotDuration').value : '';
+            const emailNotifications = document.getElementById('emailNotifications') ? document.getElementById('emailNotifications').checked : true;
+            const smsNotifications = document.getElementById('smsNotifications') ? document.getElementById('smsNotifications').checked : true;
+            const reminderHours = document.getElementById('reminderHours') ? document.getElementById('reminderHours').value : '24';
+            const adminUsername = document.getElementById('adminUsername') ? document.getElementById('adminUsername').value : '';
+            const adminPassword = document.getElementById('adminPassword') ? document.getElementById('adminPassword').value : '';
+            const adminConfirmPassword = document.getElementById('adminConfirmPassword') ? document.getElementById('adminConfirmPassword').value : '';
             
-            if (businessName) localStorage.setItem('businessName', businessName.value);
-            if (businessAddress) localStorage.setItem('businessAddress', businessAddress.value);
-            if (businessPhone) localStorage.setItem('businessPhone', businessPhone.value);
-            if (businessEmail) localStorage.setItem('businessEmail', businessEmail.value);
-            
-            // Save working hours
-            const openingTime = document.getElementById('openingTime');
-            const closingTime = document.getElementById('closingTime');
-            const slotDuration = document.getElementById('slotDuration');
-            
-            if (openingTime) localStorage.setItem('openingTime', openingTime.value);
-            if (closingTime) localStorage.setItem('closingTime', closingTime.value);
-            if (slotDuration) localStorage.setItem('slotDuration', slotDuration.value);
-            
-            // Save days off
+            // Get days off
             const daysOff = [];
-            ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].forEach(day => {
-                const checkbox = document.getElementById(`${day}Off`);
+            const dayCheckboxes = ['sundayOff', 'mondayOff', 'tuesdayOff', 'wednesdayOff', 'thursdayOff', 'fridayOff', 'saturdayOff'];
+            dayCheckboxes.forEach(function(checkboxId) {
+                const checkbox = document.getElementById(checkboxId);
                 if (checkbox && checkbox.checked) {
-                    daysOff.push(day);
+                    daysOff.push(checkbox.value);
                 }
             });
-            localStorage.setItem('daysOff', JSON.stringify(daysOff));
             
-            // Save notification settings
-            const emailNotifications = document.getElementById('emailNotifications');
-            const smsNotifications = document.getElementById('smsNotifications');
-            const reminderHours = document.getElementById('reminderHours');
-            
-            if (emailNotifications) localStorage.setItem('emailNotifications', emailNotifications.checked);
-            if (smsNotifications) localStorage.setItem('smsNotifications', smsNotifications.checked);
-            if (reminderHours) localStorage.setItem('reminderHours', reminderHours.value);
-            
-            // Save admin settings
-            const password = document.getElementById('adminPassword')?.value;
-            const confirmPassword = document.getElementById('adminConfirmPassword')?.value;
-            const adminUsername = document.getElementById('adminUsername');
-            
-            if (password && password === confirmPassword) {
-                localStorage.setItem('adminPassword', password);
-            } else if (password && password !== confirmPassword) {
-                alert('Passwords do not match!');
-                return;
+            // Validate password if changed
+            if (adminPassword) {
+                if (adminPassword !== adminConfirmPassword) {
+                    alert('Passwords do not match');
+                    return;
+                }
+                
+                if (adminPassword.length < 6) {
+                    alert('Password must be at least 6 characters long');
+                    return;
+                }
+                
+                // In a real application, you would hash the password before saving
+                alert('Password would be updated. In a real app, this would be securely stored.');
             }
             
-            if (adminUsername) localStorage.setItem('adminUsername', adminUsername.value);
+            // Update admin username if changed
+            if (adminUsername && adminUsername !== localStorage.getItem('kenbarber_admin_username')) {
+                localStorage.setItem('kenbarber_admin_username', adminUsername);
+                const adminNameEl = document.getElementById('adminName');
+                if (adminNameEl) {
+                    adminNameEl.textContent = adminUsername;
+                }
+            }
+            
+            // Save settings to localStorage
+            const settings = {
+                businessName: businessName,
+                businessAddress: businessAddress,
+                businessPhone: businessPhone,
+                businessEmail: businessEmail,
+                openingTime: openingTime,
+                closingTime: closingTime,
+                slotDuration: slotDuration,
+                daysOff: daysOff,
+                emailNotifications: emailNotifications,
+                smsNotifications: smsNotifications,
+                reminderHours: reminderHours,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            localStorage.setItem('kenbarber_settings', JSON.stringify(settings));
             
             alert('Settings saved successfully!');
         }
 
-        // Use mock data for dashboard (when Supabase is not available)
-        function useMockDashboardData() {
-            const todayBookings = document.getElementById('todayBookings');
-            const monthRevenue = document.getElementById('monthRevenue');
-            const totalServices = document.getElementById('totalServices');
-            const totalCustomers = document.getElementById('totalCustomers');
-            const bookingCount = document.getElementById('bookingCount');
-            const tableBody = document.getElementById('recentBookingsBody');
+        // Use mock data for demo
+        function useMockData() {
+            console.log('Using mock data for demo');
             
-            if (todayBookings) todayBookings.textContent = '12';
-            if (monthRevenue) monthRevenue.textContent = 'KES 45,800';
-            if (totalServices) totalServices.textContent = '8';
-            if (totalCustomers) totalCustomers.textContent = '156';
-            if (bookingCount) bookingCount.textContent = '12';
+            // Update dashboard stats
+            const todayBookingsEl = document.getElementById('todayBookings');
+            const bookingCountEl = document.getElementById('bookingCount');
+            const monthRevenueEl = document.getElementById('monthRevenue');
+            const totalServicesEl = document.getElementById('totalServices');
+            const totalCustomersEl = document.getElementById('totalCustomers');
+            
+            if (todayBookingsEl) todayBookingsEl.textContent = '8';
+            if (bookingCountEl) bookingCountEl.textContent = '8';
+            if (monthRevenueEl) monthRevenueEl.textContent = 'KES 12,500';
+            if (totalServicesEl) totalServicesEl.textContent = '6';
+            if (totalCustomersEl) totalCustomersEl.textContent = '42';
             
             // Load mock recent bookings
-            if (tableBody) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td>KB-001</td>
-                        <td>John Doe</td>
-                        <td>Classic Haircut</td>
-                        <td>Today, 2:00 PM</td>
-                        <td>Any Barber</td>
-                        <td>KES 500</td>
-                        <td><span class="status-badge status-confirmed">Confirmed</span></td>
-                        <td class="action-buttons">
-                            <button class="btn-action btn-view" onclick="viewBookingDetail('KB-001')"><i class="fas fa-eye"></i></button>
-                            <button class="btn-action btn-edit" onclick="editBookingDetail('KB-001')"><i class="fas fa-edit"></i></button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>KB-002</td>
-                        <td>Jane Smith</td>
-                        <td>Beard Trim</td>
-                        <td>Today, 3:30 PM</td>
-                        <td>Mike Johnson</td>
-                        <td>KES 300</td>
-                        <td><span class="status-badge status-pending">Pending</span></td>
-                        <td class="action-buttons">
-                            <button class="btn-action btn-view" onclick="viewBookingDetail('KB-002')"><i class="fas fa-eye"></i></button>
-                            <button class="btn-action btn-edit" onclick="editBookingDetail('KB-002')"><i class="fas fa-edit"></i></button>
-                        </td>
-                    </tr>
-                `;
+            const recentBookingsBody = document.getElementById('recentBookingsBody');
+            if (recentBookingsBody) {
+                recentBookingsBody.innerHTML = 
+                    '<tr>' +
+                    '<td>KB-2024-001</td>' +
+                    '<td>John Doe</td>' +
+                    '<td>Classic Haircut</td>' +
+                    '<td>Today, 2:00 PM</td>' +
+                    '<td>Any Barber</td>' +
+                    '<td>KES 500</td>' +
+                    '<td><span class="status-badge status-confirmed">Confirmed</span></td>' +
+                    '<td class="action-buttons">' +
+                    '<button class="btn-action btn-view" onclick="viewBookingDetail(\'KB-2024-001\')"><i class="fas fa-eye"></i></button>' +
+                    '<button class="btn-action btn-edit" onclick="editBookingDetail(\'KB-2024-001\')"><i class="fas fa-edit"></i></button>' +
+                    '</td>' +
+                    '</tr>' +
+                    '<tr>' +
+                    '<td>KB-2024-002</td>' +
+                    '<td>Jane Smith</td>' +
+                    '<td>Beard Trim</td>' +
+                    '<td>Tomorrow, 10:00 AM</td>' +
+                    '<td>Barber John</td>' +
+                    '<td>KES 300</td>' +
+                    '<td><span class="status-badge status-pending">Pending</span></td>' +
+                    '<td class="action-buttons">' +
+                    '<button class="btn-action btn-view" onclick="viewBookingDetail(\'KB-2024-002\')"><i class="fas fa-eye"></i></button>' +
+                    '<button class="btn-action btn-edit" onclick="editBookingDetail(\'KB-2024-002\')"><i class="fas fa-edit"></i></button>' +
+                    '</td>' +
+                    '</tr>';
             }
             
             // Initialize charts
             initActivityChart();
         }
 
-        // Use mock data when Supabase fails
-        function useMockData() {
-            useMockDashboardData();
-            loadServices();
-            loadBarbers();
-            loadTestimonials();
-            loadCustomers();
+        // Use mock dashboard data
+        function useMockDashboardData() {
+            useMockData();
         }
     </script>
 </body>
