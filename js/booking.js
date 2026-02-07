@@ -1,4 +1,4 @@
-// Global variables
+// ===== Global variables =====
 let selectedServicePrice = 0;
 let selectedServiceName = '';
 let selectedServiceId = '';
@@ -66,28 +66,20 @@ function initializeFormElements() {
             }
         });
     }
-   const dateInput = document.getElementById('appointmentDate');
-if (dateInput) {
-    const today = new Date(); // <-- Change "tomorrow" to "today"
-    const formatDate = (date) => date.toISOString().split('T')[0];
     
-    dateInput.min = formatDate(today); // <-- Allow today's date
-    const maxDate = new Date();
-    maxDate.setMonth(maxDate.getMonth() + 3);
-    dateInput.max = formatDate(maxDate);
-    dateInput.value = formatDate(today); // <-- Default to today
-    
-    dateInput.addEventListener('input', function() {
-        const selectedDate = new Date(this.value);
-        const dayOfWeek = selectedDate.getDay();
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-            this.value = '';
-            showBookingError('We are closed on weekends. Please select a weekday (Monday-Friday).', 'warning');
-        }
-    });
-      }
+    const dateInput = document.getElementById('appointmentDate');
+    if (dateInput) {
+        const today = new Date();
+        const formatDate = (date) => date.toISOString().split('T')[0];
+        
+        dateInput.min = formatDate(today);
+        const maxDate = new Date();
+        maxDate.setMonth(maxDate.getMonth() + 3);
+        dateInput.max = formatDate(maxDate);
+        dateInput.value = formatDate(today);
+    }
 }
-    
+
 function updatePriceDisplay() {
     const priceDisplay = document.getElementById('priceDisplay');
     const totalPrice = document.getElementById('totalPrice');
@@ -113,14 +105,6 @@ function initializeDatePicker() {
         const selectedDate = this.value;
         if (!selectedDate) {
             timeSelect.innerHTML = '<option value="">Select a date first</option>';
-            timeSelect.disabled = true;
-            return;
-        }
-        
-        const dateObj = new Date(selectedDate);
-        const dayOfWeek = dateObj.getDay();
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-            timeSelect.innerHTML = '<option value="">Closed on weekends</option>';
             timeSelect.disabled = true;
             return;
         }
@@ -153,14 +137,17 @@ async function loadAvailableTimeSlots(date) {
     window.loadingTimeSlots = true;
     try {
         console.log('Loading time slots for:', date);
+        
+        // Open daily - same hours every day
         const businessHours = { start: 8, end: 19 };
         const dateObj = new Date(date);
-        const isSunday = dateObj.getDay() === 0;
+        const dayOfWeek = dateObj.getDay();
         
-        if (isSunday) {
-            businessHours.start = 10;
-            businessHours.end = 16;
-        }
+        // Optional: Different hours for weekends if needed
+        // if (dayOfWeek === 0 || dayOfWeek === 6) {
+        //     businessHours.start = 10;
+        //     businessHours.end = 18;
+        // }
         
         let existingAppointments = [];
         
@@ -565,7 +552,6 @@ async function initiateSTKPushPayment(bookingData) {
         
         console.log('Calling REAL Lipana API:', stkRequest);
         
-        // ✅ REAL Lipana API call (not test mode)
         const supabaseFunctionUrl = 'https://eqjdkpanqwjhuyavvdaf.supabase.co/functions/v1/process-mpesa-payment';
         
         const response = await fetch(supabaseFunctionUrl, {
@@ -615,14 +601,13 @@ async function pollForPaymentConfirmation(bookingReference, transactionId) {
     }
     
     let pollCount = 0;
-    const maxPolls = 60; // 5 minutes
+    const maxPolls = 60;
     
     currentPaymentPollInterval = setInterval(async () => {
         pollCount++;
         console.log(`Payment polling attempt ${pollCount} for transaction: ${transactionId}`);
         
         try {
-            // ✅ CHANGE: Use transactionId in the query parameter
             const response = await fetch(`https://eqjdkpanqwjhuyavvdaf.supabase.co/functions/v1/check-payment?transactionId=${transactionId}`);
             
             console.log('Polling response status:', response.status);
@@ -632,7 +617,6 @@ async function pollForPaymentConfirmation(bookingReference, transactionId) {
                 console.log('Payment check result:', result);
                 
                 if (result.status === 'success' || result.status === 'completed') {
-                    // ✅ PAYMENT CONFIRMED!
                     clearInterval(currentPaymentPollInterval);
                     currentPaymentPollInterval = null;
                     
@@ -655,7 +639,6 @@ async function pollForPaymentConfirmation(bookingReference, transactionId) {
                     await updateBookingStatus(bookingReference, 'payment_failed');
                     showBookingError('Payment failed. Please try again.', 'error');
                 }
-                // If still pending, continue polling
             } else {
                 console.warn('Polling request failed:', response.status);
             }
@@ -669,7 +652,7 @@ async function pollForPaymentConfirmation(bookingReference, transactionId) {
             console.log('Payment polling timeout for:', bookingReference);
             showBookingError('Payment timeout. Please check your phone and try again.', 'warning');
         }
-    }, 5000); // Poll every 5 seconds
+    }, 5000);
 }
 
 async function updateBookingPaymentStatus(bookingReference, paymentStatus, transactionId, receiptNumber = null) {
@@ -691,7 +674,6 @@ async function updateBookingPaymentStatus(bookingReference, paymentStatus, trans
         if (error) throw error;
         console.log(`✅ Booking ${bookingReference} updated to: ${paymentStatus}`);
         
-        // Also update locally saved booking
         updateLocalBookingStatus(bookingReference, paymentStatus);
         
     } catch (error) {
@@ -793,7 +775,6 @@ function showPaymentPendingModal(bookingData, paymentResult) {
         showBookingError('Thank you! We\'ll verify your payment automatically.', 'info');
     };
     
-    // Auto-close modal after 2 minutes
     setTimeout(() => {
         if (modalContainer.parentNode) {
             document.body.removeChild(modalContainer);
@@ -832,7 +813,6 @@ function showPaymentSuccessNotification(bookingReference, paymentResult) {
     notification.innerHTML = notificationHtml;
     document.body.appendChild(notification);
     
-    // Auto-remove after 10 seconds
     setTimeout(() => {
         if (notification.parentNode) {
             notification.remove();
@@ -857,7 +837,6 @@ async function processBooking() {
         if (paymentMethod === 'mpesa_stk') {
             console.log('🚀 Starting REAL STK Push with auto-validation...');
             
-            // Save booking as pending
             bookingData.status = 'pending';
             bookingData.payment_status = 'pending';
             
@@ -869,16 +848,13 @@ async function processBooking() {
             const paymentResult = await initiateSTKPushPayment(bookingData);
             
             if (paymentResult.success) {
-                // Show payment modal
                 showPaymentPendingModal(bookingData, paymentResult);
                 
-                // Start REAL auto-validation polling
                 await pollForPaymentConfirmation(
                     bookingData.booking_reference,
-                    paymentResult.transaction_id  // ← Use this instead of checkout_request_id
-    );
+                    paymentResult.transaction_id
+                );
                 
-                // Update booking with transaction ID
                 await updateBookingPaymentStatus(
                     bookingData.booking_reference,
                     'pending',
@@ -887,16 +863,12 @@ async function processBooking() {
                 
                 submitBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Awaiting Payment...';
                 
-                // ✅ DO NOT show success modal yet - wait for auto-validation
-                // ✅ DO NOT reset form yet
-                
             } else {
                 await updateBookingStatus(bookingData.booking_reference, 'payment_failed');
                 throw new Error(`STK Push failed: ${paymentResult.message}`);
             }
             
         } else {
-            // Other payment methods (Cash, Manual M-Pesa)
             bookingData.payment_status = paymentMethod === 'cash' ? 'pending' : 'paid';
             bookingData.status = 'confirmed';
             
@@ -950,7 +922,6 @@ function collectFormData() {
     
     const bookingRef = 'KB-' + Date.now().toString().slice(-8) + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
     
-    // ✅ Determine status based on payment method
     const status = paymentMethod === 'mpesa_stk' ? 'pending' : 'confirmed';
     
     const bookingData = {
@@ -1189,9 +1160,8 @@ function resetBookingForm() {
         
         const dateInput = document.getElementById('appointmentDate');
         if (dateInput) {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            dateInput.value = tomorrow.toISOString().split('T')[0];
+            const today = new Date();
+            dateInput.value = today.toISOString().split('T')[0];
             
             const timeSelect = document.getElementById('appointmentTime');
             if (timeSelect) {
