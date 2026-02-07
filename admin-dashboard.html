@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KenBarber Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #D4AF37;
+            --secondary: #1a1a1a;
+            --accent: #B8860B;
+            --light: #f8f9fa;
+            --dark: #121212;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --border-radius: 8px;
+            --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            --sidebar-width: 260px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f7fa;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+        
+        .admin-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar Styles */
+        .admin-sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(135deg, var(--secondary) 0%, #2a2a2a 100%);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+        
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .sidebar-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .sidebar-logo i {
+            font-size: 1.8rem;
+        }
+        
+        .admin-info {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .admin-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(212, 175, 55, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+        
+        .admin-details h3 {
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+        
+        .admin-details p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+        }
+        
+        .nav-menu {
+            padding: 1rem 0;
+        }
+        
+        .nav-item {
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background: rgba(212, 175, 55, 0.1);
+            color: white;
+            border-left-color: var(--primary);
+        }
+        
+        .nav-item i {
+            width: 20px;
+            font-size: 1.1rem;
+        }
+        
+        .logout-section {
+            margin-top: auto;
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-logout {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+            border: none;
+            border-radius: var(--border-radius);
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-logout:hover {
+            background: rgba(220, 53, 69, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        /* Main Content */
+        .admin-main {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .top-bar {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .page-title h1 {
+            font-size: 1.8rem;
+            color: var(--secondary);
+            margin-bottom: 5px;
+        }
+        
+        .page-title p {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+        
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .stat-icon.bookings { background: rgba(40, 167, 69, 0.1); color: var(--success); }
+        .stat-icon.revenue { background: rgba(0, 123, 255, 0.1); color: #007bff; }
+        .stat-icon.services { background: rgba(212, 175, 55, 0.1); color: var(--primary); }
+        .stat-icon.customers { background: rgba(111, 66, 193, 0.1); color: #6f42c1; }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .stat-change {
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        
+        .stat-change.positive { color: var(--success); }
+        .stat-change.negative { color: var(--danger); }
+        
+        /* Content Sections */
+        .content-section {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .section-header h2 {
+            font-size: 1.4rem;
+            color: var(--secondary);
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: var(--secondary);
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary:hover {
+            background: var(--accent);
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: var(--light-gray);
+            color: var(--dark);
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+        
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .data-table th {
+            background: #f8f9fa;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark);
+            border-bottom: 2px solid var(--light-gray);
+        }
+        
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .status-confirmed { background: rgba(40, 167, 69, 0.1); color: var(--success); }
+        .status-pending { background: rgba(255, 193, 7, 0.1); color: var(--warning); }
+        .status-cancelled { background: rgba(220, 53, 69, 0.1); color: var(--danger); }
+        .status-completed { background: rgba(0, 123, 255, 0.1); color: #007bff; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-action {
+            width: 35px;
+            height: 35px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-edit { background: rgba(40, 167, 69, 0.1); color: var(--success); }
+        .btn-delete { background: rgba(220, 53, 69, 0.1); color: var(--danger); }
+        .btn-view { background: rgba(0, 123, 255, 0.1); color: #007bff; }
+        
+        .btn-action:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Mobile Toggle */
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--secondary);
+            cursor: pointer;
+        }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .admin-sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .admin-main {
+                margin-left: 0;
+            }
+            
+            .mobile-toggle {
+                display: block;
+            }
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: var(--border-radius);
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--light-gray);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+        
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i class="fas fa-cut"></i>
+                    <span>KenBarber Admin</span>
+                </div>
+            </div>
+            
+            <div class="admin-info">
+                <div class="admin-avatar">
+                    <i class="fas fa-user-cog"></i>
+                </div>
+                <div class="admin-details">
+                    <h3 id="adminName">Administrator</h3>
+                    <p id="adminRole">Super Admin</p>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="admin-dashboard.html" class="nav-item active">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="admin-bookings.html" class="nav-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Bookings</span>
+                    <span class="badge" id="bookingCount">0</span>
+                </a>
+                <a href="admin-services.html" class="nav-item">
+                    <i class="fas fa-cut"></i>
+                    <span>Services</span>
+                </a>
+                <a href="admin-barbers.html" class="nav-item">
+                    <i class="fas fa-user-tie"></i>
+                    <span>Barbers</span>
+                </a>
+                <a href="admin-testimonials.html" class="nav-item">
+                    <i class="fas fa-star"></i>
+                    <span>Testimonials</span>
+                </a>
+                <a href="admin-customers.html" class="nav-item">
+                    <i class="fas fa-users"></i>
+                    <span>Customers</span>
+                </a>
+                <a href="admin-settings.html" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                <a href="admin-reports.html" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </a>
+            </nav>
+            
+            <div class="logout-section">
+                <button class="btn-logout" id="logoutButton">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h1>Dashboard Overview</h1>
+                    <p>Welcome back, Administrator. Here's what's happening today.</p>
+                </div>
+                
+                <button class="mobile-toggle" id="mobileToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="todayBookings">0</div>
+                            <div class="stat-label">Today's Bookings</div>
+                        </div>
+                        <div class="stat-icon bookings">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                    </div>
+                    <div class="stat-change positive" id="bookingChange">
+                        <i class="fas fa-arrow-up"></i> 0% from yesterday
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="monthRevenue">KES 0</div>
+                            <div class="stat-label">Monthly Revenue</div>
+                        </div>
+                        <div class="stat-icon revenue">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                    </div>
+                    <div class="stat-change positive" id="revenueChange">
+                        <i class="fas fa-arrow-up"></i> 0% from last month
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="totalServices">0</div>
+                            <div class="stat-label">Services Offered</div>
+                        </div>
+                        <div class="stat-icon services">
+                            <i class="fas fa-cut"></i>
+                        </div>
+                    </div>
+                    <div class="stat-change positive" id="serviceChange">
+                        <i class="fas fa-plus"></i> 0 active services
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-value" id="totalCustomers">0</div>
+                            <div class="stat-label">Total Customers</div>
+                        </div>
+                        <div class="stat-icon customers">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="stat-change positive" id="customerChange">
+                        <i class="fas fa-arrow-up"></i> 0 new this week
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Bookings -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2>Recent Bookings</h2>
+                    <a href="admin-bookings.html" class="btn-primary">
+                        <i class="fas fa-eye"></i> View All
+                    </a>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="data-table" id="recentBookingsTable">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Customer</th>
+                                <th>Service</th>
+                                <th>Date & Time</th>
+                                <th>Barber</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 2rem;">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading recent bookings...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2>Quick Actions</h2>
+                </div>
+                
+                <div class="quick-actions-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <button class="btn-primary" id="addServiceBtn" style="justify-content: center;">
+                        <i class="fas fa-plus"></i> Add New Service
+                    </button>
+                    <button class="btn-primary" id="addBarberBtn" style="justify-content: center;">
+                        <i class="fas fa-user-plus"></i> Add New Barber
+                    </button>
+                    <button class="btn-primary" id="viewReportsBtn" style="justify-content: center;">
+                        <i class="fas fa-chart-line"></i> Generate Report
+                    </button>
+                    <button class="btn-primary" id="sendNotificationBtn" style="justify-content: center;">
+                        <i class="fas fa-bell"></i> Send Notification
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Activity Chart Placeholder -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2>Booking Activity (Last 7 Days)</h2>
+                </div>
+                <div id="activityChart" style="height: 300px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 8px;">
+                    <div style="text-align: center;">
+                        <i class="fas fa-chart-bar fa-3x" style="color: var(--primary); margin-bottom: 1rem;"></i>
+                        <p>Booking activity chart will appear here</p>
+                        <small>Requires chart.js library</small>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal for Add Service -->
+    <div class="modal" id="addServiceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Service</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addServiceForm">
+                    <div class="form-group">
+                        <label for="serviceName">Service Name *</label>
+                        <input type="text" id="serviceName" class="form-control" placeholder="e.g., Classic Haircut" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="servicePrice">Price (KES) *</label>
+                            <input type="number" id="servicePrice" class="form-control" placeholder="500" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="serviceDuration">Duration (minutes) *</label>
+                            <input type="number" id="serviceDuration" class="form-control" placeholder="30" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="serviceDescription">Description</label>
+                        <textarea id="serviceDescription" class="form-control" rows="3" placeholder="Describe the service..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="serviceCategory">Category</label>
+                        <select id="serviceCategory" class="form-control">
+                            <option value="haircut">Haircut</option>
+                            <option value="beard">Beard Grooming</option>
+                            <option value="shave">Shaving</option>
+                            <option value="combo">Combination</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="serviceActive" checked>
+                            <span>Service is active and available for booking</span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancelServiceBtn">Cancel</button>
+                <button class="btn-primary" id="saveServiceBtn">Save Service</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for Add Barber -->
+    <div class="modal" id="addBarberModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Barber</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addBarberForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="barberName">Full Name *</label>
+                            <input type="text" id="barberName" class="form-control" placeholder="John Doe" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="barberTitle">Title/Specialty</label>
+                            <input type="text" id="barberTitle" class="form-control" placeholder="Senior Barber">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="barberBio">Bio/Description</label>
+                        <textarea id="barberBio" class="form-control" rows="3" placeholder="Describe skills and experience..."></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="barberExperience">Experience (years)</label>
+                            <input type="number" id="barberExperience" class="form-control" placeholder="5">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="barberPhone">Phone Number</label>
+                            <input type="tel" id="barberPhone" class="form-control" placeholder="0712 345 678">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="barberActive" checked>
+                            <span>Barber is active and available for booking</span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancelBarberBtn">Cancel</button>
+                <button class="btn-primary" id="saveBarberBtn">Save Barber</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('kenbarber_admin_token');
+            if (!token) {
+                window.location.href = 'admin-login.html';
+                return false;
+            }
+            return true;
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!checkAuth()) return;
+            
+            // Set admin name
+            const adminName = localStorage.getItem('kenbarber_admin_username') || 'Administrator';
+            document.getElementById('adminName').textContent = adminName;
+            
+            // Mobile toggle
+            document.getElementById('mobileToggle').addEventListener('click', function() {
+                document.getElementById('adminSidebar').classList.toggle('active');
+            });
+            
+            // Logout
+            document.getElementById('logoutButton').addEventListener('click', function() {
+                localStorage.removeItem('kenbarber_admin_token');
+                localStorage.removeItem('kenbarber_admin_username');
+                window.location.href = 'admin-login.html';
+            });
+            
+            // Load dashboard data
+            loadDashboardData();
+            
+            // Setup quick action buttons
+            setupQuickActions();
+            
+            // Close modals when clicking X
+            document.querySelectorAll('.modal-close').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.closest('.modal').style.display = 'none';
+                });
+            });
+            
+            // Close modals when clicking outside
+            window.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    e.target.style.display = 'none';
+                }
+            });
+        });
+        
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Load stats
+                await loadStats();
+                
+                // Load recent bookings
+                await loadRecentBookings();
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+        
+        // Load statistics
+        async function loadStats() {
+            try {
+                if (!window.supabase) {
+                    console.warn('Supabase not available, using mock data');
+                    // Mock data for demonstration
+                    document.getElementById('todayBookings').textContent = '12';
+                    document.getElementById('monthRevenue').textContent = 'KES 45,800';
+                    document.getElementById('totalServices').textContent = '29';
+                    document.getElementById('totalCustomers').textContent = '1,245';
+                    return;
+                }
+                
+                // Get today's date
+                const today = new Date().toISOString().split('T')[0];
+                
+                // Today's bookings
+                const { data: todayBookings, error: todayError } = await supabase
+                    .from('appointments')
+                    .select('*')
+                    .eq('appointment_date', today);
+                    
+                if (!todayError) {
+                    document.getElementById('todayBookings').textContent = todayBookings.length;
+                }
+                
+                // Monthly revenue (current month)
+                const currentMonth = new Date().getMonth() + 1;
+                const currentYear = new Date().getFullYear();
+                
+                const { data: monthBookings, error: monthError } = await supabase
+                    .from('appointments')
+                    .select('service_price, payment_status')
+                    .eq('status', 'confirmed')
+                    .gte('created_at', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
+                    .lt('created_at', `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-01`);
+                    
+                if (!monthError) {
+                    const revenue = monthBookings
+                        .filter(b => b.payment_status === 'paid')
+                        .reduce((sum, booking) => sum + (booking.service_price || 0), 0);
+                    document.getElementById('monthRevenue').textContent = `KES ${revenue.toLocaleString()}`;
+                }
+                
+                // Total services
+                const { data: services, error: servicesError } = await supabase
+                    .from('services')
+                    .select('*');
+                    
+                if (!servicesError) {
+                    document.getElementById('totalServices').textContent = services.length;
+                }
+                
+                // Total customers (distinct phone numbers)
+                const { data: customers, error: customersError } = await supabase
+                    .from('appointments')
+                    .select('customer_phone');
+                    
+                if (!customersError) {
+                    const uniquePhones = [...new Set(customers.map(c => c.customer_phone))];
+                    document.getElementById('totalCustomers').textContent = uniquePhones.length;
+                }
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
+        // Load recent bookings
+        async function loadRecentBookings() {
+            try {
+                const tableBody = document.querySelector('#recentBookingsTable tbody');
+                
+                if (!window.supabase) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td>KB-001</td>
+                            <td>John Doe</td>
+                            <td>Classic Haircut</td>
+                            <td>Today, 2:00 PM</td>
+                            <td>Any Barber</td>
+                            <td>KES 500</td>
+                            <td><span class="status-badge status-confirmed">Confirmed</span></td>
+                            <td class="action-buttons">
+                                <button class="btn-action btn-view" title="View"><i class="fas fa-eye"></i></button>
+                                <button class="btn-action btn-edit" title="Edit"><i class="fas fa-edit"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                const { data: bookings, error } = await supabase
+                    .from('appointments')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                if (error) throw error;
+                
+                if (bookings.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 2rem;">
+                                <i class="fas fa-calendar-times"></i> No recent bookings found
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tableBody.innerHTML = '';
+                
+                bookings.forEach(booking => {
+                    const row = document.createElement('tr');
+                    
+                    // Format date and time
+                    const date = new Date(booking.appointment_date);
+                    const time = booking.appointment_time || '';
+                    const formattedDate = date.toLocaleDateString('en-KE', { 
+                        weekday: 'short', 
+                        month: 'short', 
+                        day: 'numeric' 
+                    });
+                    
+                    // Status badge
+                    let statusClass = 'status-pending';
+                    let statusText = 'Pending';
+                    
+                    if (booking.status === 'confirmed') statusClass = 'status-confirmed', statusText = 'Confirmed';
+                    else if (booking.status === 'cancelled') statusClass = 'status-cancelled', statusText = 'Cancelled';
+                    else if (booking.status === 'completed') statusClass = 'status-completed', statusText = 'Completed';
+                    
+                    row.innerHTML = `
+                        <td>${booking.booking_reference || 'N/A'}</td>
+                        <td>${booking.customer_name || 'N/A'}</td>
+                        <td>${booking.service_name || 'N/A'}</td>
+                        <td>${formattedDate}, ${time}</td>
+                        <td>${booking.barber_name || 'Any Barber'}</td>
+                        <td>KES ${booking.service_price || 0}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td class="action-buttons">
+                            <button class="btn-action btn-view" title="View" onclick="viewBooking('${booking.booking_reference}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-action btn-edit" title="Edit" onclick="editBooking('${booking.booking_reference}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error('Error loading recent bookings:', error);
+                const tableBody = document.querySelector('#recentBookingsTable tbody');
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--danger);">
+                            <i class="fas fa-exclamation-circle"></i> Error loading bookings
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+        
+        // Setup quick actions
+        function setupQuickActions() {
+            // Add Service
+            document.getElementById('addServiceBtn').addEventListener('click', function() {
+                document.getElementById('addServiceModal').style.display = 'flex';
+            });
+            
+            document.getElementById('cancelServiceBtn').addEventListener('click', function() {
+                document.getElementById('addServiceModal').style.display = 'none';
+            });
+            
+            document.getElementById('saveServiceBtn').addEventListener('click', async function() {
+                const serviceName = document.getElementById('serviceName').value;
+                const servicePrice = document.getElementById('servicePrice').value;
+                const serviceDuration = document.getElementById('serviceDuration').value;
+                
+                if (!serviceName || !servicePrice || !serviceDuration) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+                
+                // Save to Supabase
+                try {
+                    if (window.supabase) {
+                        const { error } = await supabase
+                            .from('services')
+                            .insert([{
+                                name: serviceName,
+                                price: parseFloat(servicePrice),
+                                duration: parseInt(serviceDuration),
+                                description: document.getElementById('serviceDescription').value,
+                                category: document.getElementById('serviceCategory').value,
+                                active: document.getElementById('serviceActive').checked,
+                                created_at: new Date().toISOString()
+                            }]);
+                        
+                        if (error) throw error;
+                        
+                        alert('Service added successfully!');
+                        document.getElementById('addServiceModal').style.display = 'none';
+                        document.getElementById('addServiceForm').reset();
+                        loadStats(); // Refresh stats
+                    } else {
+                        alert('Service added (demo mode)');
+                        document.getElementById('addServiceModal').style.display = 'none';
+                        document.getElementById('addServiceForm').reset();
+                    }
+                } catch (error) {
+                    console.error('Error adding service:', error);
+                    alert('Error adding service: ' + error.message);
+                }
+            });
+            
+            // Add Barber
+            document.getElementById('addBarberBtn').addEventListener('click', function() {
+                document.getElementById('addBarberModal').style.display = 'flex';
+            });
+            
+            document.getElementById('cancelBarberBtn').addEventListener('click', function() {
+                document.getElementById('addBarberModal').style.display = 'none';
+            });
+            
+            document.getElementById('saveBarberBtn').addEventListener('click', async function() {
+                const barberName = document.getElementById('barberName').value;
+                
+                if (!barberName) {
+                    alert('Please enter barber name');
+                    return;
+                }
+                
+                // Save to Supabase
+                try {
+                    if (window.supabase) {
+                        const { error } = await supabase
+                            .from('barbers')
+                            .insert([{
+                                name: barberName,
+                                title: document.getElementById('barberTitle').value,
+                                bio: document.getElementById('barberBio').value,
+                                experience_years: parseInt(document.getElementById('barberExperience').value) || 0,
+                                phone_number: document.getElementById('barberPhone').value,
+                                active: document.getElementById('barberActive').checked,
+                                created_at: new Date().toISOString()
+                            }]);
+                        
+                        if (error) throw error;
+                        
+                        alert('Barber added successfully!');
+                        document.getElementById('addBarberModal').style.display = 'none';
+                        document.getElementById('addBarberForm').reset();
+                    } else {
+                        alert('Barber added (demo mode)');
+                        document.getElementById('addBarberModal').style.display = 'none';
+                        document.getElementById('addBarberForm').reset();
+                    }
+                } catch (error) {
+                    console.error('Error adding barber:', error);
+                    alert('Error adding barber: ' + error.message);
+                }
+            });
+            
+            // Other quick actions
+            document.getElementById('viewReportsBtn').addEventListener('click', function() {
+                window.location.href = 'admin-reports.html';
+            });
+            
+            document.getElementById('sendNotificationBtn').addEventListener('click', function() {
+                alert('Notification feature coming soon!');
+            });
+        }
+        
+        // View booking details (placeholder)
+        window.viewBooking = function(bookingRef) {
+            alert(`View booking: ${bookingRef}\n\nThis feature is in development.`);
+        };
+        
+        // Edit booking (placeholder)
+        window.editBooking = function(bookingRef) {
+            alert(`Edit booking: ${bookingRef}\n\nThis feature is in development.`);
+        };
+        
+        // Load Supabase if available
+        async function loadSupabase() {
+            try {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+                script.onload = function() {
+                    // Initialize Supabase
+                    const SUPABASE_URL = 'https://eqjdkpanqwjhuyavvdaf.supabase.co';
+                    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA';
+                    
+                    window.supabase = window.supabase.createClient(
+                        SUPABASE_URL,
+                        SUPABASE_ANON_KEY,
+                        {
+                            auth: { persistSession: false }
+                        }
+                    );
+                    
+                    console.log('Supabase loaded in admin dashboard');
+                    
+                    // Refresh data
+                    loadDashboardData();
+                };
+                
+                document.head.appendChild(script);
+            } catch (error) {
+                console.warn('Could not load Supabase:', error);
+            }
+        }
+        
+        // Load Supabase on page load
+        if (!window.supabase) {
+            loadSupabase();
+        }
+    </script>
+</body>
+</html>
