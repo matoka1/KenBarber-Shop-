@@ -3,123 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KenBarber Admin Login</title>
+    <title>KenBarber Admin - Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto+Slab:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Login Page Specific Styles */
-        .login-page {
+        :root {
+            --primary: #D4AF37;
+            --secondary: #1a1a1a;
+            --accent: #B8860B;
+            --light: #f8f9fa;
+            --dark: #121212;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --border-radius: 8px;
+            --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
-                        url('https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
-            background-size: cover;
-            background-position: center;
-            padding: 2rem;
+            padding: 20px;
         }
         
         .login-container {
-            background-color: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            max-width: 450px;
             width: 100%;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+            max-width: 400px;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
         
         .login-header {
-            background-color: var(--secondary);
+            background: linear-gradient(135deg, var(--secondary) 0%, #2a2a2a 100%);
             color: white;
-            padding: 2rem;
+            padding: 2.5rem;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            right: -50%;
+            bottom: -50%;
+            background: radial-gradient(circle at center, rgba(212, 175, 55, 0.2) 0%, transparent 70%);
         }
         
         .login-logo {
-            font-size: 2.5rem;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .login-logo i {
             color: var(--primary);
-            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
         }
         
         .login-header h1 {
-            color: white;
             font-size: 1.8rem;
             margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
         }
         
         .login-header p {
-            color: #aaa;
-            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.95rem;
+            position: relative;
+            z-index: 1;
         }
         
-        .login-body {
-            padding: 2rem;
+        .login-form {
+            padding: 2.5rem;
         }
         
-        .login-form .form-group {
+        .form-group {
             margin-bottom: 1.5rem;
         }
         
-        .login-form label {
+        .form-group label {
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 500;
-            color: var(--secondary);
+            color: var(--dark);
+            font-size: 0.95rem;
         }
         
-        .login-form input {
+        .form-control {
             width: 100%;
-            padding: 0.8rem 1rem;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            padding: 12px 15px;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--border-radius);
             font-family: 'Poppins', sans-serif;
             font-size: 1rem;
-            transition: var(--transition);
+            transition: all 0.3s ease;
+            background: #f8f9fa;
         }
         
-        .login-form input:focus {
+        .form-control:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
         }
         
-        .login-btn {
-            width: 100%;
-            padding: 1rem;
-            background-color: var(--primary);
-            color: var(--secondary);
+        .password-input {
+            position: relative;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
             border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 1rem;
+            color: var(--gray);
             cursor: pointer;
-            transition: var(--transition);
-            margin-top: 1rem;
+            font-size: 1.1rem;
         }
         
-        .login-btn:hover {
-            background-color: var(--accent);
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .remember-me input[type="checkbox"] {
+            accent-color: var(--primary);
+        }
+        
+        .forgot-password {
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .forgot-password:hover {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: var(--dark);
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+            box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(26, 26, 26, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--dark);
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
         
         .login-footer {
             text-align: center;
             padding: 1.5rem;
-            border-top: 1px solid #eee;
-            color: var(--gray);
+            border-top: 1px solid var(--light-gray);
             font-size: 0.9rem;
+            color: var(--gray);
         }
         
         .login-footer a {
@@ -131,138 +232,209 @@
             text-decoration: underline;
         }
         
-        .error-message {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: var(--danger);
-            padding: 0.8rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            text-align: center;
+        .alert {
+            padding: 12px 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
             display: none;
         }
         
+        .alert-error {
+            background: rgba(220, 53, 69, 0.1);
+            color: #721c24;
+            border: 1px solid rgba(220, 53, 69, 0.2);
+        }
+        
+        .alert-success {
+            background: rgba(40, 167, 69, 0.1);
+            color: #155724;
+            border: 1px solid rgba(40, 167, 69, 0.2);
+        }
+        
         .back-to-site {
-            display: block;
-            text-align: center;
-            margin-top: 1.5rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             color: var(--primary);
             text-decoration: none;
+            margin-top: 1rem;
+            font-weight: 500;
         }
         
         .back-to-site:hover {
-            text-decoration: underline;
+            color: var(--accent);
         }
     </style>
 </head>
-<body class="login-page">
+<body>
     <div class="login-container">
         <div class="login-header">
             <div class="login-logo">
                 <i class="fas fa-cut"></i>
+                <div>
+                    <h1>KenBarber Admin</h1>
+                    <p>Content Management System</p>
+                </div>
             </div>
-            <h1>KenBarber Admin</h1>
-            <p>Login to access the dashboard</p>
         </div>
         
-        <div class="login-body">
-            <div id="errorMessage" class="error-message">
-                Invalid username or password. Please try again.
+        <div class="login-form">
+            <div id="errorAlert" class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorMessage">Invalid credentials</span>
             </div>
             
-            <form id="adminLoginForm" class="login-form">
+            <form id="adminLoginForm">
                 <div class="form-group">
-                    <label for="adminUsername">Username</label>
-                    <input type="text" id="adminUsername" placeholder="Enter admin username" required>
+                    <label for="username">Username</label>
+                    <input type="text" id="username" class="form-control" placeholder="Enter admin username" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="adminPassword">Password</label>
-                    <input type="password" id="adminPassword" placeholder="Enter your password" required>
+                    <label for="password">Password</label>
+                    <div class="password-input">
+                        <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+                        <button type="button" class="toggle-password" id="togglePassword">
+                            <i class="far fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label class="checkbox-label">
+                <div class="remember-forgot">
+                    <label class="remember-me">
                         <input type="checkbox" id="rememberMe">
                         <span>Remember me</span>
                     </label>
+                    <a href="#" class="forgot-password">Forgot password?</a>
                 </div>
                 
-                <button type="submit" class="login-btn">
-                    <i class="fas fa-sign-in-alt"></i> Login to Dashboard
+                <button type="submit" class="btn-login" id="loginButton">
+                    <span>Sign In</span>
+                    <div class="loading-spinner" id="loginSpinner"></div>
                 </button>
+                
+                <div class="login-footer">
+                    <a href="index.html" class="back-to-site">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to main website
+                    </a>
+                </div>
             </form>
-            
-            <a href="index.html" class="back-to-site">
-                <i class="fas fa-arrow-left"></i> Back to Main Website
-            </a>
-        </div>
-        
-        <div class="login-footer">
-            <p>For security reasons, please log out after each session.</p>
-            <p>Contact system administrator for login issues.</p>
         </div>
     </div>
 
     <script>
-        // Admin Login Script
-        document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const icon = this.querySelector('i');
             
-            const username = document.getElementById('adminUsername').value;
-            const password = document.getElementById('adminPassword').value;
-            const errorMessage = document.getElementById('errorMessage');
-            
-            // Default admin credentials (in production, use server-side authentication)
-            const validCredentials = [
-                { username: 'admin', password: 'kenbarber2023', role: 'superadmin' },
-                { username: 'manager', password: 'nakurubarber', role: 'manager' },
-                { username: 'james', password: 'barber123', role: 'barber' }
-            ];
-            
-            // Check credentials
-            const user = validCredentials.find(
-                cred => cred.username === username && cred.password === password
-            );
-            
-            if (user) {
-                // Store login session
-                localStorage.setItem('adminLoggedIn', 'true');
-                localStorage.setItem('adminUser', username);
-                localStorage.setItem('adminRole', user.role);
-                
-                // Redirect to admin dashboard
-                window.location.href = 'admin.html';
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
             } else {
-                // Show error
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'Invalid username or password. Please try again.';
-                
-                // Clear password field
-                document.getElementById('adminPassword').value = '';
-                
-                // Shake animation for error
-                errorMessage.style.animation = 'shake 0.5s ease';
-                setTimeout(() => {
-                    errorMessage.style.animation = '';
-                }, 500);
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
             }
         });
         
-        // Check if already logged in
-        if (localStorage.getItem('adminLoggedIn') === 'true') {
-            window.location.href = 'admin.html';
-        }
+        // Admin credentials (in production, this should be server-side)
+        const ADMIN_CREDENTIALS = {
+            username: 'admin',
+            password: 'kenbarber2024'
+        };
+        
+        // Handle form submission
+        document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const rememberMe = document.getElementById('rememberMe').checked;
+            
+            // Show loading state
+            const loginButton = document.getElementById('loginButton');
+            const loginSpinner = document.getElementById('loginSpinner');
+            const buttonText = loginButton.querySelector('span');
+            
+            buttonText.textContent = 'Authenticating...';
+            loginSpinner.style.display = 'block';
+            loginButton.disabled = true;
+            
+            // Hide any previous error
+            document.getElementById('errorAlert').style.display = 'none';
+            
+            // Simulate authentication delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Check credentials (in production, this should be server-side authentication)
+            if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+                // Store authentication in localStorage
+                const authToken = btoa(`${username}:${Date.now()}`);
+                localStorage.setItem('kenbarber_admin_token', authToken);
+                localStorage.setItem('kenbarber_admin_username', username);
+                
+                if (rememberMe) {
+                    localStorage.setItem('kenbarber_admin_remember', 'true');
+                }
+                
+                // Redirect to dashboard
+                window.location.href = 'admin-dashboard.html';
+            } else {
+                // Show error
+                document.getElementById('errorMessage').textContent = 'Invalid username or password';
+                document.getElementById('errorAlert').style.display = 'flex';
+                
+                // Reset button
+                buttonText.textContent = 'Sign In';
+                loginSpinner.style.display = 'none';
+                loginButton.disabled = false;
+                
+                // Shake animation for error
+                const form = document.getElementById('adminLoginForm');
+                form.classList.add('shake');
+                setTimeout(() => form.classList.remove('shake'), 500);
+            }
+        });
+        
+        // Auto-fill if remembered
+        document.addEventListener('DOMContentLoaded', function() {
+            const remembered = localStorage.getItem('kenbarber_admin_remember');
+            if (remembered === 'true') {
+                const username = localStorage.getItem('kenbarber_admin_username');
+                if (username) {
+                    document.getElementById('username').value = username;
+                    document.getElementById('rememberMe').checked = true;
+                }
+            }
+        });
         
         // Add shake animation
         const style = document.createElement('style');
         style.textContent = `
+            .shake {
+                animation: shake 0.5s ease-in-out;
+            }
+            
             @keyframes shake {
                 0%, 100% { transform: translateX(0); }
-                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-                20%, 40%, 60%, 80% { transform: translateX(5px); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
             }
         `;
         document.head.appendChild(style);
+        
+        // Forgot password (basic implementation)
+        document.querySelector('.forgot-password').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Please contact the system administrator to reset your password.\n\nContact: admin@kenbarber.co.ke\nPhone: 0704 325 810');
+        });
     </script>
 </body>
 </html>
