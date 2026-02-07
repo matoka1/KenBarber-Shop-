@@ -6,6 +6,7 @@
     <title>KenBarber Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #D4AF37;
@@ -113,6 +114,7 @@
             padding: 0.8rem 1.5rem;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 12px;
             color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
@@ -129,6 +131,15 @@
         .nav-item i {
             width: 20px;
             font-size: 1.1rem;
+        }
+        
+        .badge {
+            background: var(--primary);
+            color: var(--secondary);
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
         }
         
         .logout-section {
@@ -306,6 +317,11 @@
             background: #e9ecef;
         }
         
+        .btn-small {
+            padding: 0.3rem 0.8rem;
+            font-size: 0.85rem;
+        }
+        
         /* Table Styles */
         .data-table {
             width: 100%;
@@ -342,6 +358,8 @@
         .status-pending { background: rgba(255, 193, 7, 0.1); color: var(--warning); }
         .status-cancelled { background: rgba(220, 53, 69, 0.1); color: var(--danger); }
         .status-completed { background: rgba(0, 123, 255, 0.1); color: #007bff; }
+        .status-paid { background: rgba(40, 167, 69, 0.1); color: var(--success); }
+        .status-unpaid { background: rgba(255, 193, 7, 0.1); color: var(--warning); }
         
         .action-buttons {
             display: flex;
@@ -363,6 +381,7 @@
         .btn-edit { background: rgba(40, 167, 69, 0.1); color: var(--success); }
         .btn-delete { background: rgba(220, 53, 69, 0.1); color: var(--danger); }
         .btn-view { background: rgba(0, 123, 255, 0.1); color: #007bff; }
+        .btn-confirm { background: rgba(40, 167, 69, 0.1); color: var(--success); }
         
         .btn-action:hover {
             transform: translateY(-2px);
@@ -378,23 +397,51 @@
             cursor: pointer;
         }
         
-        /* Responsive */
-        @media (max-width: 992px) {
-            .admin-sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .admin-sidebar.active {
-                transform: translateX(0);
-            }
-            
-            .admin-main {
-                margin-left: 0;
-            }
-            
-            .mobile-toggle {
-                display: block;
-            }
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Filter Controls */
+        .filter-controls {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+        }
+        
+        .filter-label {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-bottom: 0.3rem;
+        }
+        
+        .filter-select {
+            padding: 0.6rem;
+            border: 1px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            background: white;
+            font-family: 'Poppins', sans-serif;
         }
         
         /* Modal Styles */
@@ -415,7 +462,7 @@
         .modal-content {
             background: white;
             border-radius: var(--border-radius);
-            max-width: 600px;
+            max-width: 800px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
@@ -474,7 +521,41 @@
             gap: 1rem;
         }
         
-        @media (max-width: 768px) {
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .admin-sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .admin-main {
+                margin-left: 0;
+            }
+            
+            .mobile-toggle {
+                display: block;
+            }
+            
             .form-row {
                 grid-template-columns: 1fr;
             }
@@ -503,38 +584,38 @@
             </div>
             
             <nav class="nav-menu">
-                <a href="admin-dashboard.html" class="nav-item active">
+                <a href="#dashboard" class="nav-item active" onclick="switchTab('dashboard')">
                     <i class="fas fa-tachometer-alt"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="admin-bookings.html" class="nav-item">
+                <a href="#bookings" class="nav-item" onclick="switchTab('bookings')">
                     <i class="fas fa-calendar-alt"></i>
                     <span>Bookings</span>
                     <span class="badge" id="bookingCount">0</span>
                 </a>
-                <a href="admin-services.html" class="nav-item">
+                <a href="#services" class="nav-item" onclick="switchTab('services')">
                     <i class="fas fa-cut"></i>
                     <span>Services</span>
                 </a>
-                <a href="admin-barbers.html" class="nav-item">
+                <a href="#barbers" class="nav-item" onclick="switchTab('barbers')">
                     <i class="fas fa-user-tie"></i>
                     <span>Barbers</span>
                 </a>
-                <a href="admin-testimonials.html" class="nav-item">
+                <a href="#testimonials" class="nav-item" onclick="switchTab('testimonials')">
                     <i class="fas fa-star"></i>
                     <span>Testimonials</span>
                 </a>
-                <a href="admin-customers.html" class="nav-item">
+                <a href="#customers" class="nav-item" onclick="switchTab('customers')">
                     <i class="fas fa-users"></i>
                     <span>Customers</span>
                 </a>
-                <a href="admin-settings.html" class="nav-item">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
-                </a>
-                <a href="admin-reports.html" class="nav-item">
+                <a href="#reports" class="nav-item" onclick="switchTab('reports')">
                     <i class="fas fa-chart-bar"></i>
                     <span>Reports</span>
+                </a>
+                <a href="#settings" class="nav-item" onclick="switchTab('settings')">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
                 </a>
             </nav>
             
@@ -550,8 +631,8 @@
         <main class="admin-main">
             <div class="top-bar">
                 <div class="page-title">
-                    <h1>Dashboard Overview</h1>
-                    <p>Welcome back, Administrator. Here's what's happening today.</p>
+                    <h1 id="pageTitle">Dashboard Overview</h1>
+                    <p id="pageDescription">Welcome back, Administrator. Here's what's happening today.</p>
                 </div>
                 
                 <button class="mobile-toggle" id="mobileToggle">
@@ -559,135 +640,578 @@
                 </button>
             </div>
             
-            <!-- Stats Cards -->
-            <div class="stats-cards">
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div>
-                            <div class="stat-value" id="todayBookings">0</div>
-                            <div class="stat-label">Today's Bookings</div>
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content active">
+                <!-- Stats Cards -->
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-value" id="todayBookings">0</div>
+                                <div class="stat-label">Today's Bookings</div>
+                            </div>
+                            <div class="stat-icon bookings">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
                         </div>
-                        <div class="stat-icon bookings">
-                            <i class="fas fa-calendar-check"></i>
+                        <div class="stat-change positive" id="bookingChange">
+                            <i class="fas fa-arrow-up"></i> 0% from yesterday
                         </div>
                     </div>
-                    <div class="stat-change positive" id="bookingChange">
-                        <i class="fas fa-arrow-up"></i> 0% from yesterday
+                    
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-value" id="monthRevenue">KES 0</div>
+                                <div class="stat-label">Monthly Revenue</div>
+                            </div>
+                            <div class="stat-icon revenue">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
+                        </div>
+                        <div class="stat-change positive" id="revenueChange">
+                            <i class="fas fa-arrow-up"></i> 0% from last month
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-value" id="totalServices">0</div>
+                                <div class="stat-label">Services Offered</div>
+                            </div>
+                            <div class="stat-icon services">
+                                <i class="fas fa-cut"></i>
+                            </div>
+                        </div>
+                        <div class="stat-change positive" id="serviceChange">
+                            <i class="fas fa-plus"></i> 0 active services
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div>
+                                <div class="stat-value" id="totalCustomers">0</div>
+                                <div class="stat-label">Total Customers</div>
+                            </div>
+                            <div class="stat-icon customers">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="stat-change positive" id="customerChange">
+                            <i class="fas fa-arrow-up"></i> 0 new this week
+                        </div>
                     </div>
                 </div>
                 
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div>
-                            <div class="stat-value" id="monthRevenue">KES 0</div>
-                            <div class="stat-label">Monthly Revenue</div>
-                        </div>
-                        <div class="stat-icon revenue">
-                            <i class="fas fa-money-bill-wave"></i>
-                        </div>
+                <!-- Recent Bookings -->
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>Recent Bookings</h2>
+                        <button class="btn-primary" onclick="switchTab('bookings')">
+                            <i class="fas fa-eye"></i> View All
+                        </button>
                     </div>
-                    <div class="stat-change positive" id="revenueChange">
-                        <i class="fas fa-arrow-up"></i> 0% from last month
+                    
+                    <div class="table-responsive">
+                        <table class="data-table" id="recentBookingsTable">
+                            <thead>
+                                <tr>
+                                    <th>Reference</th>
+                                    <th>Customer</th>
+                                    <th>Service</th>
+                                    <th>Date & Time</th>
+                                    <th>Barber</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentBookingsBody">
+                                <tr>
+                                    <td colspan="8" style="text-align: center; padding: 2rem;">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading recent bookings...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div>
-                            <div class="stat-value" id="totalServices">0</div>
-                            <div class="stat-label">Services Offered</div>
-                        </div>
-                        <div class="stat-icon services">
-                            <i class="fas fa-cut"></i>
-                        </div>
+                <!-- Quick Actions -->
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>Quick Actions</h2>
                     </div>
-                    <div class="stat-change positive" id="serviceChange">
-                        <i class="fas fa-plus"></i> 0 active services
+                    
+                    <div class="quick-actions-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <button class="btn-primary" onclick="showModal('addServiceModal')">
+                            <i class="fas fa-plus"></i> Add New Service
+                        </button>
+                        <button class="btn-primary" onclick="showModal('addBarberModal')">
+                            <i class="fas fa-user-plus"></i> Add New Barber
+                        </button>
+                        <button class="btn-primary" onclick="switchTab('reports')">
+                            <i class="fas fa-chart-line"></i> Generate Report
+                        </button>
+                        <button class="btn-primary" onclick="showModal('sendNotificationModal')">
+                            <i class="fas fa-bell"></i> Send Notification
+                        </button>
                     </div>
                 </div>
                 
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div>
-                            <div class="stat-value" id="totalCustomers">0</div>
-                            <div class="stat-label">Total Customers</div>
-                        </div>
-                        <div class="stat-icon customers">
-                            <i class="fas fa-users"></i>
-                        </div>
+                <!-- Activity Chart -->
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>Booking Activity (Last 7 Days)</h2>
                     </div>
-                    <div class="stat-change positive" id="customerChange">
-                        <i class="fas fa-arrow-up"></i> 0 new this week
+                    <canvas id="activityChart" height="300"></canvas>
+                </div>
+            </div>
+            
+            <!-- Bookings Tab -->
+            <div id="bookings" class="tab-content">
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>Manage Bookings</h2>
+                        <button class="btn-primary" onclick="exportBookings()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                    
+                    <div class="filter-controls">
+                        <div class="filter-group">
+                            <div class="filter-label">Status</div>
+                            <select class="filter-select" id="filterStatus" onchange="filterBookings()">
+                                <option value="">All Statuses</option>
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <div class="filter-label">Date Range</div>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="date" class="form-control" id="filterDateFrom" onchange="filterBookings()" style="padding: 0.5rem;">
+                                <input type="date" class="form-control" id="filterDateTo" onchange="filterBookings()" style="padding: 0.5rem;">
+                            </div>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <div class="filter-label">Search</div>
+                            <input type="text" class="form-control" id="searchBookings" placeholder="Search bookings..." onkeyup="filterBookings()" style="padding: 0.5rem;">
+                        </div>
+                        
+                        <button class="btn-secondary" onclick="resetFilters()">Reset Filters</button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="data-table" id="allBookingsTable">
+                            <thead>
+                                <tr>
+                                    <th>Reference</th>
+                                    <th>Customer</th>
+                                    <th>Phone</th>
+                                    <th>Service</th>
+                                    <th>Date & Time</th>
+                                    <th>Barber</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Payment</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allBookingsBody">
+                                <tr>
+                                    <td colspan="10" style="text-align: center; padding: 2rem;">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading bookings...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                        <div id="bookingsPaginationInfo"></div>
+                        <div>
+                            <button class="btn-secondary btn-small" onclick="changeBookingsPage(-1)" id="prevBookingsPage">Previous</button>
+                            <button class="btn-secondary btn-small" onclick="changeBookingsPage(1)" id="nextBookingsPage">Next</button>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Recent Bookings -->
-            <div class="content-section">
-                <div class="section-header">
-                    <h2>Recent Bookings</h2>
-                    <a href="admin-bookings.html" class="btn-primary">
-                        <i class="fas fa-eye"></i> View All
-                    </a>
-                </div>
-                
-                <div class="table-responsive">
-                    <table class="data-table" id="recentBookingsTable">
-                        <thead>
-                            <tr>
-                                <th>Reference</th>
-                                <th>Customer</th>
-                                <th>Service</th>
-                                <th>Date & Time</th>
-                                <th>Barber</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="8" style="text-align: center; padding: 2rem;">
-                                    <i class="fas fa-spinner fa-spin"></i> Loading recent bookings...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- Quick Actions -->
-            <div class="content-section">
-                <div class="section-header">
-                    <h2>Quick Actions</h2>
-                </div>
-                
-                <div class="quick-actions-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                    <button class="btn-primary" id="addServiceBtn" style="justify-content: center;">
-                        <i class="fas fa-plus"></i> Add New Service
-                    </button>
-                    <button class="btn-primary" id="addBarberBtn" style="justify-content: center;">
-                        <i class="fas fa-user-plus"></i> Add New Barber
-                    </button>
-                    <button class="btn-primary" id="viewReportsBtn" style="justify-content: center;">
-                        <i class="fas fa-chart-line"></i> Generate Report
-                    </button>
-                    <button class="btn-primary" id="sendNotificationBtn" style="justify-content: center;">
-                        <i class="fas fa-bell"></i> Send Notification
-                    </button>
+            <!-- Services Tab -->
+            <div id="services" class="tab-content">
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>Manage Services</h2>
+                        <button class="btn-primary" onclick="showModal('addServiceModal')">
+                            <i class="fas fa-plus"></i> Add Service
+                        </button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th>Price (KES)</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="servicesBody">
+                                <tr>
+                                    <td colspan="7" style="text-align: center; padding: 2rem;">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading services...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             
-            <!-- Activity Chart Placeholder -->
-            <div class="content-section">
-                <div class="section-header">
-                    <h2>Booking Activity (Last 7 Days)</h2>
+            <!-- Barbers Tab -->
+            <div id="barbers" class="tab-content">
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>Manage Barbers</h2>
+                        <button class="btn-primary" onclick="showModal('addBarberModal')">
+                            <i class="fas fa-plus"></i> Add Barber
+                        </button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Title</th>
+                                    <th>Experience</th>
+                                    <th>Phone</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="barbersBody">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 2rem;">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading barbers...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <div id="activityChart" style="height: 300px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 8px;">
-                    <div style="text-align: center;">
-                        <i class="fas fa-chart-bar fa-3x" style="color: var(--primary); margin-bottom: 1rem;"></i>
-                        <p>Booking activity chart will appear here</p>
-                        <small>Requires chart.js library</small>
+            </div>
+            
+            <!-- Testimonials Tab -->
+            <div id="testimonials" class="tab-content">
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>Manage Testimonials</h2>
+                        <button class="btn-primary" onclick="showModal('addTestimonialModal')">
+                            <i class="fas fa-plus"></i> Add Testimonial
+                        </button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Rating</th>
+                                    <th>Comment</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="testimonialsBody">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 2rem;">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading testimonials...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Customers Tab -->
+            <div id="customers" class="tab-content">
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>Manage Customers</h2>
+                        <div>
+                            <input type="text" class="form-control" id="searchCustomers" placeholder="Search customers..." style="display: inline-block; width: auto; margin-right: 10px;">
+                            <button class="btn-primary" onclick="searchCustomers()">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th>Total Bookings</th>
+                                    <th>Total Spent</th>
+                                    <th>Last Visit</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersBody">
+                                <tr>
+                                    <td colspan="7" style="text-align: center; padding: 2rem;">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading customers...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reports Tab -->
+            <div id="reports" class="tab-content">
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>Reports & Analytics</h2>
+                        <div>
+                            <select class="filter-select" id="reportPeriod" onchange="generateReport()" style="margin-right: 10px;">
+                                <option value="today">Today</option>
+                                <option value="week">This Week</option>
+                                <option value="month" selected>This Month</option>
+                                <option value="quarter">This Quarter</option>
+                                <option value="year">This Year</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                            <button class="btn-primary" onclick="downloadReport()">
+                                <i class="fas fa-download"></i> Download Report
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="customDateRange" style="display: none; margin-bottom: 1.5rem;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Start Date</label>
+                                <input type="date" class="form-control" id="reportStartDate">
+                            </div>
+                            <div class="form-group">
+                                <label>End Date</label>
+                                <input type="date" class="form-control" id="reportEndDate">
+                            </div>
+                        </div>
+                        <button class="btn-primary" onclick="generateCustomReport()">Generate Report</button>
+                    </div>
+                    
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value" id="reportTotalBookings">0</div>
+                                    <div class="stat-label">Total Bookings</div>
+                                </div>
+                                <div class="stat-icon bookings">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value" id="reportTotalRevenue">KES 0</div>
+                                    <div class="stat-label">Total Revenue</div>
+                                </div>
+                                <div class="stat-icon revenue">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value" id="reportAvgBooking">KES 0</div>
+                                    <div class="stat-label">Average Booking</div>
+                                </div>
+                                <div class="stat-icon revenue">
+                                    <i class="fas fa-calculator"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-value" id="reportSuccessRate">0%</div>
+                                    <div class="stat-label">Success Rate</div>
+                                </div>
+                                <div class="stat-icon bookings">
+                                    <i class="fas fa-percentage"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="content-section">
+                            <h3>Booking Trend</h3>
+                            <canvas id="bookingTrendChart" height="200"></canvas>
+                        </div>
+                        
+                        <div class="content-section">
+                            <h3>Service Popularity</h3>
+                            <canvas id="serviceChart" height="200"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="content-section">
+                        <h3>Top Performing Barbers</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Barber</th>
+                                    <th>Total Bookings</th>
+                                    <th>Revenue Generated</th>
+                                    <th>Rating</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topBarbersBody">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; padding: 1rem;">
+                                        Loading top barbers...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>System Settings</h2>
+                        <button class="btn-primary" onclick="saveSettings()">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="content-section">
+                            <h3>Business Information</h3>
+                            <div class="form-group">
+                                <label>Business Name</label>
+                                <input type="text" class="form-control" id="businessName" placeholder="KenBarber Shop">
+                            </div>
+                            <div class="form-group">
+                                <label>Business Address</label>
+                                <textarea class="form-control" id="businessAddress" rows="3"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Business Phone</label>
+                                <input type="tel" class="form-control" id="businessPhone" placeholder="+254 712 345 678">
+                            </div>
+                            <div class="form-group">
+                                <label>Business Email</label>
+                                <input type="email" class="form-control" id="businessEmail" placeholder="info@kenbarber.com">
+                            </div>
+                        </div>
+                        
+                        <div class="content-section">
+                            <h3>Working Hours</h3>
+                            <div class="form-group">
+                                <label>Opening Time</label>
+                                <input type="time" class="form-control" id="openingTime" value="08:00">
+                            </div>
+                            <div class="form-group">
+                                <label>Closing Time</label>
+                                <input type="time" class="form-control" id="closingTime" value="20:00">
+                            </div>
+                            <div class="form-group">
+                                <label>Slot Duration (minutes)</label>
+                                <input type="number" class="form-control" id="slotDuration" value="30">
+                            </div>
+                            <div class="form-group">
+                                <label>Days Off</label>
+                                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px;">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="sundayOff" value="sunday"> Sunday
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="mondayOff" value="monday"> Monday
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="tuesdayOff" value="tuesday"> Tuesday
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="wednesdayOff" value="wednesday"> Wednesday
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="thursdayOff" value="thursday"> Thursday
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="fridayOff" value="friday"> Friday
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="saturdayOff" value="saturday"> Saturday
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="content-section">
+                        <h3>Notification Settings</h3>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="emailNotifications" checked>
+                                <span>Enable Email Notifications</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="smsNotifications" checked>
+                                <span>Enable SMS Notifications</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>Send Booking Reminders (hours before)</label>
+                            <input type="number" class="form-control" id="reminderHours" value="24" min="1" max="72">
+                        </div>
+                    </div>
+                    
+                    <div class="content-section">
+                        <h3>Admin Account</h3>
+                        <div class="form-group">
+                            <label>Admin Username</label>
+                            <input type="text" class="form-control" id="adminUsername" placeholder="admin">
+                        </div>
+                        <div class="form-group">
+                            <label>New Password</label>
+                            <input type="password" class="form-control" id="adminPassword" placeholder="Leave blank to keep current">
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm Password</label>
+                            <input type="password" class="form-control" id="adminConfirmPassword">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -699,7 +1223,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Add New Service</h3>
-                <button class="modal-close">&times;</button>
+                <button class="modal-close" onclick="hideModal('addServiceModal')">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="addServiceForm">
@@ -745,8 +1269,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" id="cancelServiceBtn">Cancel</button>
-                <button class="btn-primary" id="saveServiceBtn">Save Service</button>
+                <button class="btn-secondary" onclick="hideModal('addServiceModal')">Cancel</button>
+                <button class="btn-primary" onclick="saveService()">Save Service</button>
             </div>
         </div>
     </div>
@@ -756,7 +1280,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Add New Barber</h3>
-                <button class="modal-close">&times;</button>
+                <button class="modal-close" onclick="hideModal('addBarberModal')">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="addBarberForm">
@@ -798,13 +1322,183 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" id="cancelBarberBtn">Cancel</button>
-                <button class="btn-primary" id="saveBarberBtn">Save Barber</button>
+                <button class="btn-secondary" onclick="hideModal('addBarberModal')">Cancel</button>
+                <button class="btn-primary" onclick="saveBarber()">Save Barber</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for Send Notification -->
+    <div class="modal" id="sendNotificationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Send Notification</h3>
+                <button class="modal-close" onclick="hideModal('sendNotificationModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Notification Type</label>
+                    <select class="form-control" id="notificationType">
+                        <option value="all">All Customers</option>
+                        <option value="recent">Recent Customers (Last 30 days)</option>
+                        <option value="upcoming">Upcoming Appointments</option>
+                        <option value="specific">Specific Customers</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="specificCustomersGroup" style="display: none;">
+                    <label>Select Customers</label>
+                    <select class="form-control" id="specificCustomers" multiple style="height: 150px;">
+                        <option value="all">All Customers</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea class="form-control" id="notificationMessage" rows="5" placeholder="Enter your notification message..."></textarea>
+                    <small style="color: var(--gray);">Max 160 characters for SMS</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Send Via</label>
+                    <div>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="sendSMS" checked>
+                            <span>SMS</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="sendEmail">
+                            <span>Email</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideModal('sendNotificationModal')">Cancel</button>
+                <button class="btn-primary" onclick="sendNotification()">Send Notification</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for Add Testimonial -->
+    <div class="modal" id="addTestimonialModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Testimonial</h3>
+                <button class="modal-close" onclick="hideModal('addTestimonialModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Customer Name *</label>
+                    <input type="text" class="form-control" id="testimonialName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Rating *</label>
+                    <div style="font-size: 24px; color: #ffc107;">
+                        <i class="far fa-star" onclick="setRating(1)"></i>
+                        <i class="far fa-star" onclick="setRating(2)"></i>
+                        <i class="far fa-star" onclick="setRating(3)"></i>
+                        <i class="far fa-star" onclick="setRating(4)"></i>
+                        <i class="far fa-star" onclick="setRating(5)"></i>
+                    </div>
+                    <input type="hidden" id="testimonialRating" value="5">
+                </div>
+                
+                <div class="form-group">
+                    <label>Comment *</label>
+                    <textarea class="form-control" id="testimonialComment" rows="4" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" class="form-control" id="testimonialDate">
+                </div>
+                
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="testimonialApproved" checked>
+                        <span>Approve and display on website</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideModal('addTestimonialModal')">Cancel</button>
+                <button class="btn-primary" onclick="saveTestimonial()">Save Testimonial</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for View Booking Details -->
+    <div class="modal" id="viewBookingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Booking Details</h3>
+                <button class="modal-close" onclick="hideModal('viewBookingModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="bookingDetails">
+                    Loading booking details...
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideModal('viewBookingModal')">Close</button>
+                <button class="btn-primary" onclick="printBookingDetails()">Print</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for Edit Booking -->
+    <div class="modal" id="editBookingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Booking</h3>
+                <button class="modal-close" onclick="hideModal('editBookingModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editBookingForm">
+                    <!-- Form will be dynamically populated -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideModal('editBookingModal')">Cancel</button>
+                <button class="btn-primary" onclick="updateBooking()">Update Booking</button>
             </div>
         </div>
     </div>
 
     <script>
+        // Global variables
+        let supabase = null;
+        let currentTab = 'dashboard';
+        let bookingsData = [];
+        let currentBookingsPage = 1;
+        const bookingsPerPage = 10;
+        let activityChart = null;
+        let bookingTrendChart = null;
+        let serviceChart = null;
+        let currentBookingId = null;
+
+        // Initialize Supabase
+        async function initSupabase() {
+            const SUPABASE_URL = 'https://eqjdkpanqwjhuyavvdaf.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA';
+            
+            if (window.supabase) {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            } else {
+                // Load Supabase from CDN
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+                script.onload = () => {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    console.log('Supabase initialized');
+                    loadInitialData();
+                };
+                document.head.appendChild(script);
+            }
+        }
+
         // Check authentication
         function checkAuth() {
             const token = localStorage.getItem('kenbarber_admin_token');
@@ -814,8 +1508,8 @@
             }
             return true;
         }
-        
-        // Initialize
+
+        // Initialize application
         document.addEventListener('DOMContentLoaded', function() {
             if (!checkAuth()) return;
             
@@ -835,13 +1529,10 @@
                 window.location.href = 'admin-login.html';
             });
             
-            // Load dashboard data
-            loadDashboardData();
+            // Initialize Supabase
+            initSupabase();
             
-            // Setup quick action buttons
-            setupQuickActions();
-            
-            // Close modals when clicking X
+            // Setup modal close buttons
             document.querySelectorAll('.modal-close').forEach(btn => {
                 btn.addEventListener('click', function() {
                     this.closest('.modal').style.display = 'none';
@@ -854,36 +1545,136 @@
                     e.target.style.display = 'none';
                 }
             });
+            
+            // Setup notification type change
+            document.getElementById('notificationType').addEventListener('change', function() {
+                const specificGroup = document.getElementById('specificCustomersGroup');
+                specificGroup.style.display = this.value === 'specific' ? 'block' : 'none';
+            });
+            
+            // Setup report period change
+            document.getElementById('reportPeriod').addEventListener('change', function() {
+                const customRange = document.getElementById('customDateRange');
+                customRange.style.display = this.value === 'custom' ? 'block' : 'none';
+                if (this.value !== 'custom') {
+                    generateReport();
+                }
+            });
+            
+            // Load settings
+            loadSettings();
         });
-        
+
+        // Switch between tabs
+        function switchTab(tabName) {
+            // Update active tab in sidebar
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[href="#${tabName}"]`).classList.add('active');
+            
+            // Update active tab content
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+            
+            // Update page title
+            const titles = {
+                dashboard: 'Dashboard Overview',
+                bookings: 'Manage Bookings',
+                services: 'Manage Services',
+                barbers: 'Manage Barbers',
+                testimonials: 'Manage Testimonials',
+                customers: 'Manage Customers',
+                reports: 'Reports & Analytics',
+                settings: 'System Settings'
+            };
+            
+            const descriptions = {
+                dashboard: 'Welcome back, Administrator. Here\'s what\'s happening today.',
+                bookings: 'View and manage all customer bookings',
+                services: 'Manage services offered at KenBarber',
+                barbers: 'Manage barber profiles and availability',
+                testimonials: 'Manage customer testimonials and reviews',
+                customers: 'View customer information and booking history',
+                reports: 'Generate reports and view analytics',
+                settings: 'Configure system settings and preferences'
+            };
+            
+            document.getElementById('pageTitle').textContent = titles[tabName];
+            document.getElementById('pageDescription').textContent = descriptions[tabName];
+            
+            currentTab = tabName;
+            
+            // Load tab-specific data
+            switch(tabName) {
+                case 'dashboard':
+                    loadDashboardData();
+                    break;
+                case 'bookings':
+                    loadAllBookings();
+                    break;
+                case 'services':
+                    loadServices();
+                    break;
+                case 'barbers':
+                    loadBarbers();
+                    break;
+                case 'testimonials':
+                    loadTestimonials();
+                    break;
+                case 'customers':
+                    loadCustomers();
+                    break;
+                case 'reports':
+                    generateReport();
+                    break;
+            }
+            
+            // Close mobile sidebar if open
+            document.getElementById('adminSidebar').classList.remove('active');
+        }
+
+        // Load initial data
+        async function loadInitialData() {
+            try {
+                await loadDashboardData();
+                await loadServices();
+                await loadBarbers();
+                await loadTestimonials();
+                await loadCustomers();
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+            }
+        }
+
         // Load dashboard data
         async function loadDashboardData() {
             try {
-                // Load stats
-                await loadStats();
-                
-                // Load recent bookings
-                await loadRecentBookings();
-                
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
-            }
-        }
-        
-        // Load statistics
-        async function loadStats() {
-            try {
-                if (!window.supabase) {
-                    console.warn('Supabase not available, using mock data');
-                    // Mock data for demonstration
-                    document.getElementById('todayBookings').textContent = '12';
-                    document.getElementById('monthRevenue').textContent = 'KES 45,800';
-                    document.getElementById('totalServices').textContent = '29';
-                    document.getElementById('totalCustomers').textContent = '1,245';
+                if (!supabase) {
+                    // Use mock data for demo
+                    useMockDashboardData();
                     return;
                 }
                 
-                // Get today's date
+                await Promise.all([
+                    loadDashboardStats(),
+                    loadRecentBookings()
+                ]);
+                
+                // Initialize charts
+                initActivityChart();
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                useMockDashboardData();
+            }
+        }
+
+        // Load dashboard statistics
+        async function loadDashboardStats() {
+            try {
                 const today = new Date().toISOString().split('T')[0];
                 
                 // Today's bookings
@@ -891,12 +1682,13 @@
                     .from('appointments')
                     .select('*')
                     .eq('appointment_date', today);
-                    
+                
                 if (!todayError) {
                     document.getElementById('todayBookings').textContent = todayBookings.length;
+                    document.getElementById('bookingCount').textContent = todayBookings.length;
                 }
                 
-                // Monthly revenue (current month)
+                // Monthly revenue
                 const currentMonth = new Date().getMonth() + 1;
                 const currentYear = new Date().getFullYear();
                 
@@ -906,7 +1698,7 @@
                     .eq('status', 'confirmed')
                     .gte('created_at', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
                     .lt('created_at', `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-01`);
-                    
+                
                 if (!monthError) {
                     const revenue = monthBookings
                         .filter(b => b.payment_status === 'paid')
@@ -917,33 +1709,35 @@
                 // Total services
                 const { data: services, error: servicesError } = await supabase
                     .from('services')
-                    .select('*');
-                    
+                    .select('*')
+                    .eq('active', true);
+                
                 if (!servicesError) {
                     document.getElementById('totalServices').textContent = services.length;
                 }
                 
-                // Total customers (distinct phone numbers)
+                // Total customers
                 const { data: customers, error: customersError } = await supabase
                     .from('appointments')
                     .select('customer_phone');
-                    
+                
                 if (!customersError) {
                     const uniquePhones = [...new Set(customers.map(c => c.customer_phone))];
                     document.getElementById('totalCustomers').textContent = uniquePhones.length;
                 }
                 
             } catch (error) {
-                console.error('Error loading stats:', error);
+                console.error('Error loading dashboard stats:', error);
             }
         }
-        
-        // Load recent bookings
+
+        // Load recent bookings for dashboard
         async function loadRecentBookings() {
             try {
-                const tableBody = document.querySelector('#recentBookingsTable tbody');
+                const tableBody = document.getElementById('recentBookingsBody');
                 
-                if (!window.supabase) {
+                if (!supabase) {
+                    // Mock data
                     tableBody.innerHTML = `
                         <tr>
                             <td>KB-001</td>
@@ -954,8 +1748,8 @@
                             <td>KES 500</td>
                             <td><span class="status-badge status-confirmed">Confirmed</span></td>
                             <td class="action-buttons">
-                                <button class="btn-action btn-view" title="View"><i class="fas fa-eye"></i></button>
-                                <button class="btn-action btn-edit" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button class="btn-action btn-view" onclick="viewBookingDetail('KB-001')"><i class="fas fa-eye"></i></button>
+                                <button class="btn-action btn-edit" onclick="editBookingDetail('KB-001')"><i class="fas fa-edit"></i></button>
                             </td>
                         </tr>
                     `;
@@ -966,7 +1760,7 @@
                     .from('appointments')
                     .select('*')
                     .order('created_at', { ascending: false })
-                    .limit(10);
+                    .limit(5);
                 
                 if (error) throw error;
                 
@@ -984,18 +1778,13 @@
                 tableBody.innerHTML = '';
                 
                 bookings.forEach(booking => {
-                    const row = document.createElement('tr');
-                    
-                    // Format date and time
                     const date = new Date(booking.appointment_date);
-                    const time = booking.appointment_time || '';
                     const formattedDate = date.toLocaleDateString('en-KE', { 
                         weekday: 'short', 
                         month: 'short', 
                         day: 'numeric' 
                     });
                     
-                    // Status badge
                     let statusClass = 'status-pending';
                     let statusText = 'Pending';
                     
@@ -1003,194 +1792,1233 @@
                     else if (booking.status === 'cancelled') statusClass = 'status-cancelled', statusText = 'Cancelled';
                     else if (booking.status === 'completed') statusClass = 'status-completed', statusText = 'Completed';
                     
+                    const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${booking.booking_reference || 'N/A'}</td>
                         <td>${booking.customer_name || 'N/A'}</td>
                         <td>${booking.service_name || 'N/A'}</td>
-                        <td>${formattedDate}, ${time}</td>
+                        <td>${formattedDate}, ${booking.appointment_time || ''}</td>
                         <td>${booking.barber_name || 'Any Barber'}</td>
                         <td>KES ${booking.service_price || 0}</td>
                         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                         <td class="action-buttons">
-                            <button class="btn-action btn-view" title="View" onclick="viewBooking('${booking.booking_reference}')">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn-action btn-edit" title="Edit" onclick="editBooking('${booking.booking_reference}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
+                            <button class="btn-action btn-view" onclick="viewBookingDetail('${booking.booking_reference}')"><i class="fas fa-eye"></i></button>
+                            <button class="btn-action btn-edit" onclick="editBookingDetail('${booking.booking_reference}')"><i class="fas fa-edit"></i></button>
                         </td>
                     `;
-                    
                     tableBody.appendChild(row);
                 });
                 
             } catch (error) {
                 console.error('Error loading recent bookings:', error);
-                const tableBody = document.querySelector('#recentBookingsTable tbody');
+            }
+        }
+
+        // Load all bookings for bookings tab
+        async function loadAllBookings() {
+            try {
+                const tableBody = document.getElementById('allBookingsBody');
+                
+                if (!supabase) {
+                    // Mock data
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td>KB-001</td>
+                            <td>John Doe</td>
+                            <td>0712 345 678</td>
+                            <td>Classic Haircut</td>
+                            <td>Today, 2:00 PM</td>
+                            <td>Any Barber</td>
+                            <td>KES 500</td>
+                            <td><span class="status-badge status-confirmed">Confirmed</span></td>
+                            <td><span class="status-badge status-paid">Paid</span></td>
+                            <td class="action-buttons">
+                                <button class="btn-action btn-view" onclick="viewBookingDetail('KB-001')"><i class="fas fa-eye"></i></button>
+                                <button class="btn-action btn-edit" onclick="editBookingDetail('KB-001')"><i class="fas fa-edit"></i></button>
+                                <button class="btn-action btn-confirm" onclick="confirmBooking('KB-001')"><i class="fas fa-check"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    updateBookingsPagination();
+                    return;
+                }
+                
+                const { data: bookings, error } = await supabase
+                    .from('appointments')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                bookingsData = bookings;
+                currentBookingsPage = 1;
+                updateBookingsTable();
+                updateBookingsPagination();
+                
+            } catch (error) {
+                console.error('Error loading all bookings:', error);
+            }
+        }
+
+        // Update bookings table with filtered data
+        function updateBookingsTable() {
+            const tableBody = document.getElementById('allBookingsBody');
+            const filteredData = filterBookingsData();
+            
+            if (filteredData.length === 0) {
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--danger);">
-                            <i class="fas fa-exclamation-circle"></i> Error loading bookings
+                        <td colspan="10" style="text-align: center; padding: 2rem;">
+                            <i class="fas fa-calendar-times"></i> No bookings found
                         </td>
                     </tr>
                 `;
+                return;
             }
-        }
-        
-        // Setup quick actions
-        function setupQuickActions() {
-            // Add Service
-            document.getElementById('addServiceBtn').addEventListener('click', function() {
-                document.getElementById('addServiceModal').style.display = 'flex';
-            });
             
-            document.getElementById('cancelServiceBtn').addEventListener('click', function() {
-                document.getElementById('addServiceModal').style.display = 'none';
-            });
+            // Calculate pagination
+            const startIndex = (currentBookingsPage - 1) * bookingsPerPage;
+            const endIndex = startIndex + bookingsPerPage;
+            const pageData = filteredData.slice(startIndex, endIndex);
             
-            document.getElementById('saveServiceBtn').addEventListener('click', async function() {
-                const serviceName = document.getElementById('serviceName').value;
-                const servicePrice = document.getElementById('servicePrice').value;
-                const serviceDuration = document.getElementById('serviceDuration').value;
+            tableBody.innerHTML = '';
+            
+            pageData.forEach(booking => {
+                const date = new Date(booking.appointment_date);
+                const formattedDate = date.toLocaleDateString('en-KE', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
                 
-                if (!serviceName || !servicePrice || !serviceDuration) {
-                    alert('Please fill in all required fields');
-                    return;
-                }
+                let statusClass = 'status-pending';
+                let statusText = 'Pending';
                 
-                // Save to Supabase
-                try {
-                    if (window.supabase) {
-                        const { error } = await supabase
-                            .from('services')
-                            .insert([{
-                                name: serviceName,
-                                price: parseFloat(servicePrice),
-                                duration: parseInt(serviceDuration),
-                                description: document.getElementById('serviceDescription').value,
-                                category: document.getElementById('serviceCategory').value,
-                                active: document.getElementById('serviceActive').checked,
-                                created_at: new Date().toISOString()
-                            }]);
-                        
-                        if (error) throw error;
-                        
-                        alert('Service added successfully!');
-                        document.getElementById('addServiceModal').style.display = 'none';
-                        document.getElementById('addServiceForm').reset();
-                        loadStats(); // Refresh stats
-                    } else {
-                        alert('Service added (demo mode)');
-                        document.getElementById('addServiceModal').style.display = 'none';
-                        document.getElementById('addServiceForm').reset();
-                    }
-                } catch (error) {
-                    console.error('Error adding service:', error);
-                    alert('Error adding service: ' + error.message);
-                }
-            });
-            
-            // Add Barber
-            document.getElementById('addBarberBtn').addEventListener('click', function() {
-                document.getElementById('addBarberModal').style.display = 'flex';
-            });
-            
-            document.getElementById('cancelBarberBtn').addEventListener('click', function() {
-                document.getElementById('addBarberModal').style.display = 'none';
-            });
-            
-            document.getElementById('saveBarberBtn').addEventListener('click', async function() {
-                const barberName = document.getElementById('barberName').value;
+                if (booking.status === 'confirmed') statusClass = 'status-confirmed', statusText = 'Confirmed';
+                else if (booking.status === 'cancelled') statusClass = 'status-cancelled', statusText = 'Cancelled';
+                else if (booking.status === 'completed') statusClass = 'status-completed', statusText = 'Completed';
                 
-                if (!barberName) {
-                    alert('Please enter barber name');
-                    return;
-                }
+                const paymentClass = booking.payment_status === 'paid' ? 'status-paid' : 'status-unpaid';
+                const paymentText = booking.payment_status === 'paid' ? 'Paid' : 'Unpaid';
                 
-                // Save to Supabase
-                try {
-                    if (window.supabase) {
-                        const { error } = await supabase
-                            .from('barbers')
-                            .insert([{
-                                name: barberName,
-                                title: document.getElementById('barberTitle').value,
-                                bio: document.getElementById('barberBio').value,
-                                experience_years: parseInt(document.getElementById('barberExperience').value) || 0,
-                                phone_number: document.getElementById('barberPhone').value,
-                                active: document.getElementById('barberActive').checked,
-                                created_at: new Date().toISOString()
-                            }]);
-                        
-                        if (error) throw error;
-                        
-                        alert('Barber added successfully!');
-                        document.getElementById('addBarberModal').style.display = 'none';
-                        document.getElementById('addBarberForm').reset();
-                    } else {
-                        alert('Barber added (demo mode)');
-                        document.getElementById('addBarberModal').style.display = 'none';
-                        document.getElementById('addBarberForm').reset();
-                    }
-                } catch (error) {
-                    console.error('Error adding barber:', error);
-                    alert('Error adding barber: ' + error.message);
-                }
-            });
-            
-            // Other quick actions
-            document.getElementById('viewReportsBtn').addEventListener('click', function() {
-                window.location.href = 'admin-reports.html';
-            });
-            
-            document.getElementById('sendNotificationBtn').addEventListener('click', function() {
-                alert('Notification feature coming soon!');
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${booking.booking_reference || 'N/A'}</td>
+                    <td>${booking.customer_name || 'N/A'}</td>
+                    <td>${booking.customer_phone || 'N/A'}</td>
+                    <td>${booking.service_name || 'N/A'}</td>
+                    <td>${formattedDate}, ${booking.appointment_time || ''}</td>
+                    <td>${booking.barber_name || 'Any Barber'}</td>
+                    <td>KES ${booking.service_price || 0}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td><span class="status-badge ${paymentClass}">${paymentText}</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-view" onclick="viewBookingDetail('${booking.booking_reference}')" title="View"><i class="fas fa-eye"></i></button>
+                        <button class="btn-action btn-edit" onclick="editBookingDetail('${booking.booking_reference}')" title="Edit"><i class="fas fa-edit"></i></button>
+                        <button class="btn-action btn-confirm" onclick="confirmBooking('${booking.booking_reference}')" title="Confirm"><i class="fas fa-check"></i></button>
+                        <button class="btn-action btn-delete" onclick="deleteBooking('${booking.booking_reference}')" title="Delete"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
             });
         }
-        
-        // View booking details (placeholder)
-        window.viewBooking = function(bookingRef) {
-            alert(`View booking: ${bookingRef}\n\nThis feature is in development.`);
-        };
-        
-        // Edit booking (placeholder)
-        window.editBooking = function(bookingRef) {
-            alert(`Edit booking: ${bookingRef}\n\nThis feature is in development.`);
-        };
-        
-        // Load Supabase if available
-        async function loadSupabase() {
-            try {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-                script.onload = function() {
-                    // Initialize Supabase
-                    const SUPABASE_URL = 'https://eqjdkpanqwjhuyavvdaf.supabase.co';
-                    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA';
-                    
-                    window.supabase = window.supabase.createClient(
-                        SUPABASE_URL,
-                        SUPABASE_ANON_KEY,
-                        {
-                            auth: { persistSession: false }
-                        }
+
+        // Filter bookings data based on filters
+        function filterBookingsData() {
+            const statusFilter = document.getElementById('filterStatus').value;
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo = document.getElementById('filterDateTo').value;
+            const searchTerm = document.getElementById('searchBookings').value.toLowerCase();
+            
+            return bookingsData.filter(booking => {
+                // Status filter
+                if (statusFilter && booking.status !== statusFilter) return false;
+                
+                // Date range filter
+                if (dateFrom && new Date(booking.appointment_date) < new Date(dateFrom)) return false;
+                if (dateTo && new Date(booking.appointment_date) > new Date(dateTo)) return false;
+                
+                // Search filter
+                if (searchTerm) {
+                    const searchFields = [
+                        booking.customer_name,
+                        booking.customer_phone,
+                        booking.service_name,
+                        booking.booking_reference,
+                        booking.barber_name
+                    ];
+                    return searchFields.some(field => 
+                        field && field.toLowerCase().includes(searchTerm)
                     );
-                    
-                    console.log('Supabase loaded in admin dashboard');
-                    
-                    // Refresh data
-                    loadDashboardData();
-                };
+                }
                 
-                document.head.appendChild(script);
+                return true;
+            });
+        }
+
+        // Filter bookings (called from UI)
+        function filterBookings() {
+            currentBookingsPage = 1;
+            updateBookingsTable();
+            updateBookingsPagination();
+        }
+
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterDateFrom').value = '';
+            document.getElementById('filterDateTo').value = '';
+            document.getElementById('searchBookings').value = '';
+            filterBookings();
+        }
+
+        // Update bookings pagination
+        function updateBookingsPagination() {
+            const filteredData = filterBookingsData();
+            const totalPages = Math.ceil(filteredData.length / bookingsPerPage);
+            
+            document.getElementById('prevBookingsPage').disabled = currentBookingsPage === 1;
+            document.getElementById('nextBookingsPage').disabled = currentBookingsPage === totalPages;
+            
+            document.getElementById('bookingsPaginationInfo').textContent = 
+                `Page ${currentBookingsPage} of ${totalPages} (${filteredData.length} bookings)`;
+        }
+
+        // Change bookings page
+        function changeBookingsPage(direction) {
+            const filteredData = filterBookingsData();
+            const totalPages = Math.ceil(filteredData.length / bookingsPerPage);
+            
+            currentBookingsPage += direction;
+            if (currentBookingsPage < 1) currentBookingsPage = 1;
+            if (currentBookingsPage > totalPages) currentBookingsPage = totalPages;
+            
+            updateBookingsTable();
+            updateBookingsPagination();
+        }
+
+        // Load services
+        async function loadServices() {
+            try {
+                const tableBody = document.getElementById('servicesBody');
+                
+                if (!supabase) {
+                    // Mock data
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td>Classic Haircut</td>
+                            <td>Traditional haircut with scissors and comb</td>
+                            <td>haircut</td>
+                            <td>KES 500</td>
+                            <td>30 mins</td>
+                            <td><span class="status-badge status-confirmed">Active</span></td>
+                            <td class="action-buttons">
+                                <button class="btn-action btn-edit" onclick="editService(1)"><i class="fas fa-edit"></i></button>
+                                <button class="btn-action btn-delete" onclick="deleteService(1)"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                const { data: services, error } = await supabase
+                    .from('services')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                if (services.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 2rem;">
+                                <i class="fas fa-cut"></i> No services found
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tableBody.innerHTML = '';
+                
+                services.forEach(service => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${service.name}</td>
+                        <td>${service.description || 'No description'}</td>
+                        <td>${service.category || 'Uncategorized'}</td>
+                        <td>KES ${service.price}</td>
+                        <td>${service.duration} mins</td>
+                        <td><span class="status-badge ${service.active ? 'status-confirmed' : 'status-cancelled'}">${service.active ? 'Active' : 'Inactive'}</span></td>
+                        <td class="action-buttons">
+                            <button class="btn-action btn-edit" onclick="editService('${service.id}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn-action btn-delete" onclick="deleteService('${service.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
             } catch (error) {
-                console.warn('Could not load Supabase:', error);
+                console.error('Error loading services:', error);
             }
         }
-        
-        // Load Supabase on page load
-        if (!window.supabase) {
-            loadSupabase();
+
+        // Load barbers
+        async function loadBarbers() {
+            try {
+                const tableBody = document.getElementById('barbersBody');
+                
+                if (!supabase) {
+                    // Mock data
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td>John Doe</td>
+                            <td>Senior Barber</td>
+                            <td>5 years</td>
+                            <td>0712 345 678</td>
+                            <td><span class="status-badge status-confirmed">Active</span></td>
+                            <td class="action-buttons">
+                                <button class="btn-action btn-edit" onclick="editBarber(1)"><i class="fas fa-edit"></i></button>
+                                <button class="btn-action btn-delete" onclick="deleteBarber(1)"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                const { data: barbers, error } = await supabase
+                    .from('barbers')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                if (barbers.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem;">
+                                <i class="fas fa-user-tie"></i> No barbers found
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tableBody.innerHTML = '';
+                
+                barbers.forEach(barber => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${barber.name}</td>
+                        <td>${barber.title || 'Barber'}</td>
+                        <td>${barber.experience_years || '0'} years</td>
+                        <td>${barber.phone_number || 'N/A'}</td>
+                        <td><span class="status-badge ${barber.active ? 'status-confirmed' : 'status-cancelled'}">${barber.active ? 'Active' : 'Inactive'}</span></td>
+                        <td class="action-buttons">
+                            <button class="btn-action btn-edit" onclick="editBarber('${barber.id}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn-action btn-delete" onclick="deleteBarber('${barber.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error('Error loading barbers:', error);
+            }
+        }
+
+        // Load testimonials
+        async function loadTestimonials() {
+            try {
+                const tableBody = document.getElementById('testimonialsBody');
+                
+                if (!supabase) {
+                    // Mock data
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td>John Doe</td>
+                            <td>★★★★★</td>
+                            <td>Great service! Will definitely come back.</td>
+                            <td>2024-01-15</td>
+                            <td><span class="status-badge status-confirmed">Approved</span></td>
+                            <td class="action-buttons">
+                                <button class="btn-action btn-edit" onclick="editTestimonial(1)"><i class="fas fa-edit"></i></button>
+                                <button class="btn-action btn-delete" onclick="deleteTestimonial(1)"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                // Note: You need to create a testimonials table in Supabase
+                // For now, we'll use mock data
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2rem;">
+                            <i class="fas fa-star"></i> Testimonials feature coming soon!
+                        </td>
+                    </tr>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading testimonials:', error);
+            }
+        }
+
+        // Load customers
+        async function loadCustomers() {
+            try {
+                const tableBody = document.getElementById('customersBody');
+                
+                if (!supabase) {
+                    // Mock data
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td>John Doe</td>
+                            <td>0712 345 678</td>
+                            <td>john@example.com</td>
+                            <td>5</td>
+                            <td>KES 2,500</td>
+                            <td>2024-01-15</td>
+                            <td class="action-buttons">
+                                <button class="btn-action btn-view" onclick="viewCustomer(1)"><i class="fas fa-eye"></i></button>
+                                <button class="btn-action btn-edit" onclick="editCustomer(1)"><i class="fas fa-edit"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                // Get unique customers from appointments
+                const { data: appointments, error } = await supabase
+                    .from('appointments')
+                    .select('customer_name, customer_phone, customer_email, service_price, appointment_date')
+                    .order('appointment_date', { ascending: false });
+                
+                if (error) throw error;
+                
+                // Group by customer phone
+                const customersMap = new Map();
+                
+                appointments.forEach(appointment => {
+                    const phone = appointment.customer_phone;
+                    if (!phone) return;
+                    
+                    if (!customersMap.has(phone)) {
+                        customersMap.set(phone, {
+                            name: appointment.customer_name,
+                            phone: phone,
+                            email: appointment.customer_email,
+                            totalBookings: 0,
+                            totalSpent: 0,
+                            lastVisit: appointment.appointment_date
+                        });
+                    }
+                    
+                    const customer = customersMap.get(phone);
+                    customer.totalBookings++;
+                    customer.totalSpent += appointment.service_price || 0;
+                    
+                    if (new Date(appointment.appointment_date) > new Date(customer.lastVisit)) {
+                        customer.lastVisit = appointment.appointment_date;
+                    }
+                });
+                
+                const customers = Array.from(customersMap.values());
+                
+                if (customers.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 2rem;">
+                                <i class="fas fa-users"></i> No customers found
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tableBody.innerHTML = '';
+                
+                customers.forEach(customer => {
+                    const lastVisit = new Date(customer.lastVisit).toLocaleDateString('en-KE');
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${customer.name || 'Unknown'}</td>
+                        <td>${customer.phone}</td>
+                        <td>${customer.email || 'N/A'}</td>
+                        <td>${customer.totalBookings}</td>
+                        <td>KES ${customer.totalSpent.toLocaleString()}</td>
+                        <td>${lastVisit}</td>
+                        <td class="action-buttons">
+                            <button class="btn-action btn-view" onclick="viewCustomer('${customer.phone}')"><i class="fas fa-eye"></i></button>
+                            <button class="btn-action btn-edit" onclick="editCustomer('${customer.phone}')"><i class="fas fa-edit"></i></button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error('Error loading customers:', error);
+            }
+        }
+
+        // Search customers
+        function searchCustomers() {
+            const searchTerm = document.getElementById('searchCustomers').value.toLowerCase();
+            const rows = document.querySelectorAll('#customersBody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        // Generate report
+        async function generateReport() {
+            try {
+                const period = document.getElementById('reportPeriod').value;
+                let startDate, endDate;
+                
+                const now = new Date();
+                
+                switch(period) {
+                    case 'today':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+                        break;
+                    case 'week':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+                        endDate = now;
+                        break;
+                    case 'month':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                        break;
+                    case 'quarter':
+                        const quarter = Math.floor(now.getMonth() / 3);
+                        startDate = new Date(now.getFullYear(), quarter * 3, 1);
+                        endDate = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
+                        break;
+                    case 'year':
+                        startDate = new Date(now.getFullYear(), 0, 1);
+                        endDate = new Date(now.getFullYear(), 11, 31);
+                        break;
+                    default:
+                        // For custom, we'll handle separately
+                        return;
+                }
+                
+                if (!supabase) {
+                    // Mock data
+                    document.getElementById('reportTotalBookings').textContent = '24';
+                    document.getElementById('reportTotalRevenue').textContent = 'KES 12,000';
+                    document.getElementById('reportAvgBooking').textContent = 'KES 500';
+                    document.getElementById('reportSuccessRate').textContent = '85%';
+                    
+                    // Mock charts
+                    initMockCharts();
+                    return;
+                }
+                
+                // Get bookings for period
+                const { data: bookings, error } = await supabase
+                    .from('appointments')
+                    .select('*')
+                    .gte('appointment_date', startDate.toISOString().split('T')[0])
+                    .lte('appointment_date', endDate.toISOString().split('T')[0]);
+                
+                if (error) throw error;
+                
+                // Calculate report data
+                const totalBookings = bookings.length;
+                const confirmedBookings = bookings.filter(b => b.status === 'confirmed' || b.status === 'completed').length;
+                const totalRevenue = bookings
+                    .filter(b => b.payment_status === 'paid')
+                    .reduce((sum, b) => sum + (b.service_price || 0), 0);
+                const avgBooking = totalBookings > 0 ? totalRevenue / totalBookings : 0;
+                const successRate = totalBookings > 0 ? (confirmedBookings / totalBookings) * 100 : 0;
+                
+                // Update UI
+                document.getElementById('reportTotalBookings').textContent = totalBookings;
+                document.getElementById('reportTotalRevenue').textContent = `KES ${totalRevenue.toLocaleString()}`;
+                document.getElementById('reportAvgBooking').textContent = `KES ${Math.round(avgBooking).toLocaleString()}`;
+                document.getElementById('reportSuccessRate').textContent = `${Math.round(successRate)}%`;
+                
+                // Generate charts
+                generateBookingTrendChart(bookings);
+                generateServiceChart(bookings);
+                
+                // Get top barbers
+                await loadTopBarbers(bookings);
+                
+            } catch (error) {
+                console.error('Error generating report:', error);
+            }
+        }
+
+        // Generate custom report
+        function generateCustomReport() {
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+            
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates');
+                return;
+            }
+            
+            // Similar to generateReport but with custom dates
+            // Implementation would be similar to generateReport with custom date range
+            alert('Custom report generation would be implemented here');
+        }
+
+        // Load top barbers for report
+        async function loadTopBarbers(bookings) {
+            try {
+                // Get all barbers
+                const { data: barbers, error } = await supabase
+                    .from('barbers')
+                    .select('*');
+                
+                if (error) throw error;
+                
+                // Calculate barber performance
+                const barberPerformance = barbers.map(barber => {
+                    const barberBookings = bookings.filter(b => b.barber_name === barber.name);
+                    const revenue = barberBookings
+                        .filter(b => b.payment_status === 'paid')
+                        .reduce((sum, b) => sum + (b.service_price || 0), 0);
+                    
+                    return {
+                        name: barber.name,
+                        bookings: barberBookings.length,
+                        revenue: revenue,
+                        rating: barber.rating || 4.5 // Mock rating
+                    };
+                }).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+                
+                // Update UI
+                const tableBody = document.getElementById('topBarbersBody');
+                tableBody.innerHTML = '';
+                
+                barberPerformance.forEach(barber => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${barber.name}</td>
+                        <td>${barber.bookings}</td>
+                        <td>KES ${barber.revenue.toLocaleString()}</td>
+                        <td>${barber.rating.toFixed(1)}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error('Error loading top barbers:', error);
+            }
+        }
+
+        // Initialize activity chart for dashboard
+        function initActivityChart() {
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            
+            if (activityChart) {
+                activityChart.destroy();
+            }
+            
+            // Mock data for activity chart
+            const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const data = {
+                labels: labels,
+                datasets: [{
+                    label: 'Bookings',
+                    data: [12, 19, 8, 15, 22, 18, 25],
+                    borderColor: 'rgb(212, 175, 55)',
+                    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            };
+            
+            activityChart = new Chart(ctx, {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 5
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Generate booking trend chart for reports
+        function generateBookingTrendChart(bookings) {
+            const ctx = document.getElementById('bookingTrendChart').getContext('2d');
+            
+            if (bookingTrendChart) {
+                bookingTrendChart.destroy();
+            }
+            
+            // Group bookings by day
+            const bookingsByDay = {};
+            bookings.forEach(booking => {
+                const date = booking.appointment_date;
+                bookingsByDay[date] = (bookingsByDay[date] || 0) + 1;
+            });
+            
+            // Prepare chart data
+            const labels = Object.keys(bookingsByDay).sort();
+            const data = labels.map(date => bookingsByDay[date]);
+            
+            bookingTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Bookings per Day',
+                        data: data,
+                        borderColor: 'rgb(40, 167, 69)',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+        }
+
+        // Generate service chart for reports
+        function generateServiceChart(bookings) {
+            const ctx = document.getElementById('serviceChart').getContext('2d');
+            
+            if (serviceChart) {
+                serviceChart.destroy();
+            }
+            
+            // Group bookings by service
+            const serviceCounts = {};
+            bookings.forEach(booking => {
+                const service = booking.service_name || 'Unknown';
+                serviceCounts[service] = (serviceCounts[service] || 0) + 1;
+            });
+            
+            // Prepare chart data
+            const labels = Object.keys(serviceCounts);
+            const data = labels.map(service => serviceCounts[service]);
+            const backgroundColors = [
+                'rgba(212, 175, 55, 0.8)',
+                'rgba(40, 167, 69, 0.8)',
+                'rgba(0, 123, 255, 0.8)',
+                'rgba(111, 66, 193, 0.8)',
+                'rgba(220, 53, 69, 0.8)'
+            ];
+            
+            serviceChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: backgroundColors.slice(0, labels.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+        }
+
+        // Mock charts for demo
+        function initMockCharts() {
+            // Booking trend chart
+            const trendCtx = document.getElementById('bookingTrendChart').getContext('2d');
+            bookingTrendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan 1', 'Jan 2', 'Jan 3', 'Jan 4', 'Jan 5', 'Jan 6', 'Jan 7'],
+                    datasets: [{
+                        label: 'Bookings per Day',
+                        data: [8, 12, 6, 14, 10, 16, 12],
+                        borderColor: 'rgb(40, 167, 69)',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        fill: true
+                    }]
+                }
+            });
+            
+            // Service chart
+            const serviceCtx = document.getElementById('serviceChart').getContext('2d');
+            serviceChart = new Chart(serviceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Haircut', 'Beard Trim', 'Shaving', 'Combo'],
+                    datasets: [{
+                        data: [40, 25, 20, 15],
+                        backgroundColor: [
+                            'rgba(212, 175, 55, 0.8)',
+                            'rgba(40, 167, 69, 0.8)',
+                            'rgba(0, 123, 255, 0.8)',
+                            'rgba(111, 66, 193, 0.8)'
+                        ]
+                    }]
+                }
+            });
+        }
+
+        // Modal functions
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function hideModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Save service
+        async function saveService() {
+            const name = document.getElementById('serviceName').value;
+            const price = document.getElementById('servicePrice').value;
+            const duration = document.getElementById('serviceDuration').value;
+            
+            if (!name || !price || !duration) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            try {
+                if (!supabase) {
+                    alert('Service added (demo mode)');
+                    hideModal('addServiceModal');
+                    document.getElementById('addServiceForm').reset();
+                    loadServices();
+                    return;
+                }
+                
+                const { error } = await supabase
+                    .from('services')
+                    .insert([{
+                        name: name,
+                        price: parseFloat(price),
+                        duration: parseInt(duration),
+                        description: document.getElementById('serviceDescription').value,
+                        category: document.getElementById('serviceCategory').value,
+                        active: document.getElementById('serviceActive').checked,
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (error) throw error;
+                
+                alert('Service added successfully!');
+                hideModal('addServiceModal');
+                document.getElementById('addServiceForm').reset();
+                loadServices();
+                loadDashboardStats(); // Refresh dashboard stats
+                
+            } catch (error) {
+                console.error('Error adding service:', error);
+                alert('Error adding service: ' + error.message);
+            }
+        }
+
+        // Save barber
+        async function saveBarber() {
+            const name = document.getElementById('barberName').value;
+            
+            if (!name) {
+                alert('Please enter barber name');
+                return;
+            }
+            
+            try {
+                if (!supabase) {
+                    alert('Barber added (demo mode)');
+                    hideModal('addBarberModal');
+                    document.getElementById('addBarberForm').reset();
+                    loadBarbers();
+                    return;
+                }
+                
+                const { error } = await supabase
+                    .from('barbers')
+                    .insert([{
+                        name: name,
+                        title: document.getElementById('barberTitle').value,
+                        bio: document.getElementById('barberBio').value,
+                        experience_years: parseInt(document.getElementById('barberExperience').value) || 0,
+                        phone_number: document.getElementById('barberPhone').value,
+                        active: document.getElementById('barberActive').checked,
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (error) throw error;
+                
+                alert('Barber added successfully!');
+                hideModal('addBarberModal');
+                document.getElementById('addBarberForm').reset();
+                loadBarbers();
+                
+            } catch (error) {
+                console.error('Error adding barber:', error);
+                alert('Error adding barber: ' + error.message);
+            }
+        }
+
+        // Save testimonial
+        function saveTestimonial() {
+            const name = document.getElementById('testimonialName').value;
+            const comment = document.getElementById('testimonialComment').value;
+            
+            if (!name || !comment) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            alert('Testimonial saved! (Feature in development)');
+            hideModal('addTestimonialModal');
+            resetTestimonialForm();
+            loadTestimonials();
+        }
+
+        // Set rating for testimonial
+        function setRating(rating) {
+            document.getElementById('testimonialRating').value = rating;
+            const stars = document.querySelectorAll('#addTestimonialModal .fa-star');
+            
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.className = 'fas fa-star';
+                    star.style.color = '#ffc107';
+                } else {
+                    star.className = 'far fa-star';
+                    star.style.color = '#ffc107';
+                }
+            });
+        }
+
+        // Reset testimonial form
+        function resetTestimonialForm() {
+            document.getElementById('testimonialName').value = '';
+            document.getElementById('testimonialComment').value = '';
+            document.getElementById('testimonialDate').value = '';
+            document.getElementById('testimonialApproved').checked = true;
+            setRating(5);
+        }
+
+        // Send notification
+        function sendNotification() {
+            const type = document.getElementById('notificationType').value;
+            const message = document.getElementById('notificationMessage').value;
+            
+            if (!message) {
+                alert('Please enter a message');
+                return;
+            }
+            
+            alert(`Notification sent to ${type} customers! (Demo mode)`);
+            hideModal('sendNotificationModal');
+        }
+
+        // View booking detail
+        async function viewBookingDetail(bookingRef) {
+            try {
+                if (!supabase) {
+                    // Mock booking details
+                    document.getElementById('bookingDetails').innerHTML = `
+                        <h4>Booking Details: ${bookingRef}</h4>
+                        <p><strong>Customer:</strong> John Doe</p>
+                        <p><strong>Phone:</strong> 0712 345 678</p>
+                        <p><strong>Service:</strong> Classic Haircut</p>
+                        <p><strong>Date & Time:</strong> Today, 2:00 PM</p>
+                        <p><strong>Barber:</strong> Any Barber</p>
+                        <p><strong>Amount:</strong> KES 500</p>
+                        <p><strong>Status:</strong> <span class="status-badge status-confirmed">Confirmed</span></p>
+                        <p><strong>Payment:</strong> <span class="status-badge status-paid">Paid</span></p>
+                    `;
+                    showModal('viewBookingModal');
+                    return;
+                }
+                
+                const { data: booking, error } = await supabase
+                    .from('appointments')
+                    .select('*')
+                    .eq('booking_reference', bookingRef)
+                    .single();
+                
+                if (error) throw error;
+                
+                const date = new Date(booking.appointment_date);
+                const formattedDate = date.toLocaleDateString('en-KE', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                
+                let statusClass = 'status-pending';
+                let statusText = 'Pending';
+                
+                if (booking.status === 'confirmed') statusClass = 'status-confirmed', statusText = 'Confirmed';
+                else if (booking.status === 'cancelled') statusClass = 'status-cancelled', statusText = 'Cancelled';
+                else if (booking.status === 'completed') statusClass = 'status-completed', statusText = 'Completed';
+                
+                const paymentClass = booking.payment_status === 'paid' ? 'status-paid' : 'status-unpaid';
+                const paymentText = booking.payment_status === 'paid' ? 'Paid' : 'Unpaid';
+                
+                document.getElementById('bookingDetails').innerHTML = `
+                    <h4>Booking Details: ${booking.booking_reference}</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <p><strong>Customer Name:</strong><br>${booking.customer_name || 'N/A'}</p>
+                            <p><strong>Customer Phone:</strong><br>${booking.customer_phone || 'N/A'}</p>
+                            <p><strong>Customer Email:</strong><br>${booking.customer_email || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p><strong>Service:</strong><br>${booking.service_name || 'N/A'}</p>
+                            <p><strong>Barber:</strong><br>${booking.barber_name || 'Any Barber'}</p>
+                            <p><strong>Amount:</strong><br>KES ${booking.service_price || 0}</p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <p><strong>Date:</strong> ${formattedDate}</p>
+                        <p><strong>Time:</strong> ${booking.appointment_time || 'N/A'}</p>
+                        <p><strong>Status:</strong> <span class="status-badge ${statusClass}">${statusText}</span></p>
+                        <p><strong>Payment Status:</strong> <span class="status-badge ${paymentClass}">${paymentText}</span></p>
+                        ${booking.notes ? `<p><strong>Notes:</strong><br>${booking.notes}</p>` : ''}
+                    </div>
+                `;
+                
+                showModal('viewBookingModal');
+                
+            } catch (error) {
+                console.error('Error viewing booking:', error);
+                alert('Error loading booking details');
+            }
+        }
+
+        // Edit booking detail
+        function editBookingDetail(bookingRef) {
+            alert(`Edit booking: ${bookingRef}\n\nThis feature is in development.`);
+        }
+
+        // Confirm booking
+        function confirmBooking(bookingRef) {
+            if (confirm(`Confirm booking ${bookingRef}?`)) {
+                alert(`Booking ${bookingRef} confirmed! (Demo mode)`);
+                // In real implementation, update the booking status in Supabase
+            }
+        }
+
+        // Delete booking
+        function deleteBooking(bookingRef) {
+            if (confirm(`Delete booking ${bookingRef}? This action cannot be undone.`)) {
+                alert(`Booking ${bookingRef} deleted! (Demo mode)`);
+                // In real implementation, delete the booking from Supabase
+            }
+        }
+
+        // Edit service
+        function editService(serviceId) {
+            alert(`Edit service ID: ${serviceId}\n\nThis feature is in development.`);
+        }
+
+        // Delete service
+        function deleteService(serviceId) {
+            if (confirm('Delete this service?')) {
+                alert(`Service deleted! (Demo mode)`);
+                // In real implementation, delete from Supabase
+            }
+        }
+
+        // Edit barber
+        function editBarber(barberId) {
+            alert(`Edit barber ID: ${barberId}\n\nThis feature is in development.`);
+        }
+
+        // Delete barber
+        function deleteBarber(barberId) {
+            if (confirm('Delete this barber?')) {
+                alert(`Barber deleted! (Demo mode)`);
+                // In real implementation, delete from Supabase
+            }
+        }
+
+        // Edit testimonial
+        function editTestimonial(testimonialId) {
+            alert(`Edit testimonial ID: ${testimonialId}\n\nThis feature is in development.`);
+        }
+
+        // Delete testimonial
+        function deleteTestimonial(testimonialId) {
+            if (confirm('Delete this testimonial?')) {
+                alert(`Testimonial deleted! (Demo mode)`);
+            }
+        }
+
+        // View customer
+        function viewCustomer(customerId) {
+            alert(`View customer: ${customerId}\n\nThis feature is in development.`);
+        }
+
+        // Edit customer
+        function editCustomer(customerId) {
+            alert(`Edit customer: ${customerId}\n\nThis feature is in development.`);
+        }
+
+        // Export bookings
+        function exportBookings() {
+            alert('Exporting bookings to CSV... (Demo mode)');
+        }
+
+        // Download report
+        function downloadReport() {
+            alert('Downloading report... (Demo mode)');
+        }
+
+        // Print booking details
+        function printBookingDetails() {
+            window.print();
+        }
+
+        // Load settings
+        function loadSettings() {
+            // Load settings from localStorage or use defaults
+            document.getElementById('businessName').value = localStorage.getItem('businessName') || 'KenBarber Shop';
+            document.getElementById('businessAddress').value = localStorage.getItem('businessAddress') || '';
+            document.getElementById('businessPhone').value = localStorage.getItem('businessPhone') || '';
+            document.getElementById('businessEmail').value = localStorage.getItem('businessEmail') || '';
+            document.getElementById('openingTime').value = localStorage.getItem('openingTime') || '08:00';
+            document.getElementById('closingTime').value = localStorage.getItem('closingTime') || '20:00';
+            document.getElementById('slotDuration').value = localStorage.getItem('slotDuration') || '30';
+            
+            // Load days off
+            const daysOff = JSON.parse(localStorage.getItem('daysOff') || '[]');
+            daysOff.forEach(day => {
+                const checkbox = document.getElementById(`${day}Off`);
+                if (checkbox) checkbox.checked = true;
+            });
+            
+            // Load notification settings
+            document.getElementById('emailNotifications').checked = localStorage.getItem('emailNotifications') !== 'false';
+            document.getElementById('smsNotifications').checked = localStorage.getItem('smsNotifications') !== 'false';
+            document.getElementById('reminderHours').value = localStorage.getItem('reminderHours') || '24';
+            
+            // Load admin settings
+            document.getElementById('adminUsername').value = localStorage.getItem('adminUsername') || 'admin';
+        }
+
+        // Save settings
+        function saveSettings() {
+            // Save business info
+            localStorage.setItem('businessName', document.getElementById('businessName').value);
+            localStorage.setItem('businessAddress', document.getElementById('businessAddress').value);
+            localStorage.setItem('businessPhone', document.getElementById('businessPhone').value);
+            localStorage.setItem('businessEmail', document.getElementById('businessEmail').value);
+            
+            // Save working hours
+            localStorage.setItem('openingTime', document.getElementById('openingTime').value);
+            localStorage.setItem('closingTime', document.getElementById('closingTime').value);
+            localStorage.setItem('slotDuration', document.getElementById('slotDuration').value);
+            
+            // Save days off
+            const daysOff = [];
+            ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].forEach(day => {
+                if (document.getElementById(`${day}Off`).checked) {
+                    daysOff.push(day);
+                }
+            });
+            localStorage.setItem('daysOff', JSON.stringify(daysOff));
+            
+            // Save notification settings
+            localStorage.setItem('emailNotifications', document.getElementById('emailNotifications').checked);
+            localStorage.setItem('smsNotifications', document.getElementById('smsNotifications').checked);
+            localStorage.setItem('reminderHours', document.getElementById('reminderHours').value);
+            
+            // Save admin settings
+            const password = document.getElementById('adminPassword').value;
+            const confirmPassword = document.getElementById('adminConfirmPassword').value;
+            
+            if (password && password === confirmPassword) {
+                localStorage.setItem('adminPassword', password); // In real app, hash this!
+            } else if (password && password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            localStorage.setItem('adminUsername', document.getElementById('adminUsername').value);
+            
+            alert('Settings saved successfully!');
+        }
+
+        // Use mock data for dashboard (when Supabase is not available)
+        function useMockDashboardData() {
+            document.getElementById('todayBookings').textContent = '12';
+            document.getElementById('monthRevenue').textContent = 'KES 45,800';
+            document.getElementById('totalServices').textContent = '8';
+            document.getElementById('totalCustomers').textContent = '156';
+            document.getElementById('bookingCount').textContent = '12';
+            
+            // Load mock recent bookings
+            const tableBody = document.getElementById('recentBookingsBody');
+            tableBody.innerHTML = `
+                <tr>
+                    <td>KB-001</td>
+                    <td>John Doe</td>
+                    <td>Classic Haircut</td>
+                    <td>Today, 2:00 PM</td>
+                    <td>Any Barber</td>
+                    <td>KES 500</td>
+                    <td><span class="status-badge status-confirmed">Confirmed</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-view" onclick="viewBookingDetail('KB-001')"><i class="fas fa-eye"></i></button>
+                        <button class="btn-action btn-edit" onclick="editBookingDetail('KB-001')"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>KB-002</td>
+                    <td>Jane Smith</td>
+                    <td>Beard Trim</td>
+                    <td>Today, 3:30 PM</td>
+                    <td>Mike Johnson</td>
+                    <td>KES 300</td>
+                    <td><span class="status-badge status-pending">Pending</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-action btn-view" onclick="viewBookingDetail('KB-002')"><i class="fas fa-eye"></i></button>
+                        <button class="btn-action btn-edit" onclick="editBookingDetail('KB-002')"><i class="fas fa-edit"></i></button>
+                    </td>
+                </tr>
+            `;
+            
+            // Initialize charts
+            initActivityChart();
+        }
+
+        // Initialize on load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initSupabase);
+        } else {
+            initSupabase();
         }
     </script>
 </body>
