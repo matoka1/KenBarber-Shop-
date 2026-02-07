@@ -1468,8 +1468,8 @@
     </div>
 
     <script>
-        // Global variables
-        let supabase = null;
+        // Global variables - FIXED: Changed from 'supabase' to 'supabaseClient' to avoid conflict
+        let supabaseClient = null; 
         let currentTab = 'dashboard';
         let bookingsData = [];
         let currentBookingsPage = 1;
@@ -1479,24 +1479,56 @@
         let serviceChart = null;
         let currentBookingId = null;
 
-        // Initialize Supabase
+        // Initialize Supabase - FIXED VERSION
         async function initSupabase() {
             const SUPABASE_URL = 'https://eqjdkpanqwjhuyavvdaf.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA';
             
-            if (window.supabase) {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            } else {
-                // Load Supabase from CDN
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-                script.onload = () => {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    console.log('Supabase initialized');
+            // Check if Supabase is already loaded in window object
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                try {
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                        auth: { persistSession: false }
+                    });
+                    console.log('Supabase client initialized successfully');
                     loadInitialData();
-                };
-                document.head.appendChild(script);
+                    return;
+                } catch (error) {
+                    console.error('Error creating Supabase client:', error);
+                }
             }
+            
+            // If not loaded, load it from CDN
+            console.log('Loading Supabase from CDN...');
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+            
+            script.onload = () => {
+                console.log('Supabase script loaded');
+                // Check again if supabase is available
+                if (window.supabase && typeof window.supabase.createClient === 'function') {
+                    try {
+                        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                            auth: { persistSession: false }
+                        });
+                        console.log('Supabase client created from CDN');
+                        loadInitialData();
+                    } catch (error) {
+                        console.error('Error creating Supabase client after CDN load:', error);
+                        useMockData();
+                    }
+                } else {
+                    console.error('Supabase library loaded but createClient is not available');
+                    useMockData();
+                }
+            };
+            
+            script.onerror = (error) => {
+                console.error('Failed to load Supabase script:', error);
+                useMockData();
+            };
+            
+            document.head.appendChild(script);
         }
 
         // Check authentication
@@ -1515,19 +1547,31 @@
             
             // Set admin name
             const adminName = localStorage.getItem('kenbarber_admin_username') || 'Administrator';
-            document.getElementById('adminName').textContent = adminName;
+            const adminNameEl = document.getElementById('adminName');
+            if (adminNameEl) {
+                adminNameEl.textContent = adminName;
+            }
             
             // Mobile toggle
-            document.getElementById('mobileToggle').addEventListener('click', function() {
-                document.getElementById('adminSidebar').classList.toggle('active');
-            });
+            const mobileToggle = document.getElementById('mobileToggle');
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', function() {
+                    const sidebar = document.getElementById('adminSidebar');
+                    if (sidebar) {
+                        sidebar.classList.toggle('active');
+                    }
+                });
+            }
             
             // Logout
-            document.getElementById('logoutButton').addEventListener('click', function() {
-                localStorage.removeItem('kenbarber_admin_token');
-                localStorage.removeItem('kenbarber_admin_username');
-                window.location.href = 'admin-login.html';
-            });
+            const logoutButton = document.getElementById('logoutButton');
+            if (logoutButton) {
+                logoutButton.addEventListener('click', function() {
+                    localStorage.removeItem('kenbarber_admin_token');
+                    localStorage.removeItem('kenbarber_admin_username');
+                    window.location.href = 'admin-login.html';
+                });
+            }
             
             // Initialize Supabase
             initSupabase();
@@ -1535,7 +1579,10 @@
             // Setup modal close buttons
             document.querySelectorAll('.modal-close').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    this.closest('.modal').style.display = 'none';
+                    const modal = this.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
                 });
             });
             
@@ -1547,19 +1594,29 @@
             });
             
             // Setup notification type change
-            document.getElementById('notificationType').addEventListener('change', function() {
-                const specificGroup = document.getElementById('specificCustomersGroup');
-                specificGroup.style.display = this.value === 'specific' ? 'block' : 'none';
-            });
+            const notificationType = document.getElementById('notificationType');
+            if (notificationType) {
+                notificationType.addEventListener('change', function() {
+                    const specificGroup = document.getElementById('specificCustomersGroup');
+                    if (specificGroup) {
+                        specificGroup.style.display = this.value === 'specific' ? 'block' : 'none';
+                    }
+                });
+            }
             
             // Setup report period change
-            document.getElementById('reportPeriod').addEventListener('change', function() {
-                const customRange = document.getElementById('customDateRange');
-                customRange.style.display = this.value === 'custom' ? 'block' : 'none';
-                if (this.value !== 'custom') {
-                    generateReport();
-                }
-            });
+            const reportPeriod = document.getElementById('reportPeriod');
+            if (reportPeriod) {
+                reportPeriod.addEventListener('change', function() {
+                    const customRange = document.getElementById('customDateRange');
+                    if (customRange) {
+                        customRange.style.display = this.value === 'custom' ? 'block' : 'none';
+                    }
+                    if (this.value !== 'custom') {
+                        generateReport();
+                    }
+                });
+            }
             
             // Load settings
             loadSettings();
@@ -1571,13 +1628,19 @@
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
-            document.querySelector(`[href="#${tabName}"]`).classList.add('active');
+            const navItem = document.querySelector(`[href="#${tabName}"]`);
+            if (navItem) {
+                navItem.classList.add('active');
+            }
             
             // Update active tab content
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
-            document.getElementById(tabName).classList.add('active');
+            const tabContent = document.getElementById(tabName);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
             
             // Update page title
             const titles = {
@@ -1602,8 +1665,11 @@
                 settings: 'Configure system settings and preferences'
             };
             
-            document.getElementById('pageTitle').textContent = titles[tabName];
-            document.getElementById('pageDescription').textContent = descriptions[tabName];
+            const pageTitle = document.getElementById('pageTitle');
+            const pageDescription = document.getElementById('pageDescription');
+            
+            if (pageTitle) pageTitle.textContent = titles[tabName] || 'Dashboard';
+            if (pageDescription) pageDescription.textContent = descriptions[tabName] || '';
             
             currentTab = tabName;
             
@@ -1633,7 +1699,10 @@
             }
             
             // Close mobile sidebar if open
-            document.getElementById('adminSidebar').classList.remove('active');
+            const sidebar = document.getElementById('adminSidebar');
+            if (sidebar) {
+                sidebar.classList.remove('active');
+            }
         }
 
         // Load initial data
@@ -1646,13 +1715,14 @@
                 await loadCustomers();
             } catch (error) {
                 console.error('Error loading initial data:', error);
+                useMockData();
             }
         }
 
         // Load dashboard data
         async function loadDashboardData() {
             try {
-                if (!supabase) {
+                if (!supabaseClient) {
                     // Use mock data for demo
                     useMockDashboardData();
                     return;
@@ -1678,52 +1748,57 @@
                 const today = new Date().toISOString().split('T')[0];
                 
                 // Today's bookings
-                const { data: todayBookings, error: todayError } = await supabase
+                const { data: todayBookings, error: todayError } = await supabaseClient
                     .from('appointments')
                     .select('*')
                     .eq('appointment_date', today);
                 
-                if (!todayError) {
-                    document.getElementById('todayBookings').textContent = todayBookings.length;
-                    document.getElementById('bookingCount').textContent = todayBookings.length;
+                if (!todayError && todayBookings) {
+                    const todayBookingsEl = document.getElementById('todayBookings');
+                    const bookingCountEl = document.getElementById('bookingCount');
+                    if (todayBookingsEl) todayBookingsEl.textContent = todayBookings.length;
+                    if (bookingCountEl) bookingCountEl.textContent = todayBookings.length;
                 }
                 
                 // Monthly revenue
                 const currentMonth = new Date().getMonth() + 1;
                 const currentYear = new Date().getFullYear();
                 
-                const { data: monthBookings, error: monthError } = await supabase
+                const { data: monthBookings, error: monthError } = await supabaseClient
                     .from('appointments')
                     .select('service_price, payment_status')
                     .eq('status', 'confirmed')
                     .gte('created_at', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`)
                     .lt('created_at', `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-01`);
                 
-                if (!monthError) {
+                if (!monthError && monthBookings) {
                     const revenue = monthBookings
                         .filter(b => b.payment_status === 'paid')
                         .reduce((sum, booking) => sum + (booking.service_price || 0), 0);
-                    document.getElementById('monthRevenue').textContent = `KES ${revenue.toLocaleString()}`;
+                    const monthRevenueEl = document.getElementById('monthRevenue');
+                    if (monthRevenueEl) monthRevenueEl.textContent = `KES ${revenue.toLocaleString()}`;
                 }
                 
                 // Total services
-                const { data: services, error: servicesError } = await supabase
+                const { data: services, error: servicesError } = await supabaseClient
                     .from('services')
                     .select('*')
                     .eq('active', true);
                 
-                if (!servicesError) {
-                    document.getElementById('totalServices').textContent = services.length;
+                if (!servicesError && services) {
+                    const totalServicesEl = document.getElementById('totalServices');
+                    if (totalServicesEl) totalServicesEl.textContent = services.length;
                 }
                 
                 // Total customers
-                const { data: customers, error: customersError } = await supabase
+                const { data: customers, error: customersError } = await supabaseClient
                     .from('appointments')
                     .select('customer_phone');
                 
-                if (!customersError) {
+                if (!customersError && customers) {
                     const uniquePhones = [...new Set(customers.map(c => c.customer_phone))];
-                    document.getElementById('totalCustomers').textContent = uniquePhones.length;
+                    const totalCustomersEl = document.getElementById('totalCustomers');
+                    if (totalCustomersEl) totalCustomersEl.textContent = uniquePhones.length;
                 }
                 
             } catch (error) {
@@ -1736,7 +1811,7 @@
             try {
                 const tableBody = document.getElementById('recentBookingsBody');
                 
-                if (!supabase) {
+                if (!supabaseClient || !tableBody) {
                     // Mock data
                     tableBody.innerHTML = `
                         <tr>
@@ -1756,7 +1831,7 @@
                     return;
                 }
                 
-                const { data: bookings, error } = await supabase
+                const { data: bookings, error } = await supabaseClient
                     .from('appointments')
                     .select('*')
                     .order('created_at', { ascending: false })
@@ -1764,7 +1839,7 @@
                 
                 if (error) throw error;
                 
-                if (bookings.length === 0) {
+                if (!bookings || bookings.length === 0) {
                     tableBody.innerHTML = `
                         <tr>
                             <td colspan="8" style="text-align: center; padding: 2rem;">
@@ -1819,7 +1894,7 @@
             try {
                 const tableBody = document.getElementById('allBookingsBody');
                 
-                if (!supabase) {
+                if (!supabaseClient || !tableBody) {
                     // Mock data
                     tableBody.innerHTML = `
                         <tr>
@@ -1843,14 +1918,14 @@
                     return;
                 }
                 
-                const { data: bookings, error } = await supabase
+                const { data: bookings, error } = await supabaseClient
                     .from('appointments')
                     .select('*')
                     .order('created_at', { ascending: false });
                 
                 if (error) throw error;
                 
-                bookingsData = bookings;
+                bookingsData = bookings || [];
                 currentBookingsPage = 1;
                 updateBookingsTable();
                 updateBookingsPagination();
@@ -1863,6 +1938,8 @@
         // Update bookings table with filtered data
         function updateBookingsTable() {
             const tableBody = document.getElementById('allBookingsBody');
+            if (!tableBody) return;
+            
             const filteredData = filterBookingsData();
             
             if (filteredData.length === 0) {
@@ -1925,10 +2002,10 @@
 
         // Filter bookings data based on filters
         function filterBookingsData() {
-            const statusFilter = document.getElementById('filterStatus').value;
-            const dateFrom = document.getElementById('filterDateFrom').value;
-            const dateTo = document.getElementById('filterDateTo').value;
-            const searchTerm = document.getElementById('searchBookings').value.toLowerCase();
+            const statusFilter = document.getElementById('filterStatus')?.value || '';
+            const dateFrom = document.getElementById('filterDateFrom')?.value || '';
+            const dateTo = document.getElementById('filterDateTo')?.value || '';
+            const searchTerm = (document.getElementById('searchBookings')?.value || '').toLowerCase();
             
             return bookingsData.filter(booking => {
                 // Status filter
@@ -1965,10 +2042,16 @@
 
         // Reset filters
         function resetFilters() {
-            document.getElementById('filterStatus').value = '';
-            document.getElementById('filterDateFrom').value = '';
-            document.getElementById('filterDateTo').value = '';
-            document.getElementById('searchBookings').value = '';
+            const filterStatus = document.getElementById('filterStatus');
+            const filterDateFrom = document.getElementById('filterDateFrom');
+            const filterDateTo = document.getElementById('filterDateTo');
+            const searchBookings = document.getElementById('searchBookings');
+            
+            if (filterStatus) filterStatus.value = '';
+            if (filterDateFrom) filterDateFrom.value = '';
+            if (filterDateTo) filterDateTo.value = '';
+            if (searchBookings) searchBookings.value = '';
+            
             filterBookings();
         }
 
@@ -1977,11 +2060,16 @@
             const filteredData = filterBookingsData();
             const totalPages = Math.ceil(filteredData.length / bookingsPerPage);
             
-            document.getElementById('prevBookingsPage').disabled = currentBookingsPage === 1;
-            document.getElementById('nextBookingsPage').disabled = currentBookingsPage === totalPages;
+            const prevBtn = document.getElementById('prevBookingsPage');
+            const nextBtn = document.getElementById('nextBookingsPage');
+            const paginationInfo = document.getElementById('bookingsPaginationInfo');
             
-            document.getElementById('bookingsPaginationInfo').textContent = 
-                `Page ${currentBookingsPage} of ${totalPages} (${filteredData.length} bookings)`;
+            if (prevBtn) prevBtn.disabled = currentBookingsPage === 1;
+            if (nextBtn) nextBtn.disabled = currentBookingsPage === totalPages || totalPages === 0;
+            if (paginationInfo) {
+                paginationInfo.textContent = 
+                    `Page ${currentBookingsPage} of ${totalPages} (${filteredData.length} bookings)`;
+            }
         }
 
         // Change bookings page
@@ -2002,7 +2090,7 @@
             try {
                 const tableBody = document.getElementById('servicesBody');
                 
-                if (!supabase) {
+                if (!supabaseClient || !tableBody) {
                     // Mock data
                     tableBody.innerHTML = `
                         <tr>
@@ -2021,14 +2109,14 @@
                     return;
                 }
                 
-                const { data: services, error } = await supabase
+                const { data: services, error } = await supabaseClient
                     .from('services')
                     .select('*')
                     .order('created_at', { ascending: false });
                 
                 if (error) throw error;
                 
-                if (services.length === 0) {
+                if (!services || services.length === 0) {
                     tableBody.innerHTML = `
                         <tr>
                             <td colspan="7" style="text-align: center; padding: 2rem;">
@@ -2068,7 +2156,7 @@
             try {
                 const tableBody = document.getElementById('barbersBody');
                 
-                if (!supabase) {
+                if (!supabaseClient || !tableBody) {
                     // Mock data
                     tableBody.innerHTML = `
                         <tr>
@@ -2086,14 +2174,14 @@
                     return;
                 }
                 
-                const { data: barbers, error } = await supabase
+                const { data: barbers, error } = await supabaseClient
                     .from('barbers')
                     .select('*')
                     .order('created_at', { ascending: false });
                 
                 if (error) throw error;
                 
-                if (barbers.length === 0) {
+                if (!barbers || barbers.length === 0) {
                     tableBody.innerHTML = `
                         <tr>
                             <td colspan="6" style="text-align: center; padding: 2rem;">
@@ -2131,31 +2219,19 @@
         async function loadTestimonials() {
             try {
                 const tableBody = document.getElementById('testimonialsBody');
+                if (!tableBody) return;
                 
-                if (!supabase) {
-                    // Mock data
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td>John Doe</td>
-                            <td>★★★★★</td>
-                            <td>Great service! Will definitely come back.</td>
-                            <td>2024-01-15</td>
-                            <td><span class="status-badge status-confirmed">Approved</span></td>
-                            <td class="action-buttons">
-                                <button class="btn-action btn-edit" onclick="editTestimonial(1)"><i class="fas fa-edit"></i></button>
-                                <button class="btn-action btn-delete" onclick="deleteTestimonial(1)"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                    return;
-                }
-                
-                // Note: You need to create a testimonials table in Supabase
-                // For now, we'll use mock data
+                // For now, use mock data since testimonials table might not exist
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 2rem;">
-                            <i class="fas fa-star"></i> Testimonials feature coming soon!
+                        <td>John Doe</td>
+                        <td>★★★★★</td>
+                        <td>Great service! Will definitely come back.</td>
+                        <td>2024-01-15</td>
+                        <td><span class="status-badge status-confirmed">Approved</span></td>
+                        <td class="action-buttons">
+                            <button class="btn-action btn-edit" onclick="editTestimonial(1)"><i class="fas fa-edit"></i></button>
+                            <button class="btn-action btn-delete" onclick="deleteTestimonial(1)"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -2170,7 +2246,7 @@
             try {
                 const tableBody = document.getElementById('customersBody');
                 
-                if (!supabase) {
+                if (!supabaseClient || !tableBody) {
                     // Mock data
                     tableBody.innerHTML = `
                         <tr>
@@ -2190,7 +2266,7 @@
                 }
                 
                 // Get unique customers from appointments
-                const { data: appointments, error } = await supabase
+                const { data: appointments, error } = await supabaseClient
                     .from('appointments')
                     .select('customer_name, customer_phone, customer_email, service_price, appointment_date')
                     .order('appointment_date', { ascending: false });
@@ -2200,7 +2276,7 @@
                 // Group by customer phone
                 const customersMap = new Map();
                 
-                appointments.forEach(appointment => {
+                appointments?.forEach(appointment => {
                     const phone = appointment.customer_phone;
                     if (!phone) return;
                     
@@ -2264,7 +2340,7 @@
 
         // Search customers
         function searchCustomers() {
-            const searchTerm = document.getElementById('searchCustomers').value.toLowerCase();
+            const searchTerm = document.getElementById('searchCustomers')?.value.toLowerCase() || '';
             const rows = document.querySelectorAll('#customersBody tr');
             
             rows.forEach(row => {
@@ -2276,7 +2352,7 @@
         // Generate report
         async function generateReport() {
             try {
-                const period = document.getElementById('reportPeriod').value;
+                const period = document.getElementById('reportPeriod')?.value || 'month';
                 let startDate, endDate;
                 
                 const now = new Date();
@@ -2304,16 +2380,20 @@
                         endDate = new Date(now.getFullYear(), 11, 31);
                         break;
                     default:
-                        // For custom, we'll handle separately
                         return;
                 }
                 
-                if (!supabase) {
+                if (!supabaseClient) {
                     // Mock data
-                    document.getElementById('reportTotalBookings').textContent = '24';
-                    document.getElementById('reportTotalRevenue').textContent = 'KES 12,000';
-                    document.getElementById('reportAvgBooking').textContent = 'KES 500';
-                    document.getElementById('reportSuccessRate').textContent = '85%';
+                    const reportTotalBookings = document.getElementById('reportTotalBookings');
+                    const reportTotalRevenue = document.getElementById('reportTotalRevenue');
+                    const reportAvgBooking = document.getElementById('reportAvgBooking');
+                    const reportSuccessRate = document.getElementById('reportSuccessRate');
+                    
+                    if (reportTotalBookings) reportTotalBookings.textContent = '24';
+                    if (reportTotalRevenue) reportTotalRevenue.textContent = 'KES 12,000';
+                    if (reportAvgBooking) reportAvgBooking.textContent = 'KES 500';
+                    if (reportSuccessRate) reportSuccessRate.textContent = '85%';
                     
                     // Mock charts
                     initMockCharts();
@@ -2321,7 +2401,7 @@
                 }
                 
                 // Get bookings for period
-                const { data: bookings, error } = await supabase
+                const { data: bookings, error } = await supabaseClient
                     .from('appointments')
                     .select('*')
                     .gte('appointment_date', startDate.toISOString().split('T')[0])
@@ -2330,26 +2410,31 @@
                 if (error) throw error;
                 
                 // Calculate report data
-                const totalBookings = bookings.length;
-                const confirmedBookings = bookings.filter(b => b.status === 'confirmed' || b.status === 'completed').length;
+                const totalBookings = bookings?.length || 0;
+                const confirmedBookings = bookings?.filter(b => b.status === 'confirmed' || b.status === 'completed').length || 0;
                 const totalRevenue = bookings
-                    .filter(b => b.payment_status === 'paid')
-                    .reduce((sum, b) => sum + (b.service_price || 0), 0);
+                    ?.filter(b => b.payment_status === 'paid')
+                    .reduce((sum, b) => sum + (b.service_price || 0), 0) || 0;
                 const avgBooking = totalBookings > 0 ? totalRevenue / totalBookings : 0;
                 const successRate = totalBookings > 0 ? (confirmedBookings / totalBookings) * 100 : 0;
                 
                 // Update UI
-                document.getElementById('reportTotalBookings').textContent = totalBookings;
-                document.getElementById('reportTotalRevenue').textContent = `KES ${totalRevenue.toLocaleString()}`;
-                document.getElementById('reportAvgBooking').textContent = `KES ${Math.round(avgBooking).toLocaleString()}`;
-                document.getElementById('reportSuccessRate').textContent = `${Math.round(successRate)}%`;
+                const reportTotalBookings = document.getElementById('reportTotalBookings');
+                const reportTotalRevenue = document.getElementById('reportTotalRevenue');
+                const reportAvgBooking = document.getElementById('reportAvgBooking');
+                const reportSuccessRate = document.getElementById('reportSuccessRate');
+                
+                if (reportTotalBookings) reportTotalBookings.textContent = totalBookings;
+                if (reportTotalRevenue) reportTotalRevenue.textContent = `KES ${totalRevenue.toLocaleString()}`;
+                if (reportAvgBooking) reportAvgBooking.textContent = `KES ${Math.round(avgBooking).toLocaleString()}`;
+                if (reportSuccessRate) reportSuccessRate.textContent = `${Math.round(successRate)}%`;
                 
                 // Generate charts
-                generateBookingTrendChart(bookings);
-                generateServiceChart(bookings);
+                generateBookingTrendChart(bookings || []);
+                generateServiceChart(bookings || []);
                 
                 // Get top barbers
-                await loadTopBarbers(bookings);
+                await loadTopBarbers(bookings || []);
                 
             } catch (error) {
                 console.error('Error generating report:', error);
@@ -2358,31 +2443,45 @@
 
         // Generate custom report
         function generateCustomReport() {
-            const startDate = document.getElementById('reportStartDate').value;
-            const endDate = document.getElementById('reportEndDate').value;
+            const startDate = document.getElementById('reportStartDate')?.value;
+            const endDate = document.getElementById('reportEndDate')?.value;
             
             if (!startDate || !endDate) {
                 alert('Please select both start and end dates');
                 return;
             }
             
-            // Similar to generateReport but with custom dates
-            // Implementation would be similar to generateReport with custom date range
             alert('Custom report generation would be implemented here');
         }
 
         // Load top barbers for report
         async function loadTopBarbers(bookings) {
             try {
+                if (!supabaseClient) {
+                    // Mock data
+                    const tableBody = document.getElementById('topBarbersBody');
+                    if (tableBody) {
+                        tableBody.innerHTML = `
+                            <tr>
+                                <td>John Doe</td>
+                                <td>15</td>
+                                <td>KES 7,500</td>
+                                <td>4.8</td>
+                            </tr>
+                        `;
+                    }
+                    return;
+                }
+                
                 // Get all barbers
-                const { data: barbers, error } = await supabase
+                const { data: barbers, error } = await supabaseClient
                     .from('barbers')
                     .select('*');
                 
                 if (error) throw error;
                 
                 // Calculate barber performance
-                const barberPerformance = barbers.map(barber => {
+                const barberPerformance = barbers?.map(barber => {
                     const barberBookings = bookings.filter(b => b.barber_name === barber.name);
                     const revenue = barberBookings
                         .filter(b => b.payment_status === 'paid')
@@ -2392,12 +2491,14 @@
                         name: barber.name,
                         bookings: barberBookings.length,
                         revenue: revenue,
-                        rating: barber.rating || 4.5 // Mock rating
+                        rating: barber.rating || 4.5
                     };
-                }).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+                }).sort((a, b) => b.revenue - a.revenue).slice(0, 5) || [];
                 
                 // Update UI
                 const tableBody = document.getElementById('topBarbersBody');
+                if (!tableBody) return;
+                
                 tableBody.innerHTML = '';
                 
                 barberPerformance.forEach(barber => {
@@ -2418,7 +2519,8 @@
 
         // Initialize activity chart for dashboard
         function initActivityChart() {
-            const ctx = document.getElementById('activityChart').getContext('2d');
+            const ctx = document.getElementById('activityChart');
+            if (!ctx) return;
             
             if (activityChart) {
                 activityChart.destroy();
@@ -2462,7 +2564,8 @@
 
         // Generate booking trend chart for reports
         function generateBookingTrendChart(bookings) {
-            const ctx = document.getElementById('bookingTrendChart').getContext('2d');
+            const ctx = document.getElementById('bookingTrendChart');
+            if (!ctx) return;
             
             if (bookingTrendChart) {
                 bookingTrendChart.destroy();
@@ -2472,7 +2575,9 @@
             const bookingsByDay = {};
             bookings.forEach(booking => {
                 const date = booking.appointment_date;
-                bookingsByDay[date] = (bookingsByDay[date] || 0) + 1;
+                if (date) {
+                    bookingsByDay[date] = (bookingsByDay[date] || 0) + 1;
+                }
             });
             
             // Prepare chart data
@@ -2505,7 +2610,8 @@
 
         // Generate service chart for reports
         function generateServiceChart(bookings) {
-            const ctx = document.getElementById('serviceChart').getContext('2d');
+            const ctx = document.getElementById('serviceChart');
+            if (!ctx) return;
             
             if (serviceChart) {
                 serviceChart.destroy();
@@ -2553,54 +2659,63 @@
         // Mock charts for demo
         function initMockCharts() {
             // Booking trend chart
-            const trendCtx = document.getElementById('bookingTrendChart').getContext('2d');
-            bookingTrendChart = new Chart(trendCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan 1', 'Jan 2', 'Jan 3', 'Jan 4', 'Jan 5', 'Jan 6', 'Jan 7'],
-                    datasets: [{
-                        label: 'Bookings per Day',
-                        data: [8, 12, 6, 14, 10, 16, 12],
-                        borderColor: 'rgb(40, 167, 69)',
-                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                        fill: true
-                    }]
-                }
-            });
+            const trendCtx = document.getElementById('bookingTrendChart');
+            if (trendCtx) {
+                bookingTrendChart = new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan 1', 'Jan 2', 'Jan 3', 'Jan 4', 'Jan 5', 'Jan 6', 'Jan 7'],
+                        datasets: [{
+                            label: 'Bookings per Day',
+                            data: [8, 12, 6, 14, 10, 16, 12],
+                            borderColor: 'rgb(40, 167, 69)',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            fill: true
+                        }]
+                    }
+                });
+            }
             
             // Service chart
-            const serviceCtx = document.getElementById('serviceChart').getContext('2d');
-            serviceChart = new Chart(serviceCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Haircut', 'Beard Trim', 'Shaving', 'Combo'],
-                    datasets: [{
-                        data: [40, 25, 20, 15],
-                        backgroundColor: [
-                            'rgba(212, 175, 55, 0.8)',
-                            'rgba(40, 167, 69, 0.8)',
-                            'rgba(0, 123, 255, 0.8)',
-                            'rgba(111, 66, 193, 0.8)'
-                        ]
-                    }]
-                }
-            });
+            const serviceCtx = document.getElementById('serviceChart');
+            if (serviceCtx) {
+                serviceChart = new Chart(serviceCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Haircut', 'Beard Trim', 'Shaving', 'Combo'],
+                        datasets: [{
+                            data: [40, 25, 20, 15],
+                            backgroundColor: [
+                                'rgba(212, 175, 55, 0.8)',
+                                'rgba(40, 167, 69, 0.8)',
+                                'rgba(0, 123, 255, 0.8)',
+                                'rgba(111, 66, 193, 0.8)'
+                            ]
+                        }]
+                });
+            }
         }
 
         // Modal functions
         function showModal(modalId) {
-            document.getElementById(modalId).style.display = 'flex';
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+            }
         }
 
         function hideModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+            }
         }
 
         // Save service
         async function saveService() {
-            const name = document.getElementById('serviceName').value;
-            const price = document.getElementById('servicePrice').value;
-            const duration = document.getElementById('serviceDuration').value;
+            const name = document.getElementById('serviceName')?.value;
+            const price = document.getElementById('servicePrice')?.value;
+            const duration = document.getElementById('serviceDuration')?.value;
             
             if (!name || !price || !duration) {
                 alert('Please fill in all required fields');
@@ -2608,23 +2723,24 @@
             }
             
             try {
-                if (!supabase) {
+                if (!supabaseClient) {
                     alert('Service added (demo mode)');
                     hideModal('addServiceModal');
-                    document.getElementById('addServiceForm').reset();
+                    const form = document.getElementById('addServiceForm');
+                    if (form) form.reset();
                     loadServices();
                     return;
                 }
                 
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('services')
                     .insert([{
                         name: name,
                         price: parseFloat(price),
                         duration: parseInt(duration),
-                        description: document.getElementById('serviceDescription').value,
-                        category: document.getElementById('serviceCategory').value,
-                        active: document.getElementById('serviceActive').checked,
+                        description: document.getElementById('serviceDescription')?.value || '',
+                        category: document.getElementById('serviceCategory')?.value || 'haircut',
+                        active: document.getElementById('serviceActive')?.checked || true,
                         created_at: new Date().toISOString()
                     }]);
                 
@@ -2632,7 +2748,8 @@
                 
                 alert('Service added successfully!');
                 hideModal('addServiceModal');
-                document.getElementById('addServiceForm').reset();
+                const form = document.getElementById('addServiceForm');
+                if (form) form.reset();
                 loadServices();
                 loadDashboardStats(); // Refresh dashboard stats
                 
@@ -2644,7 +2761,7 @@
 
         // Save barber
         async function saveBarber() {
-            const name = document.getElementById('barberName').value;
+            const name = document.getElementById('barberName')?.value;
             
             if (!name) {
                 alert('Please enter barber name');
@@ -2652,23 +2769,24 @@
             }
             
             try {
-                if (!supabase) {
+                if (!supabaseClient) {
                     alert('Barber added (demo mode)');
                     hideModal('addBarberModal');
-                    document.getElementById('addBarberForm').reset();
+                    const form = document.getElementById('addBarberForm');
+                    if (form) form.reset();
                     loadBarbers();
                     return;
                 }
                 
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('barbers')
                     .insert([{
                         name: name,
-                        title: document.getElementById('barberTitle').value,
-                        bio: document.getElementById('barberBio').value,
-                        experience_years: parseInt(document.getElementById('barberExperience').value) || 0,
-                        phone_number: document.getElementById('barberPhone').value,
-                        active: document.getElementById('barberActive').checked,
+                        title: document.getElementById('barberTitle')?.value || '',
+                        bio: document.getElementById('barberBio')?.value || '',
+                        experience_years: parseInt(document.getElementById('barberExperience')?.value) || 0,
+                        phone_number: document.getElementById('barberPhone')?.value || '',
+                        active: document.getElementById('barberActive')?.checked || true,
                         created_at: new Date().toISOString()
                     }]);
                 
@@ -2676,7 +2794,8 @@
                 
                 alert('Barber added successfully!');
                 hideModal('addBarberModal');
-                document.getElementById('addBarberForm').reset();
+                const form = document.getElementById('addBarberForm');
+                if (form) form.reset();
                 loadBarbers();
                 
             } catch (error) {
@@ -2687,8 +2806,8 @@
 
         // Save testimonial
         function saveTestimonial() {
-            const name = document.getElementById('testimonialName').value;
-            const comment = document.getElementById('testimonialComment').value;
+            const name = document.getElementById('testimonialName')?.value;
+            const comment = document.getElementById('testimonialComment')?.value;
             
             if (!name || !comment) {
                 alert('Please fill in all required fields');
@@ -2703,7 +2822,9 @@
 
         // Set rating for testimonial
         function setRating(rating) {
-            document.getElementById('testimonialRating').value = rating;
+            const ratingInput = document.getElementById('testimonialRating');
+            if (ratingInput) ratingInput.value = rating;
+            
             const stars = document.querySelectorAll('#addTestimonialModal .fa-star');
             
             stars.forEach((star, index) => {
@@ -2719,17 +2840,23 @@
 
         // Reset testimonial form
         function resetTestimonialForm() {
-            document.getElementById('testimonialName').value = '';
-            document.getElementById('testimonialComment').value = '';
-            document.getElementById('testimonialDate').value = '';
-            document.getElementById('testimonialApproved').checked = true;
+            const testimonialName = document.getElementById('testimonialName');
+            const testimonialComment = document.getElementById('testimonialComment');
+            const testimonialDate = document.getElementById('testimonialDate');
+            const testimonialApproved = document.getElementById('testimonialApproved');
+            
+            if (testimonialName) testimonialName.value = '';
+            if (testimonialComment) testimonialComment.value = '';
+            if (testimonialDate) testimonialDate.value = '';
+            if (testimonialApproved) testimonialApproved.checked = true;
+            
             setRating(5);
         }
 
         // Send notification
         function sendNotification() {
-            const type = document.getElementById('notificationType').value;
-            const message = document.getElementById('notificationMessage').value;
+            const type = document.getElementById('notificationType')?.value;
+            const message = document.getElementById('notificationMessage')?.value;
             
             if (!message) {
                 alert('Please enter a message');
@@ -2743,24 +2870,27 @@
         // View booking detail
         async function viewBookingDetail(bookingRef) {
             try {
-                if (!supabase) {
+                if (!supabaseClient) {
                     // Mock booking details
-                    document.getElementById('bookingDetails').innerHTML = `
-                        <h4>Booking Details: ${bookingRef}</h4>
-                        <p><strong>Customer:</strong> John Doe</p>
-                        <p><strong>Phone:</strong> 0712 345 678</p>
-                        <p><strong>Service:</strong> Classic Haircut</p>
-                        <p><strong>Date & Time:</strong> Today, 2:00 PM</p>
-                        <p><strong>Barber:</strong> Any Barber</p>
-                        <p><strong>Amount:</strong> KES 500</p>
-                        <p><strong>Status:</strong> <span class="status-badge status-confirmed">Confirmed</span></p>
-                        <p><strong>Payment:</strong> <span class="status-badge status-paid">Paid</span></p>
-                    `;
+                    const bookingDetails = document.getElementById('bookingDetails');
+                    if (bookingDetails) {
+                        bookingDetails.innerHTML = `
+                            <h4>Booking Details: ${bookingRef}</h4>
+                            <p><strong>Customer:</strong> John Doe</p>
+                            <p><strong>Phone:</strong> 0712 345 678</p>
+                            <p><strong>Service:</strong> Classic Haircut</p>
+                            <p><strong>Date & Time:</strong> Today, 2:00 PM</p>
+                            <p><strong>Barber:</strong> Any Barber</p>
+                            <p><strong>Amount:</strong> KES 500</p>
+                            <p><strong>Status:</strong> <span class="status-badge status-confirmed">Confirmed</span></p>
+                            <p><strong>Payment:</strong> <span class="status-badge status-paid">Paid</span></p>
+                        `;
+                    }
                     showModal('viewBookingModal');
                     return;
                 }
                 
-                const { data: booking, error } = await supabase
+                const { data: booking, error } = await supabaseClient
                     .from('appointments')
                     .select('*')
                     .eq('booking_reference', bookingRef)
@@ -2786,28 +2916,31 @@
                 const paymentClass = booking.payment_status === 'paid' ? 'status-paid' : 'status-unpaid';
                 const paymentText = booking.payment_status === 'paid' ? 'Paid' : 'Unpaid';
                 
-                document.getElementById('bookingDetails').innerHTML = `
-                    <h4>Booking Details: ${booking.booking_reference}</h4>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div>
-                            <p><strong>Customer Name:</strong><br>${booking.customer_name || 'N/A'}</p>
-                            <p><strong>Customer Phone:</strong><br>${booking.customer_phone || 'N/A'}</p>
-                            <p><strong>Customer Email:</strong><br>${booking.customer_email || 'N/A'}</p>
+                const bookingDetails = document.getElementById('bookingDetails');
+                if (bookingDetails) {
+                    bookingDetails.innerHTML = `
+                        <h4>Booking Details: ${booking.booking_reference}</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <p><strong>Customer Name:</strong><br>${booking.customer_name || 'N/A'}</p>
+                                <p><strong>Customer Phone:</strong><br>${booking.customer_phone || 'N/A'}</p>
+                                <p><strong>Customer Email:</strong><br>${booking.customer_email || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p><strong>Service:</strong><br>${booking.service_name || 'N/A'}</p>
+                                <p><strong>Barber:</strong><br>${booking.barber_name || 'Any Barber'}</p>
+                                <p><strong>Amount:</strong><br>KES ${booking.service_price || 0}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p><strong>Service:</strong><br>${booking.service_name || 'N/A'}</p>
-                            <p><strong>Barber:</strong><br>${booking.barber_name || 'Any Barber'}</p>
-                            <p><strong>Amount:</strong><br>KES ${booking.service_price || 0}</p>
+                        <div style="margin-top: 1rem;">
+                            <p><strong>Date:</strong> ${formattedDate}</p>
+                            <p><strong>Time:</strong> ${booking.appointment_time || 'N/A'}</p>
+                            <p><strong>Status:</strong> <span class="status-badge ${statusClass}">${statusText}</span></p>
+                            <p><strong>Payment Status:</strong> <span class="status-badge ${paymentClass}">${paymentText}</span></p>
+                            ${booking.notes ? `<p><strong>Notes:</strong><br>${booking.notes}</p>` : ''}
                         </div>
-                    </div>
-                    <div style="margin-top: 1rem;">
-                        <p><strong>Date:</strong> ${formattedDate}</p>
-                        <p><strong>Time:</strong> ${booking.appointment_time || 'N/A'}</p>
-                        <p><strong>Status:</strong> <span class="status-badge ${statusClass}">${statusText}</span></p>
-                        <p><strong>Payment Status:</strong> <span class="status-badge ${paymentClass}">${paymentText}</span></p>
-                        ${booking.notes ? `<p><strong>Notes:</strong><br>${booking.notes}</p>` : ''}
-                    </div>
-                `;
+                    `;
+                }
                 
                 showModal('viewBookingModal');
                 
@@ -2826,7 +2959,6 @@
         function confirmBooking(bookingRef) {
             if (confirm(`Confirm booking ${bookingRef}?`)) {
                 alert(`Booking ${bookingRef} confirmed! (Demo mode)`);
-                // In real implementation, update the booking status in Supabase
             }
         }
 
@@ -2834,7 +2966,6 @@
         function deleteBooking(bookingRef) {
             if (confirm(`Delete booking ${bookingRef}? This action cannot be undone.`)) {
                 alert(`Booking ${bookingRef} deleted! (Demo mode)`);
-                // In real implementation, delete the booking from Supabase
             }
         }
 
@@ -2847,7 +2978,6 @@
         function deleteService(serviceId) {
             if (confirm('Delete this service?')) {
                 alert(`Service deleted! (Demo mode)`);
-                // In real implementation, delete from Supabase
             }
         }
 
@@ -2860,7 +2990,6 @@
         function deleteBarber(barberId) {
             if (confirm('Delete this barber?')) {
                 alert(`Barber deleted! (Demo mode)`);
-                // In real implementation, delete from Supabase
             }
         }
 
@@ -2904,13 +3033,25 @@
         // Load settings
         function loadSettings() {
             // Load settings from localStorage or use defaults
-            document.getElementById('businessName').value = localStorage.getItem('businessName') || 'KenBarber Shop';
-            document.getElementById('businessAddress').value = localStorage.getItem('businessAddress') || '';
-            document.getElementById('businessPhone').value = localStorage.getItem('businessPhone') || '';
-            document.getElementById('businessEmail').value = localStorage.getItem('businessEmail') || '';
-            document.getElementById('openingTime').value = localStorage.getItem('openingTime') || '08:00';
-            document.getElementById('closingTime').value = localStorage.getItem('closingTime') || '20:00';
-            document.getElementById('slotDuration').value = localStorage.getItem('slotDuration') || '30';
+            const businessName = document.getElementById('businessName');
+            const businessAddress = document.getElementById('businessAddress');
+            const businessPhone = document.getElementById('businessPhone');
+            const businessEmail = document.getElementById('businessEmail');
+            const openingTime = document.getElementById('openingTime');
+            const closingTime = document.getElementById('closingTime');
+            const slotDuration = document.getElementById('slotDuration');
+            const emailNotifications = document.getElementById('emailNotifications');
+            const smsNotifications = document.getElementById('smsNotifications');
+            const reminderHours = document.getElementById('reminderHours');
+            const adminUsername = document.getElementById('adminUsername');
+            
+            if (businessName) businessName.value = localStorage.getItem('businessName') || 'KenBarber Shop';
+            if (businessAddress) businessAddress.value = localStorage.getItem('businessAddress') || '';
+            if (businessPhone) businessPhone.value = localStorage.getItem('businessPhone') || '';
+            if (businessEmail) businessEmail.value = localStorage.getItem('businessEmail') || '';
+            if (openingTime) openingTime.value = localStorage.getItem('openingTime') || '08:00';
+            if (closingTime) closingTime.value = localStorage.getItem('closingTime') || '20:00';
+            if (slotDuration) slotDuration.value = localStorage.getItem('slotDuration') || '30';
             
             // Load days off
             const daysOff = JSON.parse(localStorage.getItem('daysOff') || '[]');
@@ -2920,105 +3061,130 @@
             });
             
             // Load notification settings
-            document.getElementById('emailNotifications').checked = localStorage.getItem('emailNotifications') !== 'false';
-            document.getElementById('smsNotifications').checked = localStorage.getItem('smsNotifications') !== 'false';
-            document.getElementById('reminderHours').value = localStorage.getItem('reminderHours') || '24';
+            if (emailNotifications) emailNotifications.checked = localStorage.getItem('emailNotifications') !== 'false';
+            if (smsNotifications) smsNotifications.checked = localStorage.getItem('smsNotifications') !== 'false';
+            if (reminderHours) reminderHours.value = localStorage.getItem('reminderHours') || '24';
             
             // Load admin settings
-            document.getElementById('adminUsername').value = localStorage.getItem('adminUsername') || 'admin';
+            if (adminUsername) adminUsername.value = localStorage.getItem('adminUsername') || 'admin';
         }
 
         // Save settings
         function saveSettings() {
             // Save business info
-            localStorage.setItem('businessName', document.getElementById('businessName').value);
-            localStorage.setItem('businessAddress', document.getElementById('businessAddress').value);
-            localStorage.setItem('businessPhone', document.getElementById('businessPhone').value);
-            localStorage.setItem('businessEmail', document.getElementById('businessEmail').value);
+            const businessName = document.getElementById('businessName');
+            const businessAddress = document.getElementById('businessAddress');
+            const businessPhone = document.getElementById('businessPhone');
+            const businessEmail = document.getElementById('businessEmail');
+            
+            if (businessName) localStorage.setItem('businessName', businessName.value);
+            if (businessAddress) localStorage.setItem('businessAddress', businessAddress.value);
+            if (businessPhone) localStorage.setItem('businessPhone', businessPhone.value);
+            if (businessEmail) localStorage.setItem('businessEmail', businessEmail.value);
             
             // Save working hours
-            localStorage.setItem('openingTime', document.getElementById('openingTime').value);
-            localStorage.setItem('closingTime', document.getElementById('closingTime').value);
-            localStorage.setItem('slotDuration', document.getElementById('slotDuration').value);
+            const openingTime = document.getElementById('openingTime');
+            const closingTime = document.getElementById('closingTime');
+            const slotDuration = document.getElementById('slotDuration');
+            
+            if (openingTime) localStorage.setItem('openingTime', openingTime.value);
+            if (closingTime) localStorage.setItem('closingTime', closingTime.value);
+            if (slotDuration) localStorage.setItem('slotDuration', slotDuration.value);
             
             // Save days off
             const daysOff = [];
             ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].forEach(day => {
-                if (document.getElementById(`${day}Off`).checked) {
+                const checkbox = document.getElementById(`${day}Off`);
+                if (checkbox && checkbox.checked) {
                     daysOff.push(day);
                 }
             });
             localStorage.setItem('daysOff', JSON.stringify(daysOff));
             
             // Save notification settings
-            localStorage.setItem('emailNotifications', document.getElementById('emailNotifications').checked);
-            localStorage.setItem('smsNotifications', document.getElementById('smsNotifications').checked);
-            localStorage.setItem('reminderHours', document.getElementById('reminderHours').value);
+            const emailNotifications = document.getElementById('emailNotifications');
+            const smsNotifications = document.getElementById('smsNotifications');
+            const reminderHours = document.getElementById('reminderHours');
+            
+            if (emailNotifications) localStorage.setItem('emailNotifications', emailNotifications.checked);
+            if (smsNotifications) localStorage.setItem('smsNotifications', smsNotifications.checked);
+            if (reminderHours) localStorage.setItem('reminderHours', reminderHours.value);
             
             // Save admin settings
-            const password = document.getElementById('adminPassword').value;
-            const confirmPassword = document.getElementById('adminConfirmPassword').value;
+            const password = document.getElementById('adminPassword')?.value;
+            const confirmPassword = document.getElementById('adminConfirmPassword')?.value;
+            const adminUsername = document.getElementById('adminUsername');
             
             if (password && password === confirmPassword) {
-                localStorage.setItem('adminPassword', password); // In real app, hash this!
+                localStorage.setItem('adminPassword', password);
             } else if (password && password !== confirmPassword) {
                 alert('Passwords do not match!');
                 return;
             }
             
-            localStorage.setItem('adminUsername', document.getElementById('adminUsername').value);
+            if (adminUsername) localStorage.setItem('adminUsername', adminUsername.value);
             
             alert('Settings saved successfully!');
         }
 
         // Use mock data for dashboard (when Supabase is not available)
         function useMockDashboardData() {
-            document.getElementById('todayBookings').textContent = '12';
-            document.getElementById('monthRevenue').textContent = 'KES 45,800';
-            document.getElementById('totalServices').textContent = '8';
-            document.getElementById('totalCustomers').textContent = '156';
-            document.getElementById('bookingCount').textContent = '12';
+            const todayBookings = document.getElementById('todayBookings');
+            const monthRevenue = document.getElementById('monthRevenue');
+            const totalServices = document.getElementById('totalServices');
+            const totalCustomers = document.getElementById('totalCustomers');
+            const bookingCount = document.getElementById('bookingCount');
+            const tableBody = document.getElementById('recentBookingsBody');
+            
+            if (todayBookings) todayBookings.textContent = '12';
+            if (monthRevenue) monthRevenue.textContent = 'KES 45,800';
+            if (totalServices) totalServices.textContent = '8';
+            if (totalCustomers) totalCustomers.textContent = '156';
+            if (bookingCount) bookingCount.textContent = '12';
             
             // Load mock recent bookings
-            const tableBody = document.getElementById('recentBookingsBody');
-            tableBody.innerHTML = `
-                <tr>
-                    <td>KB-001</td>
-                    <td>John Doe</td>
-                    <td>Classic Haircut</td>
-                    <td>Today, 2:00 PM</td>
-                    <td>Any Barber</td>
-                    <td>KES 500</td>
-                    <td><span class="status-badge status-confirmed">Confirmed</span></td>
-                    <td class="action-buttons">
-                        <button class="btn-action btn-view" onclick="viewBookingDetail('KB-001')"><i class="fas fa-eye"></i></button>
-                        <button class="btn-action btn-edit" onclick="editBookingDetail('KB-001')"><i class="fas fa-edit"></i></button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>KB-002</td>
-                    <td>Jane Smith</td>
-                    <td>Beard Trim</td>
-                    <td>Today, 3:30 PM</td>
-                    <td>Mike Johnson</td>
-                    <td>KES 300</td>
-                    <td><span class="status-badge status-pending">Pending</span></td>
-                    <td class="action-buttons">
-                        <button class="btn-action btn-view" onclick="viewBookingDetail('KB-002')"><i class="fas fa-eye"></i></button>
-                        <button class="btn-action btn-edit" onclick="editBookingDetail('KB-002')"><i class="fas fa-edit"></i></button>
-                    </td>
-                </tr>
-            `;
+            if (tableBody) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td>KB-001</td>
+                        <td>John Doe</td>
+                        <td>Classic Haircut</td>
+                        <td>Today, 2:00 PM</td>
+                        <td>Any Barber</td>
+                        <td>KES 500</td>
+                        <td><span class="status-badge status-confirmed">Confirmed</span></td>
+                        <td class="action-buttons">
+                            <button class="btn-action btn-view" onclick="viewBookingDetail('KB-001')"><i class="fas fa-eye"></i></button>
+                            <button class="btn-action btn-edit" onclick="editBookingDetail('KB-001')"><i class="fas fa-edit"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>KB-002</td>
+                        <td>Jane Smith</td>
+                        <td>Beard Trim</td>
+                        <td>Today, 3:30 PM</td>
+                        <td>Mike Johnson</td>
+                        <td>KES 300</td>
+                        <td><span class="status-badge status-pending">Pending</span></td>
+                        <td class="action-buttons">
+                            <button class="btn-action btn-view" onclick="viewBookingDetail('KB-002')"><i class="fas fa-eye"></i></button>
+                            <button class="btn-action btn-edit" onclick="editBookingDetail('KB-002')"><i class="fas fa-edit"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }
             
             // Initialize charts
             initActivityChart();
         }
 
-        // Initialize on load
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initSupabase);
-        } else {
-            initSupabase();
+        // Use mock data when Supabase fails
+        function useMockData() {
+            useMockDashboardData();
+            loadServices();
+            loadBarbers();
+            loadTestimonials();
+            loadCustomers();
         }
     </script>
 </body>
