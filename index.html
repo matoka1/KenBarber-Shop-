@@ -1094,7 +1094,7 @@
         </div>
     </div>
 
-    <script>
+        <script>
         console.log('🚀 Starting KenBarber Website...');
         
         // Update status function
@@ -1289,496 +1289,521 @@
         }
         
         // ============================================
-        // Load Hero Background from Database
+        // Load Hero Background from Database (FIXED)
         // ============================================
         async function loadHeroBackground() {
-    async function loadHeroBackground() {
-    console.log('🎨 Loading hero background...');
-    const heroBackground = document.getElementById('heroBackground');
-    
-    if (!heroBackground) return;
-    
-    try {
-        if (window.supabase) {
-            // Try to get a salon image from gallery
-            const { data, error } = await window.supabase
-                .from('gallery')
-                .select('image_url')
-                .eq('category', 'salon')
-                .limit(1);
+            console.log('🎨 Loading hero background...');
+            const heroBackground = document.getElementById('heroBackground');
             
-            if (!error && data && data.length > 0 && data[0].image_url) {
-                console.log('✅ Using gallery image for hero background');
+            if (!heroBackground) return;
+            
+            try {
+                if (window.supabase) {
+                    // Try to get a salon image from gallery
+                    const { data, error } = await window.supabase
+                        .from('gallery')
+                        .select('image_url')
+                        .eq('category', 'salon')
+                        .limit(1);
+                    
+                    if (!error && data && data.length > 0 && data[0].image_url) {
+                        console.log('✅ Using gallery image for hero background');
+                        heroBackground.style.cssText = `
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background-image: url('${data[0].image_url}');
+                            background-size: cover;
+                            background-position: center;
+                            background-repeat: no-repeat;
+                            z-index: -1;
+                        `;
+                        return;
+                    }
+                    
+                    // Fallback: Get any gallery image
+                    const { data: anyImage } = await window.supabase
+                        .from('gallery')
+                        .select('image_url')
+                        .limit(1);
+                    
+                    if (anyImage && anyImage.length > 0 && anyImage[0].image_url) {
+                        console.log('✅ Using any gallery image for hero background');
+                        heroBackground.style.cssText = `
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background-image: url('${anyImage[0].image_url}');
+                            background-size: cover;
+                            background-position: center;
+                            background-repeat: no-repeat;
+                            z-index: -1;
+                        `;
+                        return;
+                    }
+                }
+                
+                // Default fallback
+                console.log('Using default hero background');
                 heroBackground.style.cssText = `
                     position: absolute;
                     top: 0;
                     left: 0;
                     width: 100%;
                     height: 100%;
-                    background-image: url('${data[0].image_url}');
-                    background-size: cover;
-                    background-position: center;
-                    background-repeat: no-repeat;
+                    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
                     z-index: -1;
                 `;
-                return;
-            }
-            
-            // Fallback: Get any gallery image
-            const { data: anyImage } = await window.supabase
-                .from('gallery')
-                .select('image_url')
-                .limit(1);
-            
-            if (anyImage && anyImage.length > 0 && anyImage[0].image_url) {
-                console.log('✅ Using any gallery image for hero background');
+                
+            } catch (error) {
+                console.warn('Error loading hero background:', error);
                 heroBackground.style.cssText = `
                     position: absolute;
                     top: 0;
                     left: 0;
                     width: 100%;
                     height: 100%;
-                    background-image: url('${anyImage[0].image_url}');
-                    background-size: cover;
-                    background-position: center;
-                    background-repeat: no-repeat;
+                    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
                     z-index: -1;
                 `;
-                return;
             }
         }
         
-        // Default fallback
-        console.log('Using default hero background');
-        heroBackground.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-            z-index: -1;
-        `;
-        
-    } catch (error) {
-        console.warn('Error loading hero background:', error);
-        heroBackground.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-            z-index: -1;
-        `;
-    }
-}
         // ============================================
-// FIX 2: Update Services Display with Admin Images + FILTER
-// ============================================
-
-let allServices = []; // Store all services for filtering
-
-async function updateServicesDisplay() {
-    console.log('🔄 Updating services display...');
-    
-    const servicesGrid = document.getElementById('servicesGrid');
-    if (!servicesGrid) return;
-    
-    try {
-        // Show loading
-        servicesGrid.innerHTML = `
-            <div class="loading-service">
-                <div class="service-img" style="background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
-                </div>
-                <div class="service-content">
-                    <h3>Loading Services...</h3>
-                    <p>Fetching services from database</p>
-                    <div class="service-footer">
-                        <span class="price">KES 0</span>
-                        <span class="duration"><i class="far fa-clock"></i> 0 min</span>
-                    </div>
-                </div>
-            </div>
-        `;
+        // SERVICE FILTER SYSTEM - COMPLETE
+        // ============================================
         
-        if (window.supabase) {
-            console.log('📥 Fetching services from database...');
-            const { data: services, error } = await window.supabase
-                .from('services')
-                .select('*')
-                .eq('is_active', true)
-                .order('price');
+        let allServices = []; // Store all services for filtering
+        
+        async function updateServicesDisplay() {
+            console.log('🔄 Updating services display...');
             
-            if (error) {
-                console.error('❌ Database error:', error);
+            const servicesGrid = document.getElementById('servicesGrid');
+            if (!servicesGrid) return;
+            
+            try {
+                // Show loading
+                servicesGrid.innerHTML = `
+                    <div class="loading-service">
+                        <div class="service-img" style="background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
+                        </div>
+                        <div class="service-content">
+                            <h3>Loading Services...</h3>
+                            <p>Fetching services from database</p>
+                            <div class="service-footer">
+                                <span class="price">KES 0</span>
+                                <span class="duration"><i class="far fa-clock"></i> 0 min</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                if (window.supabase) {
+                    console.log('📥 Fetching services from database...');
+                    const { data: services, error } = await window.supabase
+                        .from('services')
+                        .select('*')
+                        .eq('is_active', true)
+                        .order('price');
+                    
+                    if (error) {
+                        console.error('❌ Database error:', error);
+                        loadFallbackServices();
+                        return;
+                    }
+                    
+                    console.log(`✅ Found ${services?.length || 0} services`);
+                    
+                    if (!services || services.length === 0) {
+                        showNoServices();
+                        return;
+                    }
+                    
+                    // Store all services for filtering
+                    allServices = services;
+                    
+                    // Render all services initially
+                    renderServicesToGrid(services);
+                    
+                    // Setup service filter buttons
+                    setupServiceFilters();
+                    
+                    // Update popular services in footer
+                    updatePopularServices(services.slice(0, 5));
+                    
+                } else {
+                    console.warn('Supabase not available, using fallback services');
+                    loadFallbackServices();
+                }
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
                 loadFallbackServices();
-                return;
             }
-            
-            console.log(`✅ Found ${services?.length || 0} services`);
-            
-            if (!services || services.length === 0) {
-                showNoServices();
-                return;
-            }
-            
-            // Store all services for filtering
-            allServices = services;
-            
-            // Render all services initially
-            renderServicesToGrid(services);
-            
-            // Setup service filter buttons
-            setupServiceFilters();
-            
-            // Update popular services in footer
-            updatePopularServices(services.slice(0, 5));
-            
-        } else {
-            console.warn('Supabase not available, using fallback services');
-            loadFallbackServices();
         }
         
-    } catch (error) {
-        console.error('❌ Error:', error);
-        loadFallbackServices();
-    }
-}
-
-// Setup service filter buttons
-function setupServiceFilters() {
-    const filterButtons = document.querySelectorAll('.service-filter-btn');
-    const noServices = document.getElementById('noServices');
-    
-    filterButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Remove active class from all buttons
-            filterButtons.forEach(btn => btn.classList.remove('active'));
+        // Setup service filter buttons
+        function setupServiceFilters() {
+            const filterButtons = document.querySelectorAll('.service-filter-btn');
+            const noServices = document.getElementById('noServices');
             
-            // Add active class to clicked button
-            this.classList.add('active');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Get category
+                    const category = this.dataset.category;
+                    
+                    // Filter services
+                    let filteredServices = allServices;
+                    
+                    if (category !== 'all') {
+                        filteredServices = allServices.filter(service => {
+                            const serviceCategory = getServiceCategory(service.name, service.description);
+                            return serviceCategory === category;
+                        });
+                    }
+                    
+                    // Render filtered services
+                    renderServicesToGrid(filteredServices);
+                    
+                    // Show/hide no services message
+                    if (noServices) {
+                        noServices.style.display = filteredServices.length === 0 ? 'block' : 'none';
+                    }
+                    
+                    // Smooth scroll to services section if filtering
+                    if (category !== 'all') {
+                        const servicesSection = document.getElementById('services');
+                        if (servicesSection) {
+                            const header = document.querySelector('header');
+                            const headerHeight = header ? header.offsetHeight : 80;
+                            
+                            const sectionPosition = servicesSection.offsetTop - headerHeight - 20;
+                            window.scrollTo({
+                                top: sectionPosition,
+                                behavior: 'smooth'
+                            });
+                        }
+                    }
+                });
+            });
+        }
+        
+        // Function to categorize services based on name/keywords
+        function getServiceCategory(serviceName, serviceDescription = '') {
+            const name = serviceName.toLowerCase();
+            const desc = (serviceDescription || '').toLowerCase();
             
-            // Get category
-            const category = this.dataset.category;
+            // Check for hair-related keywords
+            if (name.includes('hair') || name.includes('cut') || name.includes('trim') || 
+                name.includes('style') || name.includes('fade') || name.includes('scalp') ||
+                desc.includes('hair') || desc.includes('cut') || desc.includes('trim') ||
+                desc.includes('style') || desc.includes('fade') || desc.includes('scalp')) {
+                return 'hair';
+            }
             
-            // Filter services
-            let filteredServices = allServices;
+            // Check for beard-related keywords
+            if (name.includes('beard') || name.includes('mustache') || name.includes('facial hair') ||
+                name.includes('goatee') || name.includes('sideburn') ||
+                desc.includes('beard') || desc.includes('mustache') || desc.includes('facial') ||
+                desc.includes('goatee') || desc.includes('sideburn')) {
+                return 'beard';
+            }
             
-            if (category !== 'all') {
-                filteredServices = allServices.filter(service => {
-                    const serviceCategory = getServiceCategory(service.name, service.description);
-                    return serviceCategory === category;
+            // Check for shave-related keywords
+            if (name.includes('shave') || name.includes('razor') || name.includes('hot towel') ||
+                desc.includes('shave') || desc.includes('razor') || desc.includes('hot towel')) {
+                return 'shave';
+            }
+            
+            // Check for grooming-related keywords
+            if (name.includes('groom') || name.includes('treatment') || name.includes('condition') ||
+                name.includes('massage') || name.includes('clean') ||
+                desc.includes('groom') || desc.includes('treatment') || desc.includes('condition') ||
+                desc.includes('massage') || desc.includes('clean')) {
+                return 'grooming';
+            }
+            
+            // Check for special/package keywords
+            if (name.includes('special') || name.includes('premium') || name.includes('luxury') ||
+                name.includes('package') || name.includes('combo') || name.includes('bundle') ||
+                name.includes('complete') || name.includes('full') ||
+                desc.includes('special') || desc.includes('premium') || desc.includes('luxury') ||
+                desc.includes('package') || desc.includes('combo') || desc.includes('bundle') ||
+                desc.includes('complete') || desc.includes('full')) {
+                return 'special';
+            }
+            
+            return 'grooming'; // Default category
+        }
+        
+        // Get category display name
+        function getCategoryLabel(category) {
+            const labels = {
+                'hair': 'Hair Service',
+                'beard': 'Beard Service',
+                'shave': 'Shave Service',
+                'grooming': 'Grooming',
+                'special': 'Special Treatment'
+            };
+            return labels[category] || 'Service';
+        }
+        
+        function renderServicesToGrid(services) {
+            const servicesGrid = document.getElementById('servicesGrid');
+            if (!servicesGrid) return;
+            
+            servicesGrid.innerHTML = '';
+            
+            services.forEach(service => {
+                // Determine category and label
+                const category = service.category || getServiceCategory(service.name, service.description);
+                const categoryLabel = getCategoryLabel(category);
+                
+                // Escape quotes in service name
+                const safeServiceName = service.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const safeDescription = (service.description || 'Professional grooming service')
+                    .replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                
+                // Create image HTML with proper handling
+                let imageHtml = '';
+                if (service.image_url && service.image_url.trim() !== '') {
+                    // Service has image from admin
+                    const imageUrl = service.image_url.startsWith('http') 
+                        ? service.image_url 
+                        : `https://eqjdkpanqwjhuyavvdaf.supabase.co/storage/v1/object/public/services/${service.image_url}`;
+                    
+                    imageHtml = `
+                        <div class="service-img">
+                            <span class="service-category">${categoryLabel}</span>
+                            <img src="${imageUrl}" 
+                                 alt="${service.image_alt || safeServiceName}"
+                                 style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px 8px 0 0;"
+                                 onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<span class=\"service-category\">${categoryLabel}</span><div style=\"width:100%;height:200px;background:linear-gradient(135deg, var(--primary), #ffd700);display:flex;align-items:center;justify-content:center;border-radius:8px 8px 0 0;\"><div style=\"text-align:center;color:var(--secondary);padding:20px;\"><i class=\"fas fa-cut fa-3x\"></i><h3 style=\"margin-top:10px;\">${safeServiceName}</h3></div></div>'">
+                        </div>
+                    `;
+                } else {
+                    // No image - show placeholder with service name
+                    imageHtml = `
+                        <div class="service-img" style="background: linear-gradient(135deg, var(--primary), #ffd700); display: flex; align-items: center; justify-content: center; border-radius: 8px 8px 0 0; min-height: 200px; position: relative;">
+                            <span class="service-category">${categoryLabel}</span>
+                            <div style="text-align: center; color: var(--secondary); padding: 20px;">
+                                <i class="fas fa-cut fa-3x"></i>
+                                <h3 style="margin-top: 10px;">${safeServiceName}</h3>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Format price and duration
+                const price = service.price ? parseFloat(service.price).toLocaleString() : '0';
+                const duration = service.duration_minutes || 30;
+                
+                const serviceCard = document.createElement('div');
+                serviceCard.className = 'service-card';
+                serviceCard.innerHTML = `
+                    ${imageHtml}
+                    <div class="service-content">
+                        <h3>${safeServiceName}</h3>
+                        <p style="color: #666; font-size: 0.9rem; line-height: 1.5; margin: 10px 0;">
+                            ${safeDescription}
+                        </p>
+                        <div class="service-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                            <span class="price" style="font-size: 1.2rem; font-weight: bold; color: var(--primary);">KES ${price}</span>
+                            <span class="duration" style="color: #666;"><i class="far fa-clock"></i> ${duration} min</span>
+                        </div>
+                        <button class="btn-primary" style="width: 100%; margin-top: 1rem; padding: 12px; border-radius: 8px; font-weight: 600;" 
+                                onclick="bookService('${service.id}', '${safeServiceName}', ${service.price})">
+                            <i class="fas fa-calendar-alt"></i> Book Now
+                        </button>
+                    </div>
+                `;
+                
+                servicesGrid.appendChild(serviceCard);
+            });
+        }
+        
+        function updatePopularServices(services) {
+            const popularServicesList = document.getElementById('popularServicesList');
+            if (!popularServicesList) return;
+            
+            popularServicesList.innerHTML = '';
+            
+            services.forEach(service => {
+                const li = document.createElement('li');
+                li.innerHTML = `<a href="#booking" onclick="bookService('${service.id}', '${service.name.replace(/'/g, "\\'")}', ${service.price})">${service.name}</a>`;
+                popularServicesList.appendChild(li);
+            });
+        }
+        
+        function loadFallbackServices() {
+            const fallbackServices = [
+                {
+                    id: 1,
+                    name: 'Classic Haircut',
+                    description: 'Traditional haircut with modern finishing touches',
+                    price: 500,
+                    duration_minutes: 30,
+                    image_url: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400&h=300&fit=crop',
+                    category: 'hair'
+                },
+                {
+                    id: 2,
+                    name: 'Beard Trim & Style',
+                    description: 'Professional beard grooming and shaping',
+                    price: 300,
+                    duration_minutes: 20,
+                    image_url: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&h=300&fit=crop',
+                    category: 'beard'
+                },
+                {
+                    id: 3,
+                    name: 'Hot Towel Shave',
+                    description: 'Traditional hot towel shave experience',
+                    price: 400,
+                    duration_minutes: 25,
+                    image_url: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400&h=300&fit=crop',
+                    category: 'shave'
+                },
+                {
+                    id: 4,
+                    name: 'Premium Grooming Package',
+                    description: 'Complete grooming experience with all services',
+                    price: 1000,
+                    duration_minutes: 60,
+                    image_url: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=400&h=300&fit=crop',
+                    category: 'special'
+                }
+            ];
+            
+            allServices = fallbackServices;
+            renderServicesToGrid(fallbackServices);
+            
+            // Setup filter buttons for fallback services
+            const filterButtons = document.querySelectorAll('.service-filter-btn');
+            if (filterButtons.length > 0) {
+                filterButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        filterButtons.forEach(btn => btn.classList.remove('active'));
+                        this.classList.add('active');
+                        
+                        const category = this.dataset.category;
+                        let filteredServices = fallbackServices;
+                        
+                        if (category !== 'all') {
+                            filteredServices = fallbackServices.filter(service => service.category === category);
+                        }
+                        
+                        renderServicesToGrid(filteredServices);
+                    });
                 });
             }
             
-            // Render filtered services
-            renderServicesToGrid(filteredServices);
+            updatePopularServices(fallbackServices.slice(0, 3));
+        }
+        
+        function showNoServices() {
+            const servicesGrid = document.getElementById('servicesGrid');
+            const noServices = document.getElementById('noServices');
             
-            // Show/hide no services message
+            if (servicesGrid) {
+                servicesGrid.innerHTML = '';
+            }
+            
             if (noServices) {
-                noServices.style.display = filteredServices.length === 0 ? 'block' : 'none';
+                noServices.style.display = 'block';
+            }
+        }
+        
+        function bookService(serviceId, serviceName, servicePrice) {
+            console.log('Booking service:', serviceId, serviceName, servicePrice);
+            
+            // Scroll to booking section
+            const bookingSection = document.getElementById('booking');
+            if (bookingSection) {
+                const header = document.querySelector('header');
+                const headerHeight = header ? header.offsetHeight : 80;
+                
+                window.scrollTo({
+                    top: bookingSection.offsetTop - headerHeight,
+                    behavior: 'smooth'
+                });
             }
             
-            // Smooth scroll to services section if filtering
-            if (category !== 'all') {
-                const servicesSection = document.getElementById('services');
-                if (servicesSection) {
-                    const header = document.querySelector('header');
-                    const headerHeight = header ? header.offsetHeight : 80;
+            // Update booking form
+            setTimeout(() => {
+                const serviceSelect = document.getElementById('serviceType');
+                if (serviceSelect) {
+                    // Find the option with this serviceId
+                    for (let i = 0; i < serviceSelect.options.length; i++) {
+                        if (serviceSelect.options[i].value === serviceId) {
+                            serviceSelect.value = serviceId;
+                            break;
+                        }
+                    }
                     
-                    const sectionPosition = servicesSection.offsetTop - headerHeight - 20;
-                    window.scrollTo({
-                        top: sectionPosition,
-                        behavior: 'smooth'
-                    });
+                    // Update price display
+                    const priceDisplay = document.getElementById('priceDisplay');
+                    const totalPrice = document.getElementById('totalPrice');
+                    if (priceDisplay && totalPrice) {
+                        priceDisplay.style.display = 'block';
+                        totalPrice.textContent = `KES ${servicePrice.toLocaleString()}`;
+                    }
                 }
-            }
-        });
-    });
-}
-
-// Function to categorize services based on name/keywords
-function getServiceCategory(serviceName, serviceDescription = '') {
-    const name = serviceName.toLowerCase();
-    const desc = (serviceDescription || '').toLowerCase();
-    
-    // Check for hair-related keywords
-    if (name.includes('hair') || name.includes('cut') || name.includes('trim') || 
-        name.includes('style') || name.includes('fade') || name.includes('scalp') ||
-        desc.includes('hair') || desc.includes('cut') || desc.includes('trim') ||
-        desc.includes('style') || desc.includes('fade') || desc.includes('scalp')) {
-        return 'hair';
-    }
-    
-    // Check for beard-related keywords
-    if (name.includes('beard') || name.includes('mustache') || name.includes('facial hair') ||
-        name.includes('goatee') || name.includes('sideburn') ||
-        desc.includes('beard') || desc.includes('mustache') || desc.includes('facial') ||
-        desc.includes('goatee') || desc.includes('sideburn')) {
-        return 'beard';
-    }
-    
-    // Check for shave-related keywords
-    if (name.includes('shave') || name.includes('razor') || name.includes('hot towel') ||
-        desc.includes('shave') || desc.includes('razor') || desc.includes('hot towel')) {
-        return 'shave';
-    }
-    
-    // Check for grooming-related keywords
-    if (name.includes('groom') || name.includes('treatment') || name.includes('condition') ||
-        name.includes('massage') || name.includes('clean') ||
-        desc.includes('groom') || desc.includes('treatment') || desc.includes('condition') ||
-        desc.includes('massage') || desc.includes('clean')) {
-        return 'grooming';
-    }
-    
-    // Check for special/package keywords
-    if (name.includes('special') || name.includes('premium') || name.includes('luxury') ||
-        name.includes('package') || name.includes('combo') || name.includes('bundle') ||
-        name.includes('complete') || name.includes('full') ||
-        desc.includes('special') || desc.includes('premium') || desc.includes('luxury') ||
-        desc.includes('package') || desc.includes('combo') || desc.includes('bundle') ||
-        desc.includes('complete') || desc.includes('full')) {
-        return 'special';
-    }
-    
-    // Check for kids services
-    if (name.includes('kid') || name.includes('child') || name.includes('boy') ||
-        desc.includes('kid') || desc.includes('child') || desc.includes('boy')) {
-        return 'kids';
-    }
-    
-    return 'grooming'; // Default category
-}
-
-// Get category display name
-function getCategoryLabel(category) {
-    const labels = {
-        'hair': 'Hair Service',
-        'beard': 'Beard Service',
-        'shave': 'Shave Service',
-        'grooming': 'Grooming',
-        'special': 'Special Treatment',
-        'kids': 'Kids Service'
-    };
-    return labels[category] || 'Service';
-}
-
-function renderServicesToGrid(services) {
-    const servicesGrid = document.getElementById('servicesGrid');
-    if (!servicesGrid) return;
-    
-    servicesGrid.innerHTML = '';
-    
-    services.forEach(service => {
-        const serviceCard = document.createElement('div');
-        serviceCard.className = 'service-card';
+            }, 500);
+        }
         
-        // Determine category and label
-        const category = service.category || getServiceCategory(service.name, service.description);
-        const categoryLabel = getCategoryLabel(category);
-        
-        // Escape quotes in service name
-        const safeServiceName = service.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        const safeDescription = (service.description || 'Professional grooming service')
-            .replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        
-        // Create image HTML with proper handling
-        let imageHtml = '';
-        if (service.image_url && service.image_url.trim() !== '') {
-            // Service has image from admin
-            const imageUrl = service.image_url.startsWith('http') 
-                ? service.image_url 
-                : `https://eqjdkpanqwjhuyavvdaf.supabase.co/storage/v1/object/public/services/${service.image_url}`;
+        // Load main.js
+        function loadMainJS() {
+            console.log('📦 Loading main.js...');
             
-            imageHtml = `
-                <div class="service-img">
-                    <span class="service-category">${categoryLabel}</span>
-                    <img src="${imageUrl}" 
-                         alt="${service.image_alt || safeServiceName}"
-                         style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px 8px 0 0;"
-                         onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<span class=\"service-category\">${categoryLabel}</span><div style=\"width:100%;height:200px;background:linear-gradient(135deg, var(--primary), #ffd700);display:flex;align-items:center;justify-content:center;border-radius:8px 8px 0 0;\"><div style=\"text-align:center;color:var(--secondary);padding:20px;\"><i class=\"fas fa-cut fa-3x\"></i><h3 style=\"margin-top:10px;\">${safeServiceName}</h3></div></div>'">
-                </div>
-            `;
-        } else {
-            // No image - show placeholder with service name
-            imageHtml = `
-                <div class="service-img" style="background: linear-gradient(135deg, var(--primary), #ffd700); display: flex; align-items: center; justify-content: center; border-radius: 8px 8px 0 0; min-height: 200px; position: relative;">
-                    <span class="service-category">${categoryLabel}</span>
-                    <div style="text-align: center; color: var(--secondary); padding: 20px;">
-                        <i class="fas fa-cut fa-3x"></i>
-                        <h3 style="margin-top: 10px;">${safeServiceName}</h3>
-                    </div>
-                </div>
-            `;
-        }
-        
-        // Format price and duration
-        const price = service.price ? parseFloat(service.price).toLocaleString() : '0';
-        const duration = service.duration_minutes || 30;
-        
-        serviceCard.innerHTML = `
-            ${imageHtml}
-            <div class="service-content">
-                <h3>${safeServiceName}</h3>
-                <p style="color: #666; font-size: 0.9rem; line-height: 1.5; margin: 10px 0;">
-                    ${safeDescription}
-                </p>
-                <div class="service-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
-                    <span class="price" style="font-size: 1.2rem; font-weight: bold; color: var(--primary);">KES ${price}</span>
-                    <span class="duration" style="color: #666;"><i class="far fa-clock"></i> ${duration} min</span>
-                </div>
-                <button class="btn-primary" style="width: 100%; margin-top: 1rem; padding: 12px; border-radius: 8px; font-weight: 600;" 
-                        onclick="bookService('${service.id}', '${safeServiceName}', ${service.price})">
-                    <i class="fas fa-calendar-alt"></i> Book Now
-                </button>
-            </div>
-        `;
-        
-        servicesGrid.appendChild(serviceCard);
-    });
-}
-
-function updatePopularServices(services) {
-    const popularServicesList = document.getElementById('popularServicesList');
-    if (!popularServicesList) return;
-    
-    popularServicesList.innerHTML = '';
-    
-    services.forEach(service => {
-        const li = document.createElement('li');
-        li.innerHTML = `<a href="#booking" onclick="bookService('${service.id}', '${service.name.replace(/'/g, "\\'")}', ${service.price})">${service.name}</a>`;
-        popularServicesList.appendChild(li);
-    });
-}
-
-function loadFallbackServices() {
-    const fallbackServices = [
-        {
-            id: 1,
-            name: 'Classic Haircut',
-            description: 'Traditional haircut with modern finishing touches',
-            price: 500,
-            duration_minutes: 30,
-            image_url: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400&h=300&fit=crop',
-            category: 'hair'
-        },
-        {
-            id: 2,
-            name: 'Beard Trim & Style',
-            description: 'Professional beard grooming and shaping',
-            price: 300,
-            duration_minutes: 20,
-            image_url: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&h=300&fit=crop',
-            category: 'beard'
-        },
-        {
-            id: 3,
-            name: 'Hot Towel Shave',
-            description: 'Traditional hot towel shave experience',
-            price: 400,
-            duration_minutes: 25,
-            image_url: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400&h=300&fit=crop',
-            category: 'shave'
-        },
-        {
-            id: 4,
-            name: 'Premium Grooming Package',
-            description: 'Complete grooming experience with all services',
-            price: 1000,
-            duration_minutes: 60,
-            image_url: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=400&h=300&fit=crop',
-            category: 'special'
-        },
-        {
-            id: 5,
-            name: 'Kids Haircut',
-            description: 'Haircut specially designed for children',
-            price: 350,
-            duration_minutes: 25,
-            image_url: 'https://images.unsplash.com/photo-1562788869-4ed32648eb72?w=400&h=300&fit=crop',
-            category: 'kids'
-        }
-    ];
-    
-    allServices = fallbackServices;
-    renderServicesToGrid(fallbackServices);
-    
-    // Setup filter buttons for fallback services
-    const filterButtons = document.querySelectorAll('.service-filter-btn');
-    if (filterButtons.length > 0) {
-        filterButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                filterButtons.forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                
-                const category = this.dataset.category;
-                let filteredServices = fallbackServices;
-                
-                if (category !== 'all') {
-                    filteredServices = fallbackServices.filter(service => service.category === category);
-                }
-                
-                renderServicesToGrid(filteredServices);
-            });
-        });
-    }
-    
-    updatePopularServices(fallbackServices.slice(0, 3));
-}
-
-function showNoServices() {
-    const servicesGrid = document.getElementById('servicesGrid');
-    const noServices = document.getElementById('noServices');
-    
-    if (servicesGrid) {
-        servicesGrid.innerHTML = '';
-    }
-    
-    if (noServices) {
-        noServices.style.display = 'block';
-    }
-}
-
-function bookService(serviceId, serviceName, servicePrice) {
-    console.log('Booking service:', serviceId, serviceName, servicePrice);
-    
-    // Scroll to booking section
-    const bookingSection = document.getElementById('booking');
-    if (bookingSection) {
-        const header = document.querySelector('header');
-        const headerHeight = header ? header.offsetHeight : 80;
-        
-        window.scrollTo({
-            top: bookingSection.offsetTop - headerHeight,
-            behavior: 'smooth'
-        });
-    }
-    
-    // Update booking form
-    setTimeout(() => {
-        const serviceSelect = document.getElementById('serviceType');
-        if (serviceSelect) {
-            // Find the option with this serviceId
-            for (let i = 0; i < serviceSelect.options.length; i++) {
-                if (serviceSelect.options[i].value === serviceId) {
-                    serviceSelect.value = serviceId;
-                    break;
-                }
-            }
+            const script = document.createElement('script');
+            script.src = 'js/main.js';
             
-            // Update price display
-            const priceDisplay = document.getElementById('priceDisplay');
-            const totalPrice = document.getElementById('totalPrice');
-            if (priceDisplay && totalPrice) {
-                priceDisplay.style.display = 'block';
-                totalPrice.textContent = `KES ${servicePrice.toLocaleString()}`;
-            }
+            script.onload = function() {
+                console.log('✅ main.js loaded');
+                setTimeout(loadBookingJS, 500);
+            };
+            
+            script.onerror = function() {
+                console.error('❌ Failed to load main.js');
+                loadBookingJS();
+            };
+            
+            document.body.appendChild(script);
         }
-    }, 500);
-}
+        
+        function loadBookingJS() {
+            console.log('📦 Loading booking.js...');
+            
+            const script = document.createElement('script');
+            script.src = 'js/booking.js';
+            
+            script.onload = function() {
+                console.log('✅ booking.js loaded');
+                console.log('🎉 All systems ready!');
+                
+                setTimeout(() => {
+                    updateStatus('System Ready', 'success');
+                }, 1000);
+            };
+            
+            script.onerror = function() {
+                console.error('❌ Failed to load booking.js');
+            };
+            
+            document.body.appendChild(script);
+        }
         
         // Gallery Functions
         let galleryItems = [];
@@ -1988,6 +2013,80 @@ function bookService(serviceId, serviceName, servicePrice) {
             setupGalleryFilters();
             setupLightbox();
         }
+        
+        // Global utility functions
+        window.openGoogleMaps = function() {
+            window.open('https://maps.google.com/?q=-0.3031,36.0800', '_blank');
+        };
+        
+        window.scrollToBooking = function() {
+            const bookingSection = document.getElementById('booking');
+            if (bookingSection) {
+                const header = document.querySelector('header');
+                const headerHeight = header ? header.offsetHeight : 80;
+                window.scrollTo({
+                    top: bookingSection.offsetTop - headerHeight,
+                    behavior: 'smooth'
+                });
+            }
+        };
+        
+        window.subscribeNewsletter = async function() {
+            const emailInput = document.getElementById('newsletterEmail');
+            if (!emailInput) return;
+            
+            const email = emailInput.value.trim();
+            if (!email || !email.includes('@')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+            
+            const button = emailInput.nextElementSibling;
+            const originalText = button ? button.innerHTML : 'Subscribe';
+            
+            if (button) {
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                button.disabled = true;
+            }
+            
+            try {
+                if (window.supabase) {
+                    const { error } = await window.supabase
+                        .from('newsletter_subscriptions')
+                        .insert({ 
+                            email: email, 
+                            subscribed_at: new Date().toISOString() 
+                        });
+                    
+                    if (!error) {
+                        alert('Thank you for subscribing to KenBarber updates!');
+                    } else {
+                        console.warn('Database error:', error);
+                    }
+                }
+            } catch (error) {
+                console.warn('Database error:', error);
+            }
+            
+            try {
+                let subscriptions = JSON.parse(localStorage.getItem('kenbarber_newsletter') || '[]');
+                if (!subscriptions.includes(email)) {
+                    subscriptions.push(email);
+                    localStorage.setItem('kenbarber_newsletter', JSON.stringify(subscriptions));
+                    if (!window.supabase) {
+                        alert('Thank you for subscribing!');
+                    }
+                }
+            } catch (error) {
+                console.warn('Local storage error:', error);
+            }
+            
+            if (button) {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+            emailInput.value = '';
+        };
         
         // Start everything when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
