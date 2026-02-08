@@ -1,3 +1,4 @@
+
 // js/main.js - WORKING VERSION
 console.log('🏁 KenBarber Main.js Initializing - WORKING VERSION');
 
@@ -7,12 +8,11 @@ window.allBarbers = [];
 window.allTestimonials = [];
 window.isInitialized = false;
 
-// Shortcut references - DON'T redeclare, just create references
-// Remove const/let to avoid duplicate declaration
-allServices = window.allServices;
-allBarbers = window.allBarbers;
-allTestimonials = window.allTestimonials;
-isInitialized = window.isInitialized;
+// Shortcut references
+var allServices = window.allServices;
+var allBarbers = window.allBarbers;
+var allTestimonials = window.allTestimonials;
+var isInitialized = window.isInitialized;
 
 // Update database status
 function updateStatus(message, type = 'info') {
@@ -36,7 +36,7 @@ function updateStatus(message, type = 'info') {
 async function loadAllData() {
     console.log('📡 Starting data load from database...');
     
-    if (window.isInitialized) {
+    if (isInitialized) {
         console.log('Already initialized, skipping');
         return;
     }
