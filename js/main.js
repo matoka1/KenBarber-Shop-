@@ -7,11 +7,11 @@ window.allBarbers = [];
 window.allTestimonials = [];
 window.isInitialized = false;
 
-// Shortcut references
-const allServices = window.allServices;
-const allBarbers = window.allBarbers;
-const allTestimonials = window.allTestimonials;
-let isInitialized = window.isInitialized;
+// Shortcut references - DON'T USE const/let here (use var or no declaration)
+var allServices = window.allServices;
+var allBarbers = window.allBarbers;
+var allTestimonials = window.allTestimonials;
+var isInitialized = window.isInitialized;
 
 // Update database status
 function updateStatus(message, type = 'info') {
@@ -66,17 +66,18 @@ async function loadAllData() {
             throw sError;
         }
         
-        // Load barbers
+        // Load barbers - FIXED: Include all necessary fields
         console.log('Loading barbers...');
         const { data: barbers, error: bError } = await window.supabase
             .from('barbers')
-            .select('id, name, specialty, experience_years, bio, image_url, is_active')
+            .select('*')  // Select all fields instead of specific ones
             .eq('is_active', true)
             .order('experience_years', { ascending: false });
         
         if (bError) {
             console.error('Barbers error:', bError);
-            throw bError;
+            // Don't throw - just continue without barbers
+            console.warn('Continuing without barbers data');
         }
         
         // Load testimonials (optional - skip if error)
@@ -108,7 +109,7 @@ async function loadAllData() {
         allBarbers.push(...window.allBarbers);
         allTestimonials.push(...window.allTestimonials);
         
-        console.log(`✅ SUCCESS: Loaded ${allServices.length} services, ${allBarbers.length} barbers`);
+        console.log(`✅ SUCCESS: Loaded ${allServices.length} services, ${allBarbers ? allBarbers.length : 0} barbers`);
         
         // Update UI
         updateServicesUI();
@@ -212,6 +213,15 @@ function updateBarbersUI() {
     
     if (!allBarbers || allBarbers.length === 0) {
         console.warn('No barbers to display');
+        // Show a fallback message instead of empty
+        barbersGrid.innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <i class="fas fa-user-tie"></i>
+                <h3>Our Expert Barbers</h3>
+                <p>All our barbers are highly trained professionals. Please call 0704 325 810 to check current availability.</p>
+                <p><strong>Walk-ins welcome!</strong></p>
+            </div>
+        `;
         return;
     }
     
@@ -295,7 +305,7 @@ function updateBookingForm() {
     
     // Update barber dropdown
     const barberSelect = document.getElementById('barberSelect');
-    if (barberSelect && allBarbers.length > 0) {
+    if (barberSelect && allBarbers && allBarbers.length > 0) {
         barberSelect.innerHTML = `
             <option value="">Any Available Barber</option>
             ${allBarbers.map(barber => `
@@ -303,6 +313,12 @@ function updateBookingForm() {
                     ${barber.name} - ${barber.specialty || 'Professional Barber'}
                 </option>
             `).join('')}
+        `;
+        barberSelect.disabled = false;
+    } else {
+        barberSelect.innerHTML = `
+            <option value="">Any Available Barber</option>
+            <option value="any">Any Barber Available</option>
         `;
         barberSelect.disabled = false;
     }
