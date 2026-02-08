@@ -7,7 +7,7 @@ window.allBarbers = [];
 window.allTestimonials = [];
 window.isInitialized = false;
 
-// Shortcut references - DON'T USE const/let here (use var or no declaration)
+// Shortcut references
 var allServices = window.allServices;
 var allBarbers = window.allBarbers;
 var allTestimonials = window.allTestimonials;
@@ -66,18 +66,17 @@ async function loadAllData() {
             throw sError;
         }
         
-        // Load barbers - FIXED: Include all necessary fields
+        // Load barbers
         console.log('Loading barbers...');
         const { data: barbers, error: bError } = await window.supabase
             .from('barbers')
-            .select('*')  // Select all fields instead of specific ones
+            .select('id, name, specialty, experience_years, bio, image_url, is_active')
             .eq('is_active', true)
             .order('experience_years', { ascending: false });
         
         if (bError) {
             console.error('Barbers error:', bError);
-            // Don't throw - just continue without barbers
-            console.warn('Continuing without barbers data');
+            throw bError;
         }
         
         // Load testimonials (optional - skip if error)
@@ -109,7 +108,7 @@ async function loadAllData() {
         allBarbers.push(...window.allBarbers);
         allTestimonials.push(...window.allTestimonials);
         
-        console.log(`✅ SUCCESS: Loaded ${allServices.length} services, ${allBarbers ? allBarbers.length : 0} barbers`);
+        console.log(`✅ SUCCESS: Loaded ${allServices.length} services, ${allBarbers.length} barbers`);
         
         // Update UI
         updateServicesUI();
@@ -213,15 +212,6 @@ function updateBarbersUI() {
     
     if (!allBarbers || allBarbers.length === 0) {
         console.warn('No barbers to display');
-        // Show a fallback message instead of empty
-        barbersGrid.innerHTML = `
-            <div class="empty-state" style="grid-column: 1 / -1;">
-                <i class="fas fa-user-tie"></i>
-                <h3>Our Expert Barbers</h3>
-                <p>All our barbers are highly trained professionals. Please call 0704 325 810 to check current availability.</p>
-                <p><strong>Walk-ins welcome!</strong></p>
-            </div>
-        `;
         return;
     }
     
@@ -305,7 +295,7 @@ function updateBookingForm() {
     
     // Update barber dropdown
     const barberSelect = document.getElementById('barberSelect');
-    if (barberSelect && allBarbers && allBarbers.length > 0) {
+    if (barberSelect && allBarbers.length > 0) {
         barberSelect.innerHTML = `
             <option value="">Any Available Barber</option>
             ${allBarbers.map(barber => `
@@ -313,12 +303,6 @@ function updateBookingForm() {
                     ${barber.name} - ${barber.specialty || 'Professional Barber'}
                 </option>
             `).join('')}
-        `;
-        barberSelect.disabled = false;
-    } else {
-        barberSelect.innerHTML = `
-            <option value="">Any Available Barber</option>
-            <option value="any">Any Barber Available</option>
         `;
         barberSelect.disabled = false;
     }
