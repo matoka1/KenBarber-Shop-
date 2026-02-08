@@ -1636,7 +1636,219 @@
         if (document.readyState === 'interactive' || document.readyState === 'complete') {
             initializeWebsite();
             setTimeout(initializeGallery, 1000);
+        } 
+        // ============================================
+// UPDATE SERVICES DISPLAY
+// ============================================
+
+async function updateServicesDisplay() {
+    console.log('🔄 Updating services display...');
+    
+    const servicesGrid = document.getElementById('servicesGrid');
+    if (!servicesGrid) {
+        console.error('❌ Services grid not found!');
+        return;
+    }
+    
+    try {
+        // Show loading
+        servicesGrid.innerHTML = `
+            <div class="loading-service">
+                <div class="service-img" style="background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
+                </div>
+                <div class="service-content">
+                    <h3>Loading Services...</h3>
+                    <p>Fetching services from database</p>
+                    <div class="service-footer">
+                        <span class="price">KES 0</span>
+                        <span class="duration"><i class="far fa-clock"></i> 0 min</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Check if Supabase exists
+        if (!window.supabase) {
+            console.warn('Supabase not available, showing mock services');
+            showMockServices();
+            return;
         }
+        
+        // Fetch services from Supabase
+        console.log('📥 Fetching services from database...');
+        const { data: services, error } = await window.supabase
+            .from('services')
+            .select('*')
+            .eq('is_active', true)
+            .order('price');
+        
+        if (error) {
+            console.error('❌ Database error:', error);
+            showMockServices();
+            return;
+        }
+        
+        console.log(`✅ Found ${services?.length || 0} services`);
+        
+        if (!services || services.length === 0) {
+            showNoServices();
+            return;
+        }
+        
+        // Render services
+        renderServicesToGrid(services);
+        
+    } catch (error) {
+        console.error('❌ Error:', error);
+        showMockServices();
+    }
+}
+
+function renderServicesToGrid(services) {
+    const servicesGrid = document.getElementById('servicesGrid');
+    if (!servicesGrid) return;
+    
+    servicesGrid.innerHTML = '';
+    
+    services.forEach(service => {
+        const serviceCard = document.createElement('div');
+        serviceCard.className = 'service-card';
+        
+        // Create image HTML
+        let imageHtml = '';
+        if (service.image_url && service.image_url.trim() !== '') {
+            // Service has image
+            imageHtml = `
+                <div class="service-img">
+                    <img src="${service.image_url}" 
+                         alt="${service.image_alt || service.name}"
+                         style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px 8px 0 0;"
+                         onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"200\" viewBox=\"0 0 400 200\"><rect width=\"400\" height=\"200\" fill=\"%23D4AF37\"/><text x=\"200\" y=\"110\" font-family=\"Arial\" font-size=\"24\" fill=\"%231a1a1a\" text-anchor=\"middle\">${service.name}</text></svg>';">
+                </div>
+            `;
+        } else {
+            // No image - show placeholder
+            imageHtml = `
+                <div class="service-img" style="background: linear-gradient(135deg, var(--primary), #ffd700); display: flex; align-items: center; justify-content: center; border-radius: 8px 8px 0 0; min-height: 200px;">
+                    <div style="text-align: center; color: var(--secondary); padding: 20px;">
+                        <i class="fas fa-cut fa-3x"></i>
+                        <h3 style="margin-top: 10px;">${service.name}</h3>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Format price and duration
+        const price = service.price ? parseFloat(service.price).toLocaleString() : '0';
+        const duration = service.duration_minutes || 30;
+        
+        serviceCard.innerHTML = `
+            ${imageHtml}
+            <div class="service-content">
+                <h3>${service.name}</h3>
+                <p style="color: #666; font-size: 0.9rem; line-height: 1.5; margin: 10px 0;">
+                    ${service.description || 'Professional grooming service'}
+                </p>
+                <div class="service-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                    <span class="price" style="font-size: 1.2rem; font-weight: bold; color: var(--primary);">KES ${price}</span>
+                    <span class="duration" style="color: #666;"><i class="far fa-clock"></i> ${duration} min</span>
+                </div>
+                <button class="btn-primary" style="width: 100%; margin-top: 1rem; padding: 12px; border-radius: 8px; font-weight: 600;" 
+                        onclick="bookService('${service.id}', '${service.name}', ${service.price})">
+                    <i class="fas fa-calendar-alt"></i> Book Now
+                </button>
+            </div>
+        `;
+        
+        servicesGrid.appendChild(serviceCard);
+    });
+}
+
+function showMockServices() {
+    const servicesGrid = document.getElementById('servicesGrid');
+    if (!servicesGrid) return;
+    
+    const mockServices = [
+        {
+            id: 1,
+            name: 'Classic Haircut',
+            description: 'Traditional haircut with modern finishing touches',
+            price: 500,
+            duration_minutes: 30,
+            image_url: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400&h=300&fit=crop'
+        },
+        {
+            id: 2,
+            name: 'Beard Trim & Style',
+            description: 'Professional beard grooming and shaping',
+            price: 300,
+            duration_minutes: 20,
+            image_url: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&h=300&fit=crop'
+        }
+    ];
+    
+    renderServicesToGrid(mockServices);
+}
+
+function showNoServices() {
+    const servicesGrid = document.getElementById('servicesGrid');
+    if (!servicesGrid) return;
+    
+    servicesGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+            <i class="fas fa-cut fa-3x" style="color: var(--gray); margin-bottom: 1rem;"></i>
+            <h3>No Services Available</h3>
+            <p>Our service menu is being updated. Please check back soon or contact us directly.</p>
+            <a href="tel:+254704325810" class="btn-primary" style="margin-top: 1rem;">
+                <i class="fas fa-phone"></i> Call for Availability
+            </a>
+        </div>
+    `;
+}
+
+// Function to book service
+function bookService(serviceId, serviceName, servicePrice) {
+    console.log('Booking service:', serviceId, serviceName, servicePrice);
+    
+    // Scroll to booking section
+    const bookingSection = document.getElementById('booking');
+    if (bookingSection) {
+        bookingSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // Update booking form
+    setTimeout(() => {
+        const serviceSelect = document.getElementById('serviceType');
+        if (serviceSelect) {
+            serviceSelect.value = serviceId;
+            
+            // Update price display
+            const priceDisplay = document.getElementById('priceDisplay');
+            const totalPrice = document.getElementById('totalPrice');
+            if (priceDisplay && totalPrice) {
+                priceDisplay.style.display = 'block';
+                totalPrice.textContent = `KES ${servicePrice.toLocaleString()}`;
+            }
+            
+            alert(`✅ ${serviceName} selected!\n\nPrice: KES ${servicePrice.toLocaleString()}\n\nComplete the form below to book.`);
+        }
+    }, 500);
+}
+
+// Call this function when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait a bit for everything to load
+    setTimeout(updateServicesDisplay, 2000);
+});
+
+// Also call when Supabase is ready
+if (window.supabaseReady) {
+    window.supabaseReady = function() {
+        console.log('Supabase ready, updating services...');
+        updateServicesDisplay();
+    };
+}
     </script>
 </body>
 </html>
