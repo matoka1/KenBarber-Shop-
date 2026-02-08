@@ -1,4 +1,6 @@
-/* style.css - KenBarber Main Stylesheet */
+/* style.css - KenBarber Main Stylesheet - COMPLETE UPDATED VERSION */
+/* Version: 2.0 - Updated for Mobile Menu & Admin Images */
+
 :root {
     /* Color Scheme */
     --primary: #d4af37; /* Gold - Traditional barber color */
@@ -950,13 +952,18 @@ header {
     font-size: 1.5rem;
     color: white;
     cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0.5rem;
 }
 
-/* Hero Section */
+/* =========================================== */
+/* HERO SECTION UPDATE FOR ADMIN BACKGROUND */
+/* =========================================== */
+
 .hero {
     padding: 10rem 0 6rem;
-    background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), 
-                url('https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+    background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8));
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -964,6 +971,29 @@ header {
     text-align: center;
     position: relative;
     overflow: hidden;
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    margin-top: 60px; /* Account for fixed header */
+}
+
+/* Admin editable hero background */
+.hero-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: -1;
+}
+
+/* Fallback if no background image loaded */
+.hero:has(.hero-background:empty) {
+    background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+                linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
 }
 
 .hero:before {
@@ -1047,7 +1077,10 @@ header {
     margin: 0 auto;
 }
 
-/* Services Section */
+/* =========================================== */
+/* SERVICES SECTION UPDATE FOR ADMIN IMAGES */
+/* =========================================== */
+
 .services-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -1061,6 +1094,9 @@ header {
     box-shadow: var(--shadow-md);
     transition: all var(--transition-normal);
     border: 1px solid var(--gray-light);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .service-card:hover {
@@ -1073,8 +1109,10 @@ header {
     height: 200px;
     background-color: #f5f5f5;
     overflow: hidden;
+    position: relative;
 }
 
+/* Admin uploaded service images */
 .service-img img {
     width: 100%;
     height: 100%;
@@ -1086,8 +1124,38 @@ header {
     transform: scale(1.05);
 }
 
+/* Fallback for images that fail to load */
+.service-img img:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary), #ffd700);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--secondary);
+    content: attr(alt);
+    font-size: 1.5rem;
+    font-weight: bold;
+    font-family: var(--font-heading);
+}
+
+/* Placeholder for loading */
+.service-img.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary), #ffd700);
+}
+
 .service-content {
     padding: var(--spacing-lg);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .service-content h3 {
@@ -1098,6 +1166,7 @@ header {
 .service-content p {
     color: var(--gray);
     margin-bottom: var(--spacing-md);
+    flex: 1;
 }
 
 .service-footer {
@@ -1122,6 +1191,12 @@ header {
     gap: 0.5rem;
     color: var(--gray);
     font-size: 0.9rem;
+}
+
+/* Book Now button for services */
+.service-card .btn-primary {
+    margin-top: auto;
+    margin-bottom: 0;
 }
 
 /* Barbers Section */
@@ -1541,6 +1616,71 @@ header {
     font-size: 0.9rem;
 }
 
+/* =========================================== */
+/* MOBILE MENU ENHANCEMENTS FOR CLOSE ON CLICK */
+/* =========================================== */
+
+@media (max-width: 768px) {
+    .mobile-toggle {
+        display: block;
+        z-index: 1001;
+    }
+    
+    .nav-menu {
+        position: fixed;
+        top: 70px;
+        left: 0;
+        width: 100%;
+        background-color: var(--secondary);
+        flex-direction: column;
+        padding: var(--spacing-lg);
+        transform: translateY(-100%);
+        opacity: 0;
+        visibility: hidden;
+        transition: all var(--transition-normal);
+        box-shadow: var(--shadow-lg);
+        z-index: 1000;
+        max-height: calc(100vh - 70px);
+        overflow-y: auto;
+    }
+    
+    .nav-menu.active {
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .nav-menu li {
+        width: 100%;
+    }
+    
+    .nav-menu li a {
+        display: block;
+        padding: 1rem;
+        text-align: center;
+        border-radius: var(--radius-md);
+        margin-bottom: 0.5rem;
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .nav-menu li a:hover {
+        background-color: rgba(212, 175, 55, 0.2);
+        color: var(--primary);
+    }
+    
+    /* Mobile menu overlay */
+    body:has(.nav-menu.active)::after {
+        content: '';
+        position: fixed;
+        top: 70px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+}
+
 /* Footer */
 footer {
     background-color: var(--secondary);
@@ -1872,6 +2012,10 @@ footer {
     h1 { font-size: 3rem; }
     h2 { font-size: 2.2rem; }
     
+    .hero h1 {
+        font-size: 3rem;
+    }
+    
     .booking-container,
     .contact-container {
         grid-template-columns: 1fr;
@@ -1892,6 +2036,7 @@ footer {
 @media (max-width: 768px) {
     .hero {
         padding: 8rem 0 4rem;
+        min-height: 70vh;
     }
     
     .hero h1 {
@@ -1900,37 +2045,6 @@ footer {
     
     .subtitle {
         font-size: 1.2rem;
-    }
-    
-    .mobile-toggle {
-        display: block;
-    }
-    
-    .nav-menu {
-        position: fixed;
-        top: 70px;
-        left: 0;
-        width: 100%;
-        background-color: var(--secondary);
-        flex-direction: column;
-        padding: var(--spacing-lg);
-        transform: translateY(-100%);
-        opacity: 0;
-        visibility: hidden;
-        transition: all var(--transition-normal);
-        box-shadow: var(--shadow-lg);
-    }
-    
-    .nav-menu.active {
-        transform: translateY(0);
-        opacity: 1;
-        visibility: visible;
-    }
-    
-    .nav-menu li a {
-        display: block;
-        padding: 1rem;
-        text-align: center;
     }
     
     .cta-buttons {
@@ -1957,6 +2071,20 @@ footer {
     .modal-footer {
         flex-direction: column;
     }
+    
+    .footer-container {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+    
+    .payment-icons,
+    .social-icons {
+        justify-content: center;
+    }
+    
+    .contact-info-item {
+        justify-content: center;
+    }
 }
 
 @media (max-width: 576px) {
@@ -1964,8 +2092,16 @@ footer {
         padding: var(--spacing-xl) 0;
     }
     
-    .footer-container {
-        grid-template-columns: 1fr;
+    .hero {
+        min-height: 60vh;
+    }
+    
+    .hero h1 {
+        font-size: 2rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
     }
     
     .footer-bottom {
@@ -2116,4 +2252,184 @@ footer {
 :focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
+}
+
+/* Additional styles for database status */
+.db-status {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: var(--secondary);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: var(--shadow-md);
+}
+
+.db-status.online {
+    background: var(--success);
+}
+
+.db-status.offline {
+    background: var(--danger);
+}
+
+.db-status i {
+    font-size: 0.7rem;
+}
+
+/* WhatsApp Float Button */
+.whatsapp-float {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #25D366;
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    transition: all var(--transition-normal);
+    text-decoration: none;
+}
+
+.whatsapp-float:hover {
+    transform: scale(1.1);
+    background-color: #128C7E;
+}
+
+/* M-Pesa Badge */
+.mpesa-badge {
+    background-color: #00A859;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+/* Special Offer Banner */
+.special-offer-banner {
+    background: linear-gradient(90deg, var(--primary), #ffd700);
+    color: var(--secondary);
+    text-align: center;
+    padding: 10px;
+    font-weight: bold;
+    position: relative;
+    animation: pulse 2s infinite;
+    margin-top: 60px; /* Account for fixed header */
+}
+
+/* Booking Steps */
+.booking-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+    margin: var(--spacing-xl) 0;
+}
+
+.step {
+    text-align: center;
+    padding: var(--spacing-lg);
+    background: rgba(212, 175, 55, 0.1);
+    border-radius: var(--radius-lg);
+}
+
+.step-number {
+    background: var(--primary);
+    color: var(--secondary);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--spacing-md);
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* Service Image Loading Fallback */
+@supports not (selector(:has(.hero-background:empty))) {
+    .hero-background[style*="background"] {
+        display: block;
+    }
+    
+    .hero-background:not([style*="background"]) {
+        display: none;
+    }
+}
+
+/* Improved Image Loading */
+.service-img img {
+    background: linear-gradient(135deg, var(--primary-light), var(--primary));
+}
+
+/* Touch-friendly elements on mobile */
+@media (hover: none) and (pointer: coarse) {
+    .btn:hover {
+        transform: none;
+    }
+    
+    .service-card:hover {
+        transform: none;
+    }
+    
+    .barber-card:hover {
+        transform: none;
+    }
+    
+    .nav-menu li a:hover {
+        background-color: transparent;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --primary: #b8941f;
+        --secondary: #000000;
+        --light: #ffffff;
+        --dark: #000000;
+    }
+    
+    .btn-primary,
+    .btn-secondary {
+        border: 3px solid #000000;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .btn-primary {
+        animation: none;
+    }
+    
+    .btn-primary::before {
+        transition: none;
+    }
+    
+    .special-offer-banner {
+        animation: none;
+    }
 }
