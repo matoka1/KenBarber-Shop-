@@ -3801,48 +3801,23 @@ async function uploadEditBarberImage() {
         uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
         uploadBtn.disabled = true;
         
-        // DEBUG: Check file
-        console.log('Uploading file:', editBarberImageFile.name, editBarberImageFile.size, editBarberImageFile.type);
+        console.log('Uploading image for barber:', currentEditBarberId);
         
-        // Generate unique filename
+        // Generate filename
         const fileExt = editBarberImageFile.name.split('.').pop().toLowerCase();
-        const fileName = `barber-${currentEditBarberId}-${Date.now()}.${fileExt}`;
-        const filePath = `barber-images/${fileName}`;
+        const fileName = `barber_${currentEditBarberId}_${Date.now()}.${fileExt}`;
         
-        console.log('Uploading to path:', filePath);
+        console.log('File name:', fileName);
         
-        // Check if images bucket exists first
-        try {
-            const { data: buckets, error: bucketError } = await supabaseClient.storage
-                .listBuckets();
-            
-            if (bucketError) {
-                console.error('Bucket error:', bucketError);
-                throw bucketError;
-            }
-            
-            console.log('Available buckets:', buckets);
-            
-            const imagesBucket = buckets.find(b => b.name === 'images');
-            if (!imagesBucket) {
-                throw new Error('Images bucket not found. Please create it in Supabase Storage.');
-            }
-        } catch (bucketCheckError) {
-            console.error('Bucket check failed:', bucketCheckError);
-            throw bucketCheckError;
-        }
-        
-        // Upload image to Supabase Storage
+        // REMOVED BUCKET CHECK - JUST TRY TO UPLOAD
+        // Upload to images bucket
         const { data: uploadData, error: uploadError } = await supabaseClient.storage
             .from('images')
-            .upload(filePath, editBarberImageFile, {
-                cacheControl: '3600',
-                upsert: false // Change to true if you want to overwrite
-            });
+            .upload(fileName, editBarberImageFile);
         
         if (uploadError) {
-            console.error('Storage upload error:', uploadError);
-            throw new Error('Storage upload failed: ' + uploadError.message);
+            console.error('Upload error:', uploadError);
+            throw new Error('Upload failed: ' + uploadError.message);
         }
         
         console.log('Upload successful:', uploadData);
@@ -3850,69 +3825,55 @@ async function uploadEditBarberImage() {
         // Get public URL
         const { data: { publicUrl } } = supabaseClient.storage
             .from('images')
-            .getPublicUrl(filePath);
+            .getPublicUrl(fileName);
         
         console.log('Public URL:', publicUrl);
         
-        // Update barber record with image URL
+        // Update barber record
         const updateData = {
             image_url: publicUrl,
             image_alt: document.getElementById('editBarberImageAlt')?.value || null,
             updated_at: new Date().toISOString()
         };
         
-        console.log('Updating barber with:', updateData);
-        
-        const { data: updateResult, error: updateError } = await supabaseClient
+        const { error: updateError } = await supabaseClient
             .from('barbers')
             .update(updateData)
             .eq('id', currentEditBarberId);
         
-        if (updateError) {
-            console.error('Database update error:', updateError);
-            throw new Error('Database update failed: ' + updateError.message);
+        if (updateError) throw updateError;
+        
+        // Update UI
+        const currentImage = document.getElementById('currentBarberImage');
+        if (currentImage) {
+            currentImage.src = publicUrl;
+            currentImage.style.display = 'block';
         }
         
-        console.log('Update successful');
-        
-        // Update UI IMMEDIATELY - Find the correct container
-        const imageContainer = document.querySelector('#currentBarberImageContainer img') || 
-                               document.querySelector('#currentBarberImageDisplay img') ||
-                               document.querySelector('#currentBarberImage');
-        
-        if (imageContainer) {
-            // Update the image src
-            imageContainer.src = publicUrl;
-            imageContainer.style.display = 'block';
-            
-            // Hide "no image" message
-            const noImageDiv = document.getElementById('noBarberImageMessage') || 
-                               document.getElementById('noBarberImage');
-            if (noImageDiv) {
-                noImageDiv.style.display = 'none';
-            }
-        } else {
-            console.warn('Could not find image container element');
+        const noImageDiv = document.getElementById('noBarberImageMessage') || 
+                           document.getElementById('noBarberImage');
+        if (noImageDiv) {
+            noImageDiv.style.display = 'none';
         }
         
         // Clear preview
         removeEditBarberImagePreview();
         
-        uploadBtn.innerHTML = '<i class="fas fa-check"></i> Image Updated!';
+        uploadBtn.innerHTML = '<i class="fas fa-check"></i> Success!';
         
         setTimeout(() => {
             uploadBtn.innerHTML = originalText;
             uploadBtn.disabled = false;
-            alert('Profile image updated successfully!');
+            alert('✅ Barber image updated successfully!');
         }, 1000);
         
     } catch (error) {
-        console.error('Error uploading barber image:', error);
-        alert('Failed to upload image: ' + error.message);
+        console.error('Error:', error);
+        alert('❌ Failed: ' + error.message);
         
         const uploadBtn = document.getElementById('uploadEditBarberImageBtn');
         if (uploadBtn) {
-            uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload New Image';
+            uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Try Again';
             uploadBtn.disabled = false;
         }
     }
@@ -3923,25 +3884,12 @@ async function removeCurrentBarberImage(barberId) {
     }
     
     if (!supabaseClient || !barberId) {
-        console.error('Missing supabaseClient or barberId');
+        console.error('Missing supabase or barber ID');
         return;
     }
     
     try {
-        // First, get current image URL to optionally delete from storage
-        const { data: barber, error: fetchError } = await supabaseClient
-            .from('barbers')
-            .select('image_url')
-            .eq('id', barberId)
-            .single();
-        
-        if (fetchError) {
-            console.error('Error fetching barber:', fetchError);
-            throw fetchError;
-        }
-        
-        // Update barber record to remove image
-        const { error: updateError } = await supabaseClient
+        const { error } = await supabaseClient
             .from('barbers')
             .update({
                 image_url: null,
@@ -3950,49 +3898,33 @@ async function removeCurrentBarberImage(barberId) {
             })
             .eq('id', barberId);
         
-        if (updateError) {
-            console.error('Error updating barber:', updateError);
-            throw updateError;
-        }
+        if (error) throw error;
         
-        // Update UI - Hide image, show "no image" message
+        // Update UI
         const currentImage = document.getElementById('currentBarberImage');
-        const noImageDiv = document.getElementById('noBarberImageMessage') || 
-                           document.getElementById('noBarberImage');
-        
         if (currentImage) {
             currentImage.style.display = 'none';
         }
         
+        const noImageDiv = document.getElementById('noBarberImageMessage') || 
+                           document.getElementById('noBarberImage');
         if (noImageDiv) {
             noImageDiv.style.display = 'block';
         }
         
-        // If using a dynamic display container
-        const imageDisplay = document.getElementById('currentBarberImageDisplay');
-        if (imageDisplay) {
-            imageDisplay.innerHTML = `
-                <div style="color: var(--gray); padding: 2rem; background: var(--light-gray); border-radius: 8px;">
-                    <i class="fas fa-user-circle fa-3x"></i>
-                    <p>No profile image uploaded</p>
-                </div>
-            `;
-        }
-        
-        // Clear alt text field
+        // Clear alt text
         const altField = document.getElementById('editBarberImageAlt');
         if (altField) {
             altField.value = '';
         }
         
-        alert('Barber profile image removed successfully!');
+        alert('✅ Image removed successfully!');
         
     } catch (error) {
-        console.error('Error removing barber image:', error);
-        alert('Failed to remove barber image: ' + error.message);
+        console.error('Error:', error);
+        alert('❌ Failed to remove image: ' + error.message);
     }
 }
-
 async function updateBarber() {
     if (!supabaseClient || !currentEditBarberId) return;
     
