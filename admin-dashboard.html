@@ -3286,9 +3286,14 @@ function removeEditServiceImagePreview() {
     editServiceImageFile = null;
 }
 
-// Upload new image from edit modal
 async function uploadEditServiceImage() {
-    if (!supabaseClient || !currentEditServiceId) return;
+    console.log('=== SERVICE IMAGE UPLOAD ===');
+    
+    if (!supabaseClient || !currentEditServiceId) {
+        console.error('Missing supabase or service ID');
+        alert('No service selected or database not connected');
+        return;
+    }
     
     if (!editServiceImageFile) {
         alert('Please select an image to upload');
@@ -3301,118 +3306,161 @@ async function uploadEditServiceImage() {
         uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
         uploadBtn.disabled = true;
         
-        // Generate unique filename
-        const fileExt = editServiceImageFile.name.split('.').pop();
-        const fileName = `service-${currentEditServiceId}-${Date.now()}.${fileExt}`;
-        const filePath = `service-images/${fileName}`;
+        console.log('Service ID:', currentEditServiceId);
+        console.log('File:', editServiceImageFile.name, editServiceImageFile.type, editServiceImageFile.size);
         
-        // Upload image to Supabase Storage
+        // Generate filename
+        const fileExt = editServiceImageFile.name.split('.').pop().toLowerCase();
+        const fileName = `service_${currentEditServiceId}_${Date.now()}.${fileExt}`;
+        
+        console.log('Uploading:', fileName);
+        
+        // Upload to storage
         const { data: uploadData, error: uploadError } = await supabaseClient.storage
             .from('images')
-            .upload(filePath, editServiceImageFile, {
-                cacheControl: '3600',
-                upsert: true
-            });
+            .upload(fileName, editServiceImageFile);
         
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+            console.error('Storage error:', uploadError);
+            throw new Error('Failed to upload to storage: ' + uploadError.message);
+        }
+        
+        console.log('✅ Storage upload success:', uploadData);
         
         // Get public URL
         const { data: { publicUrl } } = supabaseClient.storage
             .from('images')
-            .getPublicUrl(filePath);
+            .getPublicUrl(fileName);
         
-        // Update service record with image URL
+        console.log('Public URL:', publicUrl);
+        
+        // Prepare update data - NOW includes all columns
         const updateData = {
             image_url: publicUrl,
-            image_alt: document.getElementById('editServiceImageAlt').value || null,
+            image_alt: document.getElementById('editServiceImageAlt')?.value || null,
             updated_at: new Date().toISOString()
         };
         
-        const { error: updateError } = await supabaseClient
+        console.log('Updating service with:', updateData);
+        
+        const { data: updateResult, error: updateError } = await supabaseClient
             .from('services')
             .update(updateData)
             .eq('id', currentEditServiceId);
         
-        if (updateError) throw updateError;
+        if (updateError) {
+            console.error('Database error:', updateError);
+            throw new Error('Failed to update service: ' + updateError.message);
+        }
         
-        // Update UI
-        uploadBtn.innerHTML = '<i class="fas fa-check"></i> Image Updated!';
+        console.log('✅ Database update successful');
         
-        // Refresh the modal with new image
-        setTimeout(async () => {
-            const { data: updatedService, error: fetchError } = await supabaseClient
-                .from('services')
-                .select('*')
-                .eq('id', currentEditServiceId)
-                .single();
-            
-            if (!fetchError && updatedService) {
-                const imageDisplay = document.getElementById('currentServiceImageDisplay');
-                imageDisplay.innerHTML = `
-                    <img src="${updatedService.image_url}" alt="${updatedService.name}" 
-                          style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid var(--light-gray);">
-                    <div style="margin-top: 0.5rem;">
-                        <button type="button" class="btn-secondary btn-small" onclick="removeCurrentServiceImage('${currentEditServiceId}')">
-                            <i class="fas fa-trash"></i> Remove Current Image
-                        </button>
-                    </div>
-                `;
-                
-                // Clear preview
-                removeEditServiceImagePreview();
-            }
-            
+        // ========== UPDATE UI ==========
+        
+        // 1. Update image element if it exists
+        const currentImage = document.getElementById('currentServiceImage');
+        if (currentImage) {
+            console.log('Found currentServiceImage, updating...');
+            currentImage.src = publicUrl;
+            currentImage.style.display = 'block';
+            currentImage.alt = updateData.image_alt || 'Service image';
+        }
+        
+        // 2. Hide "no image" message
+        const noImageMsg = document.getElementById('noServiceImageMessage') || 
+                           document.getElementById('noServiceImage');
+        if (noImageMsg) {
+            console.log('Found no image message, hiding...');
+            noImageMsg.style.display = 'none';
+        }
+        
+        // 3. If using a display container, update it
+        const imageDisplay = document.getElementById('currentServiceImageDisplay');
+        if (imageDisplay && !currentImage) {
+            console.log('Found image display container, updating...');
+            imageDisplay.innerHTML = `
+                <img src="${publicUrl}" alt="${updateData.image_alt || 'Service image'}" 
+                     id="currentServiceImage"
+                     style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid var(--light-gray);">
+                <div style="margin-top: 0.5rem;">
+                    <button type="button" class="btn-secondary btn-small" onclick="removeCurrentServiceImage('${currentEditServiceId}')">
+                        <i class="fas fa-trash"></i> Remove Image
+                    </button>
+                </div>
+            `;
+        }
+        
+        // Clear preview
+        removeEditServiceImagePreview();
+        
+        uploadBtn.innerHTML = '<i class="fas fa-check"></i> Success!';
+        
+        setTimeout(() => {
             uploadBtn.innerHTML = originalText;
             uploadBtn.disabled = false;
-        }, 1500);
+            alert('✅ Service image updated successfully!');
+        }, 1000);
         
     } catch (error) {
-        console.error('Error uploading service image:', error);
-        alert('Failed to upload image. Please try again.');
+        console.error('❌ Upload error:', error);
+        alert('Failed to upload service image: ' + error.message);
         
         const uploadBtn = document.getElementById('uploadEditServiceImageBtn');
-        uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload New Image';
-        uploadBtn.disabled = false;
+        if (uploadBtn) {
+            uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Try Again';
+            uploadBtn.disabled = false;
+        }
     }
 }
 
-// Remove current service image
 async function removeCurrentServiceImage(serviceId) {
     if (!confirm('Are you sure you want to remove this service image?')) {
         return;
     }
     
-    if (!supabaseClient || !serviceId) return;
+    if (!supabaseClient || !serviceId) {
+        console.error('Missing supabase or service ID');
+        return;
+    }
     
     try {
+        // Update service to remove image
+        const updateData = {
+            image_url: null,
+            image_alt: null,
+            updated_at: new Date().toISOString()
+        };
+        
         const { error } = await supabaseClient
             .from('services')
-            .update({
-                image_url: null,
-                image_alt: null,
-                updated_at: new Date().toISOString()
-            })
+            .update(updateData)
             .eq('id', serviceId);
         
         if (error) throw error;
         
-        // Update UI in modal
-        const imageDisplay = document.getElementById('currentServiceImageDisplay');
-        imageDisplay.innerHTML = `
-            <div style="color: var(--gray); padding: 2rem; background: var(--light-gray); border-radius: 8px;">
-                <i class="fas fa-image fa-3x"></i>
-                <p>No image uploaded</p>
-            </div>
-        `;
+        // Update UI
+        const currentImage = document.getElementById('currentServiceImage');
+        if (currentImage) {
+            currentImage.style.display = 'none';
+        }
+        
+        const noImageMsg = document.getElementById('noServiceImageMessage') || 
+                           document.getElementById('noServiceImage');
+        if (noImageMsg) {
+            noImageMsg.style.display = 'block';
+        }
         
         // Clear alt text field
-        document.getElementById('editServiceImageAlt').value = '';
+        const altField = document.getElementById('editServiceImageAlt');
+        if (altField) {
+            altField.value = '';
+        }
         
-        alert('Service image removed successfully!');
+        alert('✅ Service image removed successfully!');
         
     } catch (error) {
         console.error('Error removing service image:', error);
-        alert('Failed to remove service image');
+        alert('Failed to remove service image: ' + error.message);
     }
 }
 
