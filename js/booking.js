@@ -143,12 +143,6 @@ async function loadAvailableTimeSlots(date) {
         const dateObj = new Date(date);
         const dayOfWeek = dateObj.getDay();
         
-        // Optional: Different hours for weekends if needed
-        // if (dayOfWeek === 0 || dayOfWeek === 6) {
-        //     businessHours.start = 10;
-        //     businessHours.end = 18;
-        // }
-        
         let existingAppointments = [];
         
         try {
@@ -968,10 +962,6 @@ function collectFormData() {
     const paymentMethodRadio = document.querySelector('input[name="payment"]:checked');
     const paymentMethod = paymentMethodRadio ? paymentMethodRadio.value : 'cash';
     
-    const bookingRef = 'KB-' + Date.now().toString().slice(-8) + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
-    
-    const status = paymentMethod === 'mpesa_stk' ? 'pending' : 'confirmed';
-    
     const bookingData = {
         customer_name: fullName,
         customer_phone: phoneNumber.replace(/\s/g, ''),
@@ -986,9 +976,7 @@ function collectFormData() {
         special_requests: formData.get('specialRequests') || '',
         payment_method: paymentMethod,
         payment_status: paymentMethod === 'mpesa_stk' ? 'pending' : (paymentMethod === 'cash' ? 'pending' : 'paid'),
-        booking_reference: bookingRef,
-        status: status,
-        created_at: new Date().toISOString()
+        status: paymentMethod === 'mpesa_stk' ? 'pending' : 'confirmed'
     };
     
     if (paymentMethod === 'mpesa_stk') {
@@ -1001,22 +989,60 @@ function collectFormData() {
     return bookingData;
 }
 
+// ============================================
+// CRITICAL FIX: UPDATED saveBookingToSupabase FUNCTION
+// ============================================
 async function saveBookingToSupabase(bookingData) {
-    console.log('Saving booking to Supabase:', bookingData);
+    console.log('Saving booking to Supabase...');
     
     if (!window.supabase) {
         throw new Error('Supabase not available');
     }
     
     try {
+        // Generate required unique references
+        const bookingReference = 'KEN-' + Date.now().toString().slice(-8) + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+        const reference = 'REF-' + Date.now().toString().slice(-8) + Math.random().toString(36).substr(2, 3).toUpperCase();
+        const bookingDate = new Date().toISOString().split('T')[0];
+        
+        // ============================================
+        // CORRECT COLUMN MAPPING FOR YOUR DATABASE
+        // ============================================
+        const supabaseData = {
+            // MATCH DATABASE COLUMN NAMES EXACTLY:
+            full_name: bookingData.customer_name || '',
+            phone_number: bookingData.customer_phone || '',
+            email: bookingData.customer_email || '',
+            service_id: bookingData.service_id || null,
+            barber_id: bookingData.barber_id || null,
+            appointment_date: bookingData.appointment_date || '',
+            appointment_time: bookingData.appointment_time || '',
+            time_slot: bookingData.appointment_time || '', // Required field
+            special_requests: bookingData.special_requests || '',
+            payment_method: bookingData.payment_method || 'cash',
+            payment_status: bookingData.payment_status || 'pending',
+            booking_reference: bookingReference,
+            reference: reference, // Required field - different from booking_reference
+            booking_date: bookingDate, // Required field - today's date
+            status: bookingData.status || 'pending',
+            service_price: parseFloat(bookingData.service_price) || 0,
+            mpesa_number: bookingData.mpesa_number || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+        
+        console.log('📤 Sending to Supabase with correct column mapping:', supabaseData);
+        
+        // Validate required fields
         const requiredFields = [
-            'customer_name', 'customer_phone', 'customer_email',
-            'appointment_date', 'appointment_time', 'service_name', 'booking_reference'
+            'full_name', 'phone_number', 'email', 'appointment_date', 
+            'appointment_time', 'time_slot', 'booking_reference', 
+            'reference', 'booking_date'
         ];
         
         const missingFields = [];
         for (const field of requiredFields) {
-            if (!bookingData[field] || bookingData[field].toString().trim() === '') {
+            if (!supabaseData[field] || supabaseData[field].toString().trim() === '') {
                 missingFields.push(field);
             }
         }
@@ -1025,52 +1051,36 @@ async function saveBookingToSupabase(bookingData) {
             throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
         }
         
-        const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'no-show'];
-        const validPaymentStatuses = ['pending', 'paid', 'failed', 'refunded'];
-        
-        const status = validStatuses.includes(bookingData.status) ? bookingData.status : 'pending';
-        const paymentStatus = validPaymentStatuses.includes(bookingData.payment_status) ? bookingData.payment_status : 'pending';
-        
-        const supabaseData = {
-            customer_name: bookingData.customer_name || '',
-            customer_phone: bookingData.customer_phone || '',
-            customer_email: bookingData.customer_email || '',
-            service_name: bookingData.service_name || '',
-            barber_name: bookingData.barber_name || 'Any Available Barber',
-            special_requests: bookingData.special_requests || '',
-            payment_method: bookingData.payment_method || 'cash',
-            payment_status: paymentStatus,
-            booking_reference: bookingData.booking_reference || '',
-            status: status,
-            service_price: parseFloat(bookingData.service_price) || 0,
-            appointment_date: bookingData.appointment_date || '',
-            appointment_time: bookingData.appointment_time || '',
-            mpesa_number: bookingData.mpesa_number || null,
-            created_at: new Date().toISOString()
-        };
-        
-        console.log('Validated data for Supabase:', supabaseData);
-        
+        // Insert into database
         const { data, error } = await window.supabase
             .from('appointments')
-            .insert([supabaseData]);
+            .insert([supabaseData])
+            .select();
         
         if (error) {
-            console.error('Supabase insert error:', error);
+            console.error('❌ Supabase insert error:', error);
             throw new Error(`Booking failed: ${error.message}`);
         }
         
-        console.log('✅ Booking saved to Supabase successfully');
+        console.log('✅ Booking saved to Supabase successfully!');
+        console.log('   Booking Reference:', supabaseData.booking_reference);
+        console.log('   Reference:', supabaseData.reference);
+        console.log('   Time Slot:', supabaseData.time_slot);
+        
+        // Update bookingData with generated references
+        bookingData.booking_reference = bookingReference;
+        bookingData.reference = reference;
         
         return {
             success: true,
-            booking_ref: bookingData.booking_reference,
-            message: 'Booking saved successfully!',
-            status: status
+            booking_ref: bookingReference,
+            reference: reference,
+            data: data,
+            message: 'Booking saved successfully!'
         };
         
     } catch (error) {
-        console.error('Failed to save to Supabase:', error);
+        console.error('❌ Failed to save to Supabase:', error);
         throw error;
     }
 }
