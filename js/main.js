@@ -7,11 +7,11 @@ window.allBarbers = [];
 window.allTestimonials = [];
 window.isInitialized = false;
 
-// Shortcut references - USE var TO ALLOW REDECLARATION
-var allServices = window.allServices;
-var allBarbers = window.allBarbers;
-var allTestimonials = window.allTestimonials;
-var isInitialized = window.isInitialized;
+// Shortcut references
+const allServices = window.allServices;
+const allBarbers = window.allBarbers;
+const allTestimonials = window.allTestimonials;
+let isInitialized = window.isInitialized;
 
 // Update database status
 function updateStatus(message, type = 'info') {
@@ -35,37 +35,7 @@ function updateStatus(message, type = 'info') {
 async function loadAllData() {
     console.log('📡 Starting data load from database...');
     
-    // FIRST: Check if HTML script already loaded data
-    if (window.allServices && window.allServices.length > 0) {
-        console.log('✅ Using data already loaded by HTML script:', window.allServices.length, 'services');
-        
-        // Use the data HTML already loaded
-        allServices.length = 0;
-        allBarbers.length = 0;
-        allTestimonials.length = 0;
-        
-        allServices.push(...window.allServices);
-        
-        // Try to get barbers if available
-        if (window.allBarbers && window.allBarbers.length > 0) {
-            allBarbers.push(...window.allBarbers);
-        }
-        
-        console.log(`✅ SUCCESS: Using ${allServices.length} services from HTML script`);
-        
-        // Update UI
-        updateServicesUI();
-        updateBarbersUI();
-        updateTestimonialsUI();
-        updateBookingForm();
-        
-        updateStatus(`Loaded ${allServices.length} services`, 'success');
-        window.isInitialized = true;
-        isInitialized = true;
-        return; // STOP HERE - don't load again
-    }
-    
-    if (window.isInitialized) {
+    if (isInitialized) {
         console.log('Already initialized, skipping');
         return;
     }
@@ -129,7 +99,7 @@ async function loadAllData() {
         window.allBarbers = barbers || [];
         window.allTestimonials = testimonials || [];
         
-        // Update shortcut references
+        // Update local references
         allServices.length = 0;
         allBarbers.length = 0;
         allTestimonials.length = 0;
@@ -194,18 +164,15 @@ function updateServicesUI() {
         return;
     }
     
-    // Use data from either HTML script or our own loading
-    const servicesToDisplay = allServices;
-    
-    if (!servicesToDisplay || servicesToDisplay.length === 0) {
+    if (!allServices || allServices.length === 0) {
         console.warn('No services to display');
         showEmptyStates();
         return;
     }
     
-    console.log(`Displaying ${servicesToDisplay.length} services`);
+    console.log(`Displaying ${allServices.length} services`);
     
-    servicesGrid.innerHTML = servicesToDisplay.map(service => {
+    servicesGrid.innerHTML = allServices.map(service => {
         const duration = service.duration_minutes || service.duration || 30;
         const price = parseFloat(service.price).toFixed(2);
         
@@ -407,29 +374,20 @@ function initializeMain() {
         yearElement.textContent = new Date().getFullYear();
     }
     
-    // Check if data is already loaded by HTML script
-    const checkDataInterval = setInterval(() => {
-        // Wait for HTML script to finish OR for Supabase to be ready
-        if ((window.allServices && window.allServices.length > 0) || window.supabase) {
-            clearInterval(checkDataInterval);
+    // Check if Supabase is loaded, then load data
+    const checkSupabaseInterval = setInterval(() => {
+        if (window.supabase) {
+            clearInterval(checkSupabaseInterval);
+            console.log('✅ Supabase detected, loading data...');
             
-            // If HTML already loaded data, use it immediately
-            if (window.allServices && window.allServices.length > 0) {
-                console.log('✅ HTML script already loaded data, using it');
-                setTimeout(() => {
-                    loadAllData(); // This will use the HTML data
-                }, 100);
-            } else {
-                // Otherwise load it ourselves
-                console.log('✅ Supabase ready, loading data...');
-                setTimeout(() => {
-                    loadAllData();
-                }, 1000);
-            }
+            // Wait a bit for everything to settle
+            setTimeout(() => {
+                loadAllData();
+            }, 500);
         } else {
-            console.log('⏳ Waiting for data or Supabase...');
+            console.log('⏳ Waiting for Supabase...');
         }
-    }, 300);
+    }, 100);
 }
 
 // Start initialization
