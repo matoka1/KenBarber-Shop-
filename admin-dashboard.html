@@ -2272,7 +2272,215 @@ async function loadDashboardData() {
         setDemoDashboardData();
     }
 }
+// ============================================
+// SERVICES FUNCTIONS
+// ============================================
 
+async function loadServices() {
+    if (!supabaseClient) return;
+    
+    try {
+        const { data: services, error } = await supabaseClient
+            .from('services')
+            .select('*')
+            .order('category')
+            .order('price');
+        
+        if (error) throw error;
+        
+        const tbody = document.getElementById('servicesBody');
+        tbody.innerHTML = '';
+        
+        if (!services || services.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 2rem; color: var(--gray);">
+                        <i class="fas fa-cut"></i> No services found. Add your first service!
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        services.forEach(service => {
+            const row = document.createElement('tr');
+            const imageUrl = service.image_url ? 
+                `<img src="${service.image_url}" alt="${service.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">` :
+                '<div style="width: 50px; height: 50px; background: var(--light-gray); display: flex; align-items: center; justify-content: center; border-radius: 5px;">' +
+                '<i class="fas fa-cut" style="color: var(--gray);"></i></div>';
+            
+            row.innerHTML = `
+                <td>${imageUrl}</td>
+                <td><strong>${service.name}</strong></td>
+                <td style="max-width: 300px;">${service.description || 'No description'}</td>
+                <td>${service.category || 'Uncategorized'}</td>
+                <td><strong>KES ${parseFloat(service.price).toLocaleString()}</strong></td>
+                <td>${service.duration_minutes || 30} mins</td>
+                <td>
+                    <span class="status-badge ${service.is_active ? 'status-confirmed' : 'status-cancelled'}">
+                        ${service.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editService('${service.id}')" title="Edit Service">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-action btn-delete" onclick="deleteService('${service.id}')" title="Delete Service">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+    } catch (error) {
+        console.error('Error loading services:', error);
+        const tbody = document.getElementById('servicesBody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 2rem; color: var(--danger);">
+                    <i class="fas fa-exclamation-triangle"></i> Failed to load services
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Add Service function
+async function saveService() {
+    if (!supabaseClient) return;
+    
+    const form = document.getElementById('addServiceForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    try {
+        const serviceData = {
+            name: document.getElementById('serviceName').value,
+            description: document.getElementById('serviceDescription').value,
+            category: document.getElementById('serviceCategory').value,
+            price: parseFloat(document.getElementById('servicePrice').value),
+            duration_minutes: parseInt(document.getElementById('serviceDuration').value),
+            is_active: document.getElementById('serviceActive').checked,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+        
+        const { error } = await supabaseClient
+            .from('services')
+            .insert([serviceData]);
+        
+        if (error) throw error;
+        
+        alert('Service added successfully!');
+        hideModal('addServiceModal');
+        loadServices();
+        loadDashboardData();
+        
+        // Reset form
+        form.reset();
+        
+    } catch (error) {
+        console.error('Error saving service:', error);
+        alert('Failed to save service');
+    }
+}
+        // ============================================
+// TESTIMONIALS FUNCTIONS
+// ============================================
+
+async function loadTestimonials() {
+    if (!supabaseClient) return;
+    
+    try {
+        const { data: testimonials, error } = await supabaseClient
+            .from('testimonials')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        const tbody = document.getElementById('testimonialsBody');
+        tbody.innerHTML = '';
+        
+        if (!testimonials || testimonials.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 2rem; color: var(--gray);">
+                        <i class="fas fa-star"></i> No testimonials found. Add your first testimonial!
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        testimonials.forEach(testimonial => {
+            const row = document.createElement('tr');
+            const date = new Date(testimonial.created_at);
+            const formattedDate = date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            
+            // Generate star rating display
+            let stars = '';
+            const rating = testimonial.rating || 5;
+            for (let i = 1; i <= 5; i++) {
+                stars += i <= rating ? 
+                    '<i class="fas fa-star" style="color: #ffc107;"></i>' : 
+                    '<i class="far fa-star" style="color: #ffc107;"></i>';
+            }
+            
+            row.innerHTML = `
+                <td><strong>${testimonial.customer_name}</strong></td>
+                <td>${stars}</td>
+                <td style="max-width: 300px;">${testimonial.comment || 'No comment'}</td>
+                <td>${formattedDate}</td>
+                <td>
+                    <span class="status-badge ${testimonial.is_approved ? 'status-confirmed' : 'status-pending'}">
+                        ${testimonial.is_approved ? 'Approved' : 'Pending'}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-action btn-edit" onclick="editTestimonial('${testimonial.id}')" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-action btn-delete" onclick="deleteTestimonial('${testimonial.id}')" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+    } catch (error) {
+        console.error('Error loading testimonials:', error);
+    }
+}
+
+// ============================================
+// SETTINGS FUNCTIONS
+// ============================================
+
+async function loadSettings() {
+    // In a real app, load settings from database
+    // For now, set default values
+    document.getElementById('businessName').value = 'KenBarber Shop';
+    document.getElementById('businessAddress').value = '123 Barber Street, Nairobi, Kenya';
+    document.getElementById('businessPhone').value = '+254 712 345 678';
+    document.getElementById('businessEmail').value = 'info@kenbarber.com';
+    document.getElementById('openingTime').value = '08:00';
+    document.getElementById('closingTime').value = '20:00';
+    document.getElementById('slotDuration').value = '30';
+    document.getElementById('adminUsername').value = 'admin';
+}
 async function loadRecentAppointments() {
     if (!supabaseClient) return;
     
