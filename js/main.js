@@ -7,11 +7,12 @@ window.allBarbers = [];
 window.allTestimonials = [];
 window.isInitialized = false;
 
-// Shortcut references
-const allServices = window.allServices;
-const allBarbers = window.allBarbers;
-const allTestimonials = window.allTestimonials;
-let isInitialized = window.isInitialized;
+// Shortcut references - DON'T redeclare, just create references
+// Remove const/let to avoid duplicate declaration
+allServices = window.allServices;
+allBarbers = window.allBarbers;
+allTestimonials = window.allTestimonials;
+isInitialized = window.isInitialized;
 
 // Update database status
 function updateStatus(message, type = 'info') {
@@ -35,7 +36,7 @@ function updateStatus(message, type = 'info') {
 async function loadAllData() {
     console.log('📡 Starting data load from database...');
     
-    if (isInitialized) {
+    if (window.isInitialized) {
         console.log('Already initialized, skipping');
         return;
     }
@@ -99,7 +100,7 @@ async function loadAllData() {
         window.allBarbers = barbers || [];
         window.allTestimonials = testimonials || [];
         
-        // Update local references
+        // Update shortcut references
         allServices.length = 0;
         allBarbers.length = 0;
         allTestimonials.length = 0;
