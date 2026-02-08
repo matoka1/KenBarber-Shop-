@@ -7,7 +7,7 @@ window.allBarbers = [];
 window.allTestimonials = [];
 window.isInitialized = false;
 
-// Shortcut references
+// Shortcut references - USE var TO ALLOW REDECLARATION
 var allServices = window.allServices;
 var allBarbers = window.allBarbers;
 var allTestimonials = window.allTestimonials;
@@ -31,9 +31,51 @@ function updateStatus(message, type = 'info') {
     dbStatus.innerHTML = `<i class="fas fa-circle"></i> <span>${message}</span>`;
 }
 
-// Load all data - SIMPLIFIED WORKING VERSION
+// Load all data - UPDATED TO USE DATA FROM HTML SCRIPT
 async function loadAllData() {
     console.log('📡 Starting data load from database...');
+    
+    // FIRST: Check if HTML script already loaded data
+    if (window.allServices && window.allServices.length > 0) {
+        console.log('✅ Using data already loaded by HTML script:', window.allServices.length, 'services');
+        
+        // Copy data from HTML script
+        allServices.length = 0;
+        allBarbers.length = 0;
+        allTestimonials.length = 0;
+        
+        // Copy services
+        for (let service of window.allServices) {
+            allServices.push(service);
+        }
+        
+        // Copy barbers if available
+        if (window.allBarbers && window.allBarbers.length > 0) {
+            for (let barber of window.allBarbers) {
+                allBarbers.push(barber);
+            }
+        }
+        
+        // Copy testimonials if available
+        if (window.allTestimonials && window.allTestimonials.length > 0) {
+            for (let testimonial of window.allTestimonials) {
+                allTestimonials.push(testimonial);
+            }
+        }
+        
+        console.log(`✅ SUCCESS: Using ${allServices.length} services, ${allBarbers.length} barbers from HTML script`);
+        
+        // Update UI
+        updateServicesUI();
+        updateBarbersUI();
+        updateTestimonialsUI();
+        updateBookingForm();
+        
+        updateStatus(`Loaded ${allServices.length} services`, 'success');
+        window.isInitialized = true;
+        isInitialized = true;
+        return; // STOP HERE - don't load again
+    }
     
     if (isInitialized) {
         console.log('Already initialized, skipping');
