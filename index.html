@@ -407,7 +407,7 @@
             </div>
             
             <ul class="nav-menu" id="navMenu">
-                <li><a href="index.html">Home</a></li>
+                <li><a href="#home">Home</a></li>
                 <li><a href="#services">Services</a></li>
                 <li><a href="#barbers">Barbers</a></li>
                 <li><a href="#gallery">Gallery</a></li>
@@ -421,6 +421,9 @@
 
     <!-- Hero Section -->
     <section class="hero" id="home">
+        <div class="hero-background" id="heroBackground">
+            <!-- Hero background image will be loaded here dynamically -->
+        </div>
         <div class="container">
             <h1>KenBarber Shop</h1>
             <p class="subtitle">Nakuru's Premium Barber Experience</p>
@@ -1102,12 +1105,58 @@
                 yearElement.textContent = new Date().getFullYear();
             }
             
-            // Initialize mobile menu toggle
+            // ============================================
+            // FIX 1: Mobile Menu Close on Click
+            // ============================================
             const mobileToggle = document.getElementById('mobileToggle');
             const navMenu = document.getElementById('navMenu');
+            
             if (mobileToggle && navMenu) {
+                // Toggle mobile menu
                 mobileToggle.addEventListener('click', function() {
                     navMenu.classList.toggle('active');
+                });
+                
+                // Close menu when clicking nav links
+                const navLinks = document.querySelectorAll('.nav-menu a');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        const href = this.getAttribute('href');
+                        
+                        // Close mobile menu
+                        if (navMenu.classList.contains('active')) {
+                            navMenu.classList.remove('active');
+                        }
+                        
+                        // Handle anchor links
+                        if (href.startsWith('#')) {
+                            e.preventDefault();
+                            const targetId = href.substring(1);
+                            const targetElement = document.getElementById(targetId);
+                            
+                            if (targetElement) {
+                                // Get header height for offset
+                                const header = document.querySelector('header');
+                                const headerHeight = header ? header.offsetHeight : 80;
+                                
+                                // Calculate position
+                                const targetPosition = targetElement.offsetTop - headerHeight;
+                                
+                                // Smooth scroll
+                                window.scrollTo({
+                                    top: targetPosition,
+                                    behavior: 'smooth'
+                                });
+                                
+                                // Focus on the target for accessibility
+                                setTimeout(() => {
+                                    targetElement.setAttribute('tabindex', '-1');
+                                    targetElement.focus();
+                                    targetElement.removeAttribute('tabindex');
+                                }, 500);
+                            }
+                        }
+                    });
                 });
             }
             
@@ -1120,7 +1169,6 @@
             console.log('📦 Loading Supabase...');
             updateStatus('Connecting to database...', 'info');
             
-            // First try: Load from standard CDN
             const script = document.createElement('script');
             script.src = 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js';
             
@@ -1137,7 +1185,6 @@
             document.head.appendChild(script);
         }
         
-        // Alternative CDN
         function loadSupabaseFromJsDelivr() {
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
@@ -1150,21 +1197,17 @@
             script.onerror = function() {
                 console.error('❌ Failed to load Supabase from all CDNs');
                 updateStatus('Database offline', 'error');
-                // Still load main.js without Supabase
                 loadMainJS();
             };
             
             document.head.appendChild(script);
         }
         
-        // Initialize Supabase client
         function initializeSupabaseClient() {
             try {
-                // Your Supabase credentials
                 const SUPABASE_URL = 'https://eqjdkpanqwjhuyavvdaf.supabase.co';
                 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxamRrcGFucXdqaHV5YXZ2ZGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5MDUxMDQsImV4cCI6MjA4MjQ4MTEwNH0.7aQlOv1bC9_HJS844XhzCFjeiw7iMdV0n9K65uNIDZA';
                 
-                // Create client
                 window.supabase = window.supabase.createClient(
                     SUPABASE_URL,
                     SUPABASE_ANON_KEY,
@@ -1183,9 +1226,6 @@
                 );
                 
                 console.log('🎉 Supabase client created successfully!');
-                console.log('Client URL:', window.supabase.supabaseUrl);
-                
-                // Test connection
                 testSupabaseConnection();
                 
             } catch (error) {
@@ -1195,12 +1235,9 @@
             }
         }
         
-        // Test the connection
         async function testSupabaseConnection() {
             try {
                 console.log('🔍 Testing Supabase connection...');
-                
-                // Simple test query
                 const { data, error } = await window.supabase
                     .from('services')
                     .select('count')
@@ -1219,8 +1256,303 @@
                 updateStatus('Database connected', 'info');
             }
             
-            // Always load main.js after testing
+            // ============================================
+            // Load Hero Background Image from Database
+            // ============================================
+            loadHeroBackground();
+            
+            // ============================================
+            // FIX 2: Update Services Display with Admin Images
+            // ============================================
+            updateServicesDisplay();
+            
             loadMainJS();
+        }
+        
+        // ============================================
+        // Load Hero Background from Database
+        // ============================================
+        async function loadHeroBackground() {
+            console.log('🎨 Loading hero background...');
+            const heroBackground = document.getElementById('heroBackground');
+            
+            if (!heroBackground) return;
+            
+            try {
+                if (window.supabase) {
+                    // Try to get hero background from settings table
+                    const { data, error } = await window.supabase
+                        .from('settings')
+                        .select('*')
+                        .eq('key', 'hero_background')
+                        .single();
+                    
+                    if (!error && data && data.value) {
+                        console.log('✅ Hero background loaded from database');
+                        heroBackground.style.cssText = `
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background-image: url('${data.value}');
+                            background-size: cover;
+                            background-position: center;
+                            background-repeat: no-repeat;
+                            z-index: -1;
+                        `;
+                        return;
+                    }
+                }
+                
+                // Fallback to default background
+                console.log('Using default hero background');
+                heroBackground.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+                    z-index: -1;
+                `;
+                
+            } catch (error) {
+                console.warn('Error loading hero background:', error);
+                // Use fallback
+                heroBackground.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+                    z-index: -1;
+                `;
+            }
+        }
+        
+        // ============================================
+        // FIX 2: Update Services Display with Admin Images
+        // ============================================
+        async function updateServicesDisplay() {
+            console.log('🔄 Updating services display...');
+            
+            const servicesGrid = document.getElementById('servicesGrid');
+            if (!servicesGrid) return;
+            
+            try {
+                // Show loading
+                servicesGrid.innerHTML = `
+                    <div class="loading-service">
+                        <div class="service-img" style="background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
+                        </div>
+                        <div class="service-content">
+                            <h3>Loading Services...</h3>
+                            <p>Fetching services from database</p>
+                            <div class="service-footer">
+                                <span class="price">KES 0</span>
+                                <span class="duration"><i class="far fa-clock"></i> 0 min</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                if (window.supabase) {
+                    console.log('📥 Fetching services from database...');
+                    const { data: services, error } = await window.supabase
+                        .from('services')
+                        .select('*')
+                        .eq('is_active', true)
+                        .order('price');
+                    
+                    if (error) {
+                        console.error('❌ Database error:', error);
+                        loadFallbackServices();
+                        return;
+                    }
+                    
+                    console.log(`✅ Found ${services?.length || 0} services`);
+                    
+                    if (!services || services.length === 0) {
+                        showNoServices();
+                        return;
+                    }
+                    
+                    // Render services
+                    renderServicesToGrid(services);
+                    
+                    // Update popular services in footer
+                    updatePopularServices(services.slice(0, 5));
+                    
+                } else {
+                    console.warn('Supabase not available, using fallback services');
+                    loadFallbackServices();
+                }
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                loadFallbackServices();
+            }
+        }
+        
+        function renderServicesToGrid(services) {
+            const servicesGrid = document.getElementById('servicesGrid');
+            if (!servicesGrid) return;
+            
+            servicesGrid.innerHTML = '';
+            
+            services.forEach(service => {
+                const serviceCard = document.createElement('div');
+                serviceCard.className = 'service-card';
+                
+                // Create image HTML with proper handling
+                let imageHtml = '';
+                if (service.image_url && service.image_url.trim() !== '') {
+                    // Service has image from admin
+                    const imageUrl = service.image_url.startsWith('http') 
+                        ? service.image_url 
+                        : `https://eqjdkpanqwjhuyavvdaf.supabase.co/storage/v1/object/public/services/${service.image_url}`;
+                    
+                    imageHtml = `
+                        <div class="service-img">
+                            <img src="${imageUrl}" 
+                                 alt="${service.image_alt || service.name}"
+                                 style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px 8px 0 0;"
+                                 onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"200\" viewBox=\"0 0 400 200\"><rect width=\"400\" height=\"200\" fill=\"%23D4AF37\"/><text x=\"200\" y=\"110\" font-family=\"Arial\" font-size=\"24\" fill=\"%231a1a1a\" text-anchor=\"middle\">${service.name}</text></svg>';">
+                        </div>
+                    `;
+                } else {
+                    // No image - show placeholder with service name
+                    imageHtml = `
+                        <div class="service-img" style="background: linear-gradient(135deg, var(--primary), #ffd700); display: flex; align-items: center; justify-content: center; border-radius: 8px 8px 0 0; min-height: 200px;">
+                            <div style="text-align: center; color: var(--secondary); padding: 20px;">
+                                <i class="fas fa-cut fa-3x"></i>
+                                <h3 style="margin-top: 10px;">${service.name}</h3>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Format price and duration
+                const price = service.price ? parseFloat(service.price).toLocaleString() : '0';
+                const duration = service.duration_minutes || 30;
+                
+                serviceCard.innerHTML = `
+                    ${imageHtml}
+                    <div class="service-content">
+                        <h3>${service.name}</h3>
+                        <p style="color: #666; font-size: 0.9rem; line-height: 1.5; margin: 10px 0;">
+                            ${service.description || 'Professional grooming service'}
+                        </p>
+                        <div class="service-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                            <span class="price" style="font-size: 1.2rem; font-weight: bold; color: var(--primary);">KES ${price}</span>
+                            <span class="duration" style="color: #666;"><i class="far fa-clock"></i> ${duration} min</span>
+                        </div>
+                        <button class="btn-primary" style="width: 100%; margin-top: 1rem; padding: 12px; border-radius: 8px; font-weight: 600;" 
+                                onclick="bookService('${service.id}', '${service.name.replace(/'/g, "\\'")}', ${service.price})">
+                            <i class="fas fa-calendar-alt"></i> Book Now
+                        </button>
+                    </div>
+                `;
+                
+                servicesGrid.appendChild(serviceCard);
+            });
+        }
+        
+        function updatePopularServices(services) {
+            const popularServicesList = document.getElementById('popularServicesList');
+            if (!popularServicesList) return;
+            
+            popularServicesList.innerHTML = '';
+            
+            services.forEach(service => {
+                const li = document.createElement('li');
+                li.innerHTML = `<a href="#booking" onclick="bookService('${service.id}', '${service.name.replace(/'/g, "\\'")}', ${service.price})">${service.name}</a>`;
+                popularServicesList.appendChild(li);
+            });
+        }
+        
+        function loadFallbackServices() {
+            const servicesGrid = document.getElementById('servicesGrid');
+            if (!servicesGrid) return;
+            
+            const fallbackServices = [
+                {
+                    id: 1,
+                    name: 'Classic Haircut',
+                    description: 'Traditional haircut with modern finishing touches',
+                    price: 500,
+                    duration_minutes: 30,
+                    image_url: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400&h=300&fit=crop'
+                },
+                {
+                    id: 2,
+                    name: 'Beard Trim & Style',
+                    description: 'Professional beard grooming and shaping',
+                    price: 300,
+                    duration_minutes: 20,
+                    image_url: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&h=300&fit=crop'
+                }
+            ];
+            
+            renderServicesToGrid(fallbackServices);
+            updatePopularServices(fallbackServices);
+        }
+        
+        function showNoServices() {
+            const servicesGrid = document.getElementById('servicesGrid');
+            if (!servicesGrid) return;
+            
+            servicesGrid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                    <i class="fas fa-cut fa-3x" style="color: var(--gray); margin-bottom: 1rem;"></i>
+                    <h3>No Services Available</h3>
+                    <p>Our service menu is being updated. Please check back soon or contact us directly.</p>
+                    <a href="tel:+254704325810" class="btn-primary" style="margin-top: 1rem;">
+                        <i class="fas fa-phone"></i> Call for Availability
+                    </a>
+                </div>
+            `;
+        }
+        
+        function bookService(serviceId, serviceName, servicePrice) {
+            console.log('Booking service:', serviceId, serviceName, servicePrice);
+            
+            // Scroll to booking section
+            const bookingSection = document.getElementById('booking');
+            if (bookingSection) {
+                const header = document.querySelector('header');
+                const headerHeight = header ? header.offsetHeight : 80;
+                
+                window.scrollTo({
+                    top: bookingSection.offsetTop - headerHeight,
+                    behavior: 'smooth'
+                });
+            }
+            
+            // Update booking form
+            setTimeout(() => {
+                const serviceSelect = document.getElementById('serviceType');
+                if (serviceSelect) {
+                    // Find the option with this serviceId
+                    for (let i = 0; i < serviceSelect.options.length; i++) {
+                        if (serviceSelect.options[i].value === serviceId) {
+                            serviceSelect.value = serviceId;
+                            break;
+                        }
+                    }
+                    
+                    // Update price display
+                    const priceDisplay = document.getElementById('priceDisplay');
+                    const totalPrice = document.getElementById('totalPrice');
+                    if (priceDisplay && totalPrice) {
+                        priceDisplay.style.display = 'block';
+                        totalPrice.textContent = `KES ${servicePrice.toLocaleString()}`;
+                    }
+                }
+            }, 500);
         }
         
         // Load main.js
@@ -1232,21 +1564,17 @@
             
             script.onload = function() {
                 console.log('✅ main.js loaded');
-                
-                // Load booking.js after a short delay
                 setTimeout(loadBookingJS, 500);
             };
             
             script.onerror = function() {
                 console.error('❌ Failed to load main.js');
-                // Still try to load booking.js
                 loadBookingJS();
             };
             
             document.body.appendChild(script);
         }
         
-        // Load booking.js
         function loadBookingJS() {
             console.log('📦 Loading booking.js...');
             
@@ -1257,7 +1585,6 @@
                 console.log('✅ booking.js loaded');
                 console.log('🎉 All systems ready!');
                 
-                // Update status to show system is ready
                 setTimeout(() => {
                     updateStatus('System Ready', 'success');
                 }, 1000);
@@ -1324,7 +1651,6 @@
                 console.warn('Database error:', error);
             }
             
-            // Save locally as fallback
             try {
                 let subscriptions = JSON.parse(localStorage.getItem('kenbarber_newsletter') || '[]');
                 if (!subscriptions.includes(email)) {
@@ -1338,7 +1664,6 @@
                 console.warn('Local storage error:', error);
             }
             
-            // Reset button and input
             if (button) {
                 button.innerHTML = originalText;
                 button.disabled = false;
@@ -1350,7 +1675,6 @@
         let galleryItems = [];
         let currentGalleryIndex = 0;
         
-        // Load gallery from Supabase
         async function loadGallery() {
             const galleryGrid = document.getElementById('galleryGrid');
             const noGallery = document.getElementById('noGalleryItems');
@@ -1358,10 +1682,8 @@
             if (!galleryGrid) return;
             
             try {
-                // Show loading state
                 galleryGrid.innerHTML = '<div class="gallery-item loading-gallery"><div style="background: rgba(255,255,255,0.1); height: 100%; display: flex; align-items: center; justify-content: center;"><i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i></div></div>';
                 
-                // Try to load from Supabase
                 if (window.supabase) {
                     const { data, error } = await window.supabase
                         .from('gallery')
@@ -1376,7 +1698,6 @@
                     }
                 }
                 
-                // If no data from Supabase, use mock data
                 loadMockGallery();
                 
             } catch (error) {
@@ -1385,7 +1706,6 @@
             }
         }
         
-        // Load mock gallery data
         function loadMockGallery() {
             galleryItems = [
                 {
@@ -1401,62 +1721,18 @@
                     category: 'beard',
                     image_url: 'https://images.unsplash.com/photo-1562788869-4ed32648eb72?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
                     description: 'Perfect beard trim and shaping'
-                },
-                {
-                    id: 3,
-                    title: 'Hot Towel Shave',
-                    category: 'shaves',
-                    image_url: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-                    description: 'Traditional hot towel shave experience'
-                },
-                {
-                    id: 4,
-                    title: 'Salon Interior',
-                    category: 'salon',
-                    image_url: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-                    description: 'Our modern and comfortable salon'
-                },
-                {
-                    id: 5,
-                    title: 'Barber Team',
-                    category: 'barbers',
-                    image_url: 'https://images.unsplash.com/photo-1599351431441-4b2565d5c8ce?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-                    description: 'Our professional barber team'
-                },
-                {
-                    id: 6,
-                    title: 'Kids Haircut',
-                    category: 'haircuts',
-                    image_url: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-                    description: 'Special haircut for children'
-                },
-                {
-                    id: 7,
-                    title: 'Beard Care',
-                    category: 'beard',
-                    image_url: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-                    description: 'Professional beard care and maintenance'
-                },
-                {
-                    id: 8,
-                    title: 'Barber Tools',
-                    category: 'salon',
-                    image_url: 'https://images.unsplash.com/photo-1605497788044-5a32c7078486?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-                    description: 'Premium barber tools and equipment'
                 }
             ];
             
             renderGallery('all');
         }
         
-        // Render gallery items
         function renderGallery(category) {
             const galleryGrid = document.getElementById('galleryGrid');
             const noGallery = document.getElementById('noGalleryItems');
             
             if (!galleryGrid) return;
             
-            // Filter items by category
             let filteredItems = galleryItems;
             if (category !== 'all') {
                 filteredItems = galleryItems.filter(item => item.category === category);
@@ -1470,7 +1746,6 @@
             
             if (noGallery) noGallery.style.display = 'none';
             
-            // Render items
             galleryGrid.innerHTML = '';
             filteredItems.forEach((item, index) => {
                 const galleryItem = document.createElement('div');
@@ -1491,28 +1766,19 @@
             });
         }
         
-        // Setup gallery filter buttons
         function setupGalleryFilters() {
             const filterButtons = document.querySelectorAll('.gallery-filter-btn');
             
             filterButtons.forEach(button => {
                 button.addEventListener('click', function() {
-                    // Remove active class from all buttons
                     filterButtons.forEach(btn => btn.classList.remove('active'));
-                    
-                    // Add active class to clicked button
                     this.classList.add('active');
-                    
-                    // Get category
                     const category = this.dataset.category;
-                    
-                    // Render filtered gallery
                     renderGallery(category);
                 });
             });
         }
         
-        // Open lightbox
         function openLightbox(index, category) {
             currentGalleryIndex = index;
             const modal = document.getElementById('lightboxModal');
@@ -1521,12 +1787,10 @@
             
             if (!modal || !img) return;
             
-            // Get filtered items based on current category
             let filteredItems = galleryItems;
             const activeFilter = document.querySelector('.gallery-filter-btn.active');
             if (activeFilter && activeFilter.dataset.category !== 'all') {
                 filteredItems = galleryItems.filter(item => item.category === activeFilter.dataset.category);
-                // Find the correct index in filtered array
                 const originalIndex = galleryItems.findIndex(item => item.id === filteredItems[index].id);
                 currentGalleryIndex = originalIndex;
             }
@@ -1541,7 +1805,6 @@
             document.body.style.overflow = 'hidden';
         }
         
-        // Close lightbox
         function closeLightbox() {
             const modal = document.getElementById('lightboxModal');
             if (!modal) return;
@@ -1550,14 +1813,12 @@
             document.body.style.overflow = 'auto';
         }
         
-        // Navigate lightbox
         function navigateLightbox(direction) {
             const activeFilter = document.querySelector('.gallery-filter-btn.active');
             let filteredItems = galleryItems;
             
             if (activeFilter && activeFilter.dataset.category !== 'all') {
                 filteredItems = galleryItems.filter(item => item.category === activeFilter.dataset.category);
-                // Find current item in filtered array
                 const currentItem = galleryItems[currentGalleryIndex];
                 const filteredIndex = filteredItems.findIndex(item => item.id === currentItem.id);
                 
@@ -1578,7 +1839,6 @@
                 }
             }
             
-            // Update lightbox
             const img = document.getElementById('lightboxImg');
             const caption = document.getElementById('lightboxCaption');
             const item = galleryItems[currentGalleryIndex];
@@ -1587,7 +1847,6 @@
             if (caption) caption.textContent = `${item.title} - ${item.description}`;
         }
         
-        // Setup lightbox
         function setupLightbox() {
             const closeBtn = document.getElementById('lightboxClose');
             const prevBtn = document.getElementById('lightboxPrev');
@@ -1598,7 +1857,6 @@
             if (prevBtn) prevBtn.addEventListener('click', () => navigateLightbox('prev'));
             if (nextBtn) nextBtn.addEventListener('click', () => navigateLightbox('next'));
             
-            // Close on background click
             if (modal) {
                 modal.addEventListener('click', function(e) {
                     if (e.target === this) {
@@ -1607,7 +1865,6 @@
                 });
             }
             
-            // Keyboard navigation
             document.addEventListener('keydown', function(e) {
                 if (modal.style.display === 'flex') {
                     if (e.key === 'Escape') closeLightbox();
@@ -1617,7 +1874,6 @@
             });
         }
         
-        // Initialize gallery
         function initializeGallery() {
             loadGallery();
             setupGalleryFilters();
@@ -1627,228 +1883,13 @@
         // Start everything when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             initializeWebsite();
-            
-            // Initialize gallery after a short delay
             setTimeout(initializeGallery, 1000);
         });
         
-        // If DOM is already loaded
         if (document.readyState === 'interactive' || document.readyState === 'complete') {
             initializeWebsite();
             setTimeout(initializeGallery, 1000);
-        } 
-        // ============================================
-// UPDATE SERVICES DISPLAY
-// ============================================
-
-async function updateServicesDisplay() {
-    console.log('🔄 Updating services display...');
-    
-    const servicesGrid = document.getElementById('servicesGrid');
-    if (!servicesGrid) {
-        console.error('❌ Services grid not found!');
-        return;
-    }
-    
-    try {
-        // Show loading
-        servicesGrid.innerHTML = `
-            <div class="loading-service">
-                <div class="service-img" style="background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
-                </div>
-                <div class="service-content">
-                    <h3>Loading Services...</h3>
-                    <p>Fetching services from database</p>
-                    <div class="service-footer">
-                        <span class="price">KES 0</span>
-                        <span class="duration"><i class="far fa-clock"></i> 0 min</span>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Check if Supabase exists
-        if (!window.supabase) {
-            console.warn('Supabase not available, showing mock services');
-            showMockServices();
-            return;
         }
-        
-        // Fetch services from Supabase
-        console.log('📥 Fetching services from database...');
-        const { data: services, error } = await window.supabase
-            .from('services')
-            .select('*')
-            .eq('is_active', true)
-            .order('price');
-        
-        if (error) {
-            console.error('❌ Database error:', error);
-            showMockServices();
-            return;
-        }
-        
-        console.log(`✅ Found ${services?.length || 0} services`);
-        
-        if (!services || services.length === 0) {
-            showNoServices();
-            return;
-        }
-        
-        // Render services
-        renderServicesToGrid(services);
-        
-    } catch (error) {
-        console.error('❌ Error:', error);
-        showMockServices();
-    }
-}
-
-function renderServicesToGrid(services) {
-    const servicesGrid = document.getElementById('servicesGrid');
-    if (!servicesGrid) return;
-    
-    servicesGrid.innerHTML = '';
-    
-    services.forEach(service => {
-        const serviceCard = document.createElement('div');
-        serviceCard.className = 'service-card';
-        
-        // Create image HTML
-        let imageHtml = '';
-        if (service.image_url && service.image_url.trim() !== '') {
-            // Service has image
-            imageHtml = `
-                <div class="service-img">
-                    <img src="${service.image_url}" 
-                         alt="${service.image_alt || service.name}"
-                         style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px 8px 0 0;"
-                         onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"200\" viewBox=\"0 0 400 200\"><rect width=\"400\" height=\"200\" fill=\"%23D4AF37\"/><text x=\"200\" y=\"110\" font-family=\"Arial\" font-size=\"24\" fill=\"%231a1a1a\" text-anchor=\"middle\">${service.name}</text></svg>';">
-                </div>
-            `;
-        } else {
-            // No image - show placeholder
-            imageHtml = `
-                <div class="service-img" style="background: linear-gradient(135deg, var(--primary), #ffd700); display: flex; align-items: center; justify-content: center; border-radius: 8px 8px 0 0; min-height: 200px;">
-                    <div style="text-align: center; color: var(--secondary); padding: 20px;">
-                        <i class="fas fa-cut fa-3x"></i>
-                        <h3 style="margin-top: 10px;">${service.name}</h3>
-                    </div>
-                </div>
-            `;
-        }
-        
-        // Format price and duration
-        const price = service.price ? parseFloat(service.price).toLocaleString() : '0';
-        const duration = service.duration_minutes || 30;
-        
-        serviceCard.innerHTML = `
-            ${imageHtml}
-            <div class="service-content">
-                <h3>${service.name}</h3>
-                <p style="color: #666; font-size: 0.9rem; line-height: 1.5; margin: 10px 0;">
-                    ${service.description || 'Professional grooming service'}
-                </p>
-                <div class="service-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
-                    <span class="price" style="font-size: 1.2rem; font-weight: bold; color: var(--primary);">KES ${price}</span>
-                    <span class="duration" style="color: #666;"><i class="far fa-clock"></i> ${duration} min</span>
-                </div>
-                <button class="btn-primary" style="width: 100%; margin-top: 1rem; padding: 12px; border-radius: 8px; font-weight: 600;" 
-                        onclick="bookService('${service.id}', '${service.name}', ${service.price})">
-                    <i class="fas fa-calendar-alt"></i> Book Now
-                </button>
-            </div>
-        `;
-        
-        servicesGrid.appendChild(serviceCard);
-    });
-}
-
-function showMockServices() {
-    const servicesGrid = document.getElementById('servicesGrid');
-    if (!servicesGrid) return;
-    
-    const mockServices = [
-        {
-            id: 1,
-            name: 'Classic Haircut',
-            description: 'Traditional haircut with modern finishing touches',
-            price: 500,
-            duration_minutes: 30,
-            image_url: 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400&h=300&fit=crop'
-        },
-        {
-            id: 2,
-            name: 'Beard Trim & Style',
-            description: 'Professional beard grooming and shaping',
-            price: 300,
-            duration_minutes: 20,
-            image_url: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&h=300&fit=crop'
-        }
-    ];
-    
-    renderServicesToGrid(mockServices);
-}
-
-function showNoServices() {
-    const servicesGrid = document.getElementById('servicesGrid');
-    if (!servicesGrid) return;
-    
-    servicesGrid.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
-            <i class="fas fa-cut fa-3x" style="color: var(--gray); margin-bottom: 1rem;"></i>
-            <h3>No Services Available</h3>
-            <p>Our service menu is being updated. Please check back soon or contact us directly.</p>
-            <a href="tel:+254704325810" class="btn-primary" style="margin-top: 1rem;">
-                <i class="fas fa-phone"></i> Call for Availability
-            </a>
-        </div>
-    `;
-}
-
-// Function to book service
-function bookService(serviceId, serviceName, servicePrice) {
-    console.log('Booking service:', serviceId, serviceName, servicePrice);
-    
-    // Scroll to booking section
-    const bookingSection = document.getElementById('booking');
-    if (bookingSection) {
-        bookingSection.scrollIntoView({ behavior: 'smooth' });
-    }
-    
-    // Update booking form
-    setTimeout(() => {
-        const serviceSelect = document.getElementById('serviceType');
-        if (serviceSelect) {
-            serviceSelect.value = serviceId;
-            
-            // Update price display
-            const priceDisplay = document.getElementById('priceDisplay');
-            const totalPrice = document.getElementById('totalPrice');
-            if (priceDisplay && totalPrice) {
-                priceDisplay.style.display = 'block';
-                totalPrice.textContent = `KES ${servicePrice.toLocaleString()}`;
-            }
-            
-            alert(`✅ ${serviceName} selected!\n\nPrice: KES ${servicePrice.toLocaleString()}\n\nComplete the form below to book.`);
-        }
-    }, 500);
-}
-
-// Call this function when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Wait a bit for everything to load
-    setTimeout(updateServicesDisplay, 2000);
-});
-
-// Also call when Supabase is ready
-if (window.supabaseReady) {
-    window.supabaseReady = function() {
-        console.log('Supabase ready, updating services...');
-        updateServicesDisplay();
-    };
-}
     </script>
 </body>
 </html>
